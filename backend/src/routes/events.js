@@ -41,8 +41,8 @@ router.get('/', async (req, res) => {
       (SELECT COUNT(*) FROM event_players ep WHERE ep.event_id = e.id AND ep.status = 'active') as player_count
       FROM events e JOIN users u ON u.id = e.owner_id WHERE e.test_event = 0`;
     const params = [];
-    if (past === 'true') { sql += ' AND e.date < ?'; params.push(now); }
-    else { sql += ' AND e.date >= ?'; params.push(now); }
+    if (past === 'true') { sql += " AND (e.date < ? OR e.status = 'completed')"; params.push(now); }
+    else { sql += " AND e.date >= ? AND e.status != 'completed'"; params.push(now); }
     if (q) {
       sql += ' AND (e.name LIKE ? OR e.description LIKE ? OR e.game LIKE ?)';
       params.push(`%${q}%`, `%${q}%`, `%${q}%`);
@@ -271,6 +271,17 @@ router.delete('/:id/players/:playerId', auth, async (req, res) => {
     if (!event || event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
     await db.run('DELETE FROM event_players WHERE id = ?', [req.params.playerId]);
     res.json({ message: 'Player removed' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Auth: finish event (owner only)
+router.post('/:id/finish', auth, async (req, res) => {
+  try {
+    const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    await db.run("UPDATE events SET status = 'completed' WHERE id = ?", [req.params.id]);
+    res.json(await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

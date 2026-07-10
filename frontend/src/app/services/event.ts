@@ -149,4 +149,8 @@ export class EventService {
       headers: this.authHeaders(),
     });
   }
+
+  finishEvent(eventId: string) {
+    return this.http.post(`${this.API}/${eventId}/finish`, {}, { headers: this.authHeaders() });
+  }
 }

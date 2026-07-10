@@ -1,0 +1,61 @@
+- generic [ref=f5e2]:
+  - navigation [ref=f5e3]:
+    - generic [ref=f5e4]:
+      - generic [ref=f5e5]:
+        - link "⚡ ManaSync" [ref=f5e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f5e7]: ⚡
+          - generic [ref=f5e8]: ManaSync
+        - generic [ref=f5e9]:
+          - link "Home" [ref=f5e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f5e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f5e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f5e13]:
+        - button "Open notifications" [ref=f5e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f5e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f5e24] [cursor=pointer]
+  - main [ref=f5e27]:
+    - generic [ref=f5e28]:
+      - generic [ref=f5e37]:
+        - generic [ref=f5e38]:
+          - generic [ref=f5e39]: M
+          - generic [ref=f5e40]:
+            - generic [ref=f5e41]:
+              - generic [ref=f5e42]:
+                - generic [ref=f5e43]: MTG
+                - generic [ref=f5e44]: Commander500
+                - generic [ref=f5e45]: upcoming
+              - heading "Phantom Test Event" [level=1] [ref=f5e46]
+              - paragraph [ref=f5e47]: 📅 Dec 25, 2026 · 2:00 PM • 📍 TBD • 👥 0 Players
+            - generic [ref=f5e50]:
+              - button "▶ Start Round 1" [ref=f5e51] [cursor=pointer]
+              - button "Add Player" [ref=f5e52] [cursor=pointer]
+              - button "👻 Add Phantom" [active] [ref=f5e56] [cursor=pointer]
+              - link "Edit Event" [ref=f5e57] [cursor=pointer]:
+                - /url: /event/57df250b-1f9b-4584-aa4f-26691ff783b3/edit
+              - button "Delete Event" [ref=f5e61] [cursor=pointer]
+        - generic [ref=f5e66]:
+          - button "Standings (0)" [ref=f5e67] [cursor=pointer]
+          - button "Results (0 rounds)" [ref=f5e68] [cursor=pointer]
+        - paragraph [ref=f5e70]: No players yet. Be the first to join!
+      - generic [ref=f5e72]:
+        - heading "👻 Add Phantom Players" [level=3] [ref=f5e73]
+        - paragraph [ref=f5e74]: Adiciona jogadores fictícios com nomes aleatórios para testes.
+        - generic [ref=f5e75]:
+          - generic [ref=f5e76]: Quantidade
+          - spinbutton [ref=f5e77]: "8"
+        - generic [ref=f5e78]:
+          - button "OK — Adicionar 8" [ref=f5e79] [cursor=pointer]
+          - button "Cancelar" [ref=f5e80] [cursor=pointer]
+  - contentinfo [ref=f5e31]:
+    - generic [ref=f5e32]:
+      - generic [ref=f5e33]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f5e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f5e35] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f5e36] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

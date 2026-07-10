@@ -32,6 +32,55 @@ export class EventDetailComponent implements OnInit {
   addPlayerLoading = signal(false);
   addPlayerError = signal('');
 
+  phantomModal = signal(false);
+  phantomCount = signal(8);
+  phantomLoading = signal(false);
+
+  private readonly FIRST = [
+    'Alice','Bob','Carlos','Diana','Eduardo','Fernanda','Gabriel','Helena',
+    'Igor','Juliana','Klaus','Laura','Marcos','Natalia','Oscar','Paula',
+    'Rafael','Sabrina','Thiago','Ursula','Victor','Wendy','Xavier','Yasmin',
+    'Zara','André','Beatriz','Caio','Débora','Élton','Fátima','Gustavo',
+    'Hígor','Isabela','João','Keila','Leandro','Mariana','Nando','Olivia',
+    'Pedro','Quésia','Rodrigo','Sofia','Tânia','Ugo','Vanessa','Wilson',
+  ];
+  private readonly LAST = [
+    'Silva','Santos','Oliveira','Souza','Rodrigues','Ferreira','Alves','Lima',
+    'Costa','Pereira','Carvalho','Melo','Ribeiro','Almeida','Nascimento',
+    'Gomes','Martins','Araújo','Monteiro','Barbosa','Cardoso','Cavalcanti',
+    'Moreira','Nunes','Correia','Dias','Duarte','Cunha','Freitas','Pinto',
+  ];
+
+  private usedPhantomNames = new Set<string>();
+
+  private randomName(): string {
+    const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+    let name: string;
+    let tries = 0;
+    do { name = `${pick(this.FIRST)} ${pick(this.LAST)}`; tries++; }
+    while (this.usedPhantomNames.has(name) && tries < 200);
+    this.usedPhantomNames.add(name);
+    return name;
+  }
+
+  openPhantomModal() {
+    this.phantomCount.set(8);
+    this.phantomModal.set(true);
+  }
+
+  submitPhantom() {
+    const n = Math.max(1, Math.min(this.phantomCount(), 100));
+    this.phantomLoading.set(true);
+    const names = Array.from({ length: n }, () => this.randomName());
+    let done = 0;
+    for (const name of names) {
+      this.eventSvc.addPlayer(this.id(), { display_name: name }).subscribe({
+        next: () => { if (++done === n) { this.load(); this.phantomModal.set(false); this.phantomLoading.set(false); } },
+        error: () => { if (++done === n) { this.load(); this.phantomModal.set(false); this.phantomLoading.set(false); } },
+      });
+    }
+  }
+
   isOwner = computed(() => {
     const user = this.auth.currentUser();
     const ev = this.event();
@@ -83,6 +132,39 @@ export class EventDetailComponent implements OnInit {
     );
     return pairing ? { round: latestRound, pairing, myPlayer } : null;
   });
+
+  private mwp(player: Player): number {
+    const total = player.wins + player.losses + player.draws;
+    if (total === 0) return 1 / 3;
+    return Math.max(player.wins / total, 1 / 3);
+  }
+
+  private opponents(playerId: string): Player[] {
+    const ev = this.event();
+    if (!ev?.pairings || !ev?.players) return [];
+    const ids = new Set<string>();
+    for (const p of ev.pairings) {
+      const seats = [p.player1_id, p.player2_id, p.player3_id, p.player4_id].filter(Boolean) as string[];
+      if (seats.includes(playerId) && seats.length > 1)
+        seats.filter(id => id !== playerId).forEach(id => ids.add(id));
+    }
+    return ev.players!.filter(p => ids.has(p.id));
+  }
+
+  tiebreakers(player: Player): { omw: string; gw: string; ogw: string } {
+    const opps = this.opponents(player.id);
+    const avg = (list: Player[]) =>
+      list.length ? list.reduce((s, o) => s + this.mwp(o), 0) / list.length : 0;
+    const omw = avg(opps);
+    const gw = this.mwp(player);
+    const ogwList = opps.flatMap(o => this.opponents(o.id).filter(x => x.id !== player.id));
+    const ogw = ogwList.length ? ogwList.reduce((s, o) => s + this.mwp(o), 0) / ogwList.length : 0;
+    return {
+      omw: (omw * 100).toFixed(1) + '%',
+      gw: gw.toFixed(2),
+      ogw: (ogw * 100).toFixed(1) + '%',
+    };
+  }
 
   podPlayers(p: Pairing): { id: string; name: string; slot: string }[] {
     const ev = this.event();
@@ -167,6 +249,14 @@ export class EventDetailComponent implements OnInit {
     this.eventSvc.updatePlayer(this.id(), modal.playerId, { deck_name: this.deckNameInput() }).subscribe({
       next: () => { this.load(); this.editDeckModal.set(null); },
       error: (err) => this.error.set(err.error?.error || 'Failed to update deck'),
+    });
+  }
+
+  finishEvent() {
+    if (!confirm('Finalizar este evento? Ele será movido para Past Events e não poderá receber novas rodadas.')) return;
+    this.eventSvc.finishEvent(this.id()).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(err.error?.error || 'Failed to finish event'),
     });
   }
 

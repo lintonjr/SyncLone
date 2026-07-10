@@ -12,7 +12,7 @@ import { NavbarComponent } from './components/navbar/navbar';
     </main>
     <footer class="footer">
       <div class="footer-inner">
-        <span>© 2025 ManaSync</span>
+        <span>© 2025 Mercadia</span>
         <a routerLink="/terms-of-service">Terms of Service</a>
         <a routerLink="/privacy-policy">Privacy Policy</a>
         <a href="https://ko-fi.com/manasync" target="_blank" rel="noopener">Donate ♥</a>
