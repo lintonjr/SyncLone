@@ -1,0 +1,111 @@
+<div class="create-page">
+  <h1 class="page-title">{{ isEditMode ? 'Edit Event' : 'Create New Event' }}</h1>
+
+  @if (error()) { <div class="error-msg">{{ error() }}</div> }
+
+  <div class="create-form card">
+    <div class="form-field">
+      <label>Event Name</label>
+      <input type="text" placeholder="Event Name (3-50 characters)" [value]="name()" (input)="name.set($any($event.target).value)" maxlength="50" />
+    </div>
+
+    <div class="row-2">
+      <div class="form-field">
+        <label>City</label>
+        <input type="text" placeholder="City" [value]="city()" (input)="city.set($any($event.target).value)" [disabled]="online()" />
+        <label class="checkbox-label">
+          <input type="checkbox" [checked]="online()" (change)="online.set($any($event.target).checked)" />
+          Online
+        </label>
+      </div>
+      <div class="form-field">
+        <label>Address (Optional)</label>
+        <input type="text" placeholder="Street address, building, etc." [value]="address()" (input)="address.set($any($event.target).value)" />
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label>Description (Optional)</label>
+      <textarea placeholder="Event description (max 100 characters)" [value]="description()" (input)="description.set($any($event.target).value)" maxlength="100"></textarea>
+    </div>
+
+    <div class="form-field">
+      <label>Event Thumbnail</label>
+      <div class="thumb-upload">
+        @if (thumbnailPreview()) {
+          <img [src]="thumbnailPreview()" alt="preview" class="thumb-preview" />
+        } @else {
+          <div class="thumb-placeholder">No image selected</div>
+        }
+        <label class="btn btn-ghost upload-btn">
+          Upload Image
+          <input type="file" accept="image/*" (change)="onFile($event)" style="display:none" />
+        </label>
+      </div>
+    </div>
+
+    <div class="row-3">
+      <div class="form-field">
+        <label>Date</label>
+        <input type="date" [value]="date()" (input)="date.set($any($event.target).value)" (change)="date.set($any($event.target).value)" />
+      </div>
+      <div class="form-field">
+        <label>Time</label>
+        <input type="time" [value]="time()" (input)="time.set($any($event.target).value)" (change)="time.set($any($event.target).value)" />
+      </div>
+      <div class="form-field">
+        <label>Game</label>
+        <select [value]="game()" (change)="game.set($any($event.target).value); format.set('')">
+          <option value="">Select a game</option>
+          @for (g of GAMES; track g) {
+            <option [value]="g">{{ g }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (game() && formats().length) {
+      <div class="form-field">
+        <label>Format</label>
+        <select [value]="format()" (change)="format.set($any($event.target).value)">
+          <option value="">Select a format</option>
+          @for (f of formats(); track f) {
+            <option [value]="f">{{ f }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <div class="row-2">
+      <div class="form-field">
+        <label>Pairing Method</label>
+        <select [value]="pairingMethod()" (change)="pairingMethod.set($any($event.target).value)">
+          <option value="swiss">Swiss (Performance Pairing)</option>
+          <option value="round-robin">Round Robin</option>
+          <option value="single-elimination">Single Elimination</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Playoff Structure</label>
+        <select [value]="playoffStructure()" (change)="playoffStructure.set($any($event.target).value)">
+          <option value="none">No Playoffs</option>
+          <option value="top4">Top 4</option>
+          <option value="top8">Top 8</option>
+        </select>
+      </div>
+    </div>
+
+    <h3 class="optionals-title">Optionals</h3>
+    <div class="checkboxes">
+      <label class="checkbox-label"><input type="checkbox" [checked]="allowByes()" (change)="allowByes.set($any($event.target).checked)" /> Allow Byes</label>
+      <label class="checkbox-label"><input type="checkbox" [checked]="testEvent()" (change)="testEvent.set($any($event.target).checked)" /> Test Event</label>
+      <label class="checkbox-label"><input type="checkbox" [checked]="collaborativeDeck()" (change)="collaborativeDeck.set($any($event.target).checked)" /> Collaborative Deck Registering</label>
+      <label class="checkbox-label"><input type="checkbox" [checked]="asyncDraws()" (change)="asyncDraws.set($any($event.target).checked)" /> Asynchronous Draws</label>
+      <label class="checkbox-label"><input type="checkbox" [checked]="confirmPlayers()" (change)="confirmPlayers.set($any($event.target).checked)" /> Confirm New Players</label>
+    </div>
+
+    <button class="btn btn-primary" (click)="submit()" [disabled]="loading()">
+      @if (loading()) { <span class="spinner-sm"></span> } {{ isEditMode ? 'Save Changes' : 'Create Event' }}
+    </button>
+  </div>
+</div>

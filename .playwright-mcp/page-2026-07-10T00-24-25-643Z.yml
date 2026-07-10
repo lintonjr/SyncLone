@@ -1,0 +1,42 @@
+- generic [ref=f39e2]:
+  - navigation [ref=f39e3]:
+    - generic [ref=f39e4]:
+      - generic [ref=f39e5]:
+        - link "⚡ ManaSync" [ref=f39e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f39e7]: ⚡
+          - generic [ref=f39e8]: ManaSync
+        - generic [ref=f39e9]:
+          - link "Home" [ref=f39e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f39e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f39e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f39e13]:
+        - button "Open notifications" [ref=f39e15] [cursor=pointer]
+        - group [ref=f39e19]:
+          - generic "Player Two" [ref=f39e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f39e24] [cursor=pointer]
+  - main [ref=f39e27]:
+    - generic [ref=f39e35]:
+      - generic [ref=f39e36]:
+        - heading "My Events" [level=1] [ref=f39e37]
+        - link "+ Create Event" [ref=f39e38] [cursor=pointer]:
+          - /url: /create
+      - generic [ref=f39e39]:
+        - button "Organized (0)" [ref=f39e40] [cursor=pointer]
+        - button "Joined (1)" [ref=f39e41] [cursor=pointer]
+      - generic [ref=f39e42]:
+        - paragraph [ref=f39e43]: You haven't created any events yet.
+        - link "Create your first event" [ref=f39e44] [cursor=pointer]:
+          - /url: /create
+  - contentinfo [ref=f39e28]:
+    - generic [ref=f39e29]:
+      - generic [ref=f39e30]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f39e31] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f39e32] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f39e33] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

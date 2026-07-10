@@ -1,0 +1,89 @@
+- generic [ref=f2e2]:
+  - navigation [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - link "⚡ ManaSync" [ref=f2e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f2e7]: ⚡
+          - generic [ref=f2e8]: ManaSync
+        - generic [ref=f2e9]:
+          - link "Home" [ref=f2e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f2e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f2e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f2e13]:
+        - button "Open notifications" [ref=f2e15] [cursor=pointer]
+        - group [ref=f2e19]:
+          - generic "Player Two" [ref=f2e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f2e24] [cursor=pointer]
+  - main [ref=f2e27]:
+    - generic [ref=f2e29]:
+      - generic [ref=f2e30]:
+        - generic [ref=f2e31]: M
+        - generic [ref=f2e32]:
+          - generic [ref=f2e33]:
+            - generic [ref=f2e34]:
+              - generic [ref=f2e35]: MTG
+              - generic [ref=f2e36]: Commander
+              - generic [ref=f2e37]: ongoing
+            - 'heading "Commander Night #5" [level=1] [ref=f2e38]'
+            - paragraph [ref=f2e39]: 📅 Aug 15, 2026 · 12:00 AM • 📍 São Paulo • 👥 3 Players
+          - button "Leave Event" [ref=f2e41] [cursor=pointer]
+      - generic [ref=f2e42]:
+        - button "Standings (3)" [ref=f2e43] [cursor=pointer]
+        - button "Results (2 rounds)" [ref=f2e44] [cursor=pointer]
+        - button "My Round" [ref=f2e45] [cursor=pointer]
+      - table [ref=f2e48]:
+        - rowgroup [ref=f2e49]:
+          - row [ref=f2e50]:
+            - columnheader "Rank" [ref=f2e51]
+            - columnheader "Player" [ref=f2e52]
+            - columnheader "Deck" [ref=f2e53]
+            - columnheader "W" [ref=f2e54]
+            - columnheader "L" [ref=f2e55]
+            - columnheader "D" [ref=f2e56]
+            - columnheader "Pts" [ref=f2e57]
+            - columnheader "Tiebreakers" [ref=f2e58]
+        - rowgroup [ref=f2e59]:
+          - row [ref=f2e60]:
+            - cell "1st" [ref=f2e61]
+            - cell "Player Four" [ref=f2e63]
+            - cell "—" [ref=f2e64]
+            - cell "2" [ref=f2e65]
+            - cell "0" [ref=f2e66]
+            - cell "0" [ref=f2e67]
+            - cell [ref=f2e68]:
+              - strong [ref=f2e69]: "6"
+            - cell "0.0% | 0.00 | 0.0%" [ref=f2e70]
+          - row [ref=f2e71]:
+            - cell "2nd" [ref=f2e72]
+            - cell "Player Three" [ref=f2e74]
+            - cell "—" [ref=f2e75]
+            - cell "1" [ref=f2e76]
+            - cell "1" [ref=f2e77]
+            - cell "0" [ref=f2e78]
+            - cell [ref=f2e79]:
+              - strong [ref=f2e80]: "3"
+            - cell "0.0% | 0.00 | 0.0%" [ref=f2e81]
+          - row [ref=f2e82]:
+            - cell "3rd" [ref=f2e83]
+            - cell "Player Two" [ref=f2e85]
+            - cell [ref=f2e86]:
+              - button "+ Set Deck" [ref=f2e87] [cursor=pointer]
+            - cell "0" [ref=f2e88]
+            - cell "1" [ref=f2e89]
+            - cell "0" [ref=f2e90]
+            - cell [ref=f2e91]:
+              - strong [ref=f2e92]: "0"
+            - cell "0.0% | 0.00 | 0.0%" [ref=f2e93]
+  - contentinfo [ref=f2e94]:
+    - generic [ref=f2e95]:
+      - generic [ref=f2e96]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f2e97] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f2e98] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f2e99] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

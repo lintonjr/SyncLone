@@ -1,0 +1,119 @@
+- generic [active] [ref=f5e1]:
+  - generic [ref=f5e2]:
+    - banner [ref=f5e4]:
+      - generic [ref=f5e5]:
+        - link [ref=f5e8] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=f5e9]
+        - generic [ref=f5e10]:
+          - link [ref=f5e11] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=f5e12]
+          - link [ref=f5e13] [cursor=pointer]:
+            - /url: /events
+            - button "My Events" [ref=f5e14]
+          - link [ref=f5e15] [cursor=pointer]:
+            - /url: /create
+            - button "Create Event" [ref=f5e16]
+          - button [ref=f5e18]
+        - generic [ref=f5e24]:
+          - button "Open notifications" [ref=f5e25]:
+            - button [ref=f5e26]
+          - link [ref=f5e31] [cursor=pointer]:
+            - /url: /login
+            - button [ref=f5e32]
+          - button "Toggle theme" [ref=f5e38]
+    - generic [ref=f5e46]:
+      - heading "Create New Event" [level=1] [ref=f5e47]
+      - generic [ref=f5e48]:
+        - generic [ref=f5e49]:
+          - generic [ref=f5e50]: Event Name
+          - textbox "Event Name" [ref=f5e52]:
+            - /placeholder: Event Name (3-50 characters)
+        - generic [ref=f5e54]:
+          - generic [ref=f5e55]:
+            - generic [ref=f5e56]: City
+            - generic [ref=f5e57]:
+              - textbox "Type to search cities..." [ref=f5e59]
+              - generic [ref=f5e61]:
+                - generic [ref=f5e62]:
+                  - checkbox "Online" [ref=f5e63]
+                  - checkbox
+                - generic [ref=f5e65] [cursor=pointer]: Online
+          - generic [ref=f5e67]:
+            - generic [ref=f5e68]: Address (Optional)
+            - textbox "Address (Optional)" [ref=f5e70]:
+              - /placeholder: Street address, building, etc.
+        - generic [ref=f5e72]:
+          - generic [ref=f5e73]: Description (Optional)
+          - textbox "Description (Optional)" [ref=f5e76]:
+            - /placeholder: Event description (max 100 characters)
+        - generic [ref=f5e78]:
+          - generic [ref=f5e79]: Event Thumbnail
+          - generic [ref=f5e81]:
+            - generic [ref=f5e82]: No image selected
+            - generic [ref=f5e87]:
+              - button [ref=f5e88]
+              - button [ref=f5e94]
+        - generic [ref=f5e100]:
+          - generic [ref=f5e101]:
+            - generic [ref=f5e102]: Date
+            - button "Pick a date" [ref=f5e104]
+          - generic [ref=f5e108]:
+            - generic [ref=f5e109]: Time
+            - textbox "--:--" [ref=f5e111]
+          - generic [ref=f5e113]:
+            - generic [ref=f5e114]: Game
+            - combobox [ref=f5e116]:
+              - generic: Select a game
+            - combobox [ref=f5e117]
+        - generic [ref=f5e119]:
+          - generic [ref=f5e120]:
+            - generic [ref=f5e121]: Pairing Method
+            - combobox [ref=f5e123]:
+              - generic: Swiss (Performance Pairing)
+            - combobox [ref=f5e124]
+          - generic [ref=f5e126]:
+            - generic [ref=f5e127]: Playoff Structure
+            - combobox [ref=f5e129]:
+              - generic: No Playoffs
+            - combobox [ref=f5e130]
+        - heading "Optionals" [level=3] [ref=f5e133]
+        - generic [ref=f5e134]:
+          - generic [ref=f5e135]:
+            - generic [ref=f5e136]:
+              - checkbox "Allow Byes" [ref=f5e137]
+              - checkbox
+            - generic [ref=f5e139]: Allow Byes
+          - generic [ref=f5e143]:
+            - generic [ref=f5e144]:
+              - checkbox "Test Event" [ref=f5e145]
+              - checkbox
+            - generic [ref=f5e147]: Test Event
+          - generic [ref=f5e151]:
+            - generic [ref=f5e152]:
+              - checkbox "Collaborative Deck Registering" [ref=f5e153]
+              - checkbox
+            - generic [ref=f5e155]: Collaborative Deck Registering
+          - generic [ref=f5e159]:
+            - generic [ref=f5e160]:
+              - checkbox "Asynchronous Draws" [ref=f5e161]
+              - checkbox
+            - generic [ref=f5e163]: Asynchronous Draws
+          - generic [ref=f5e167]:
+            - generic [ref=f5e168]:
+              - checkbox "Confirm New Players" [ref=f5e169]
+              - checkbox
+            - generic [ref=f5e171]: Confirm New Players
+        - button [ref=f5e176]
+    - contentinfo [ref=f5e184]:
+      - generic [ref=f5e185]:
+        - button "Report a Bug" [ref=f5e189]
+        - link "Terms of Service" [ref=f5e191] [cursor=pointer]:
+          - /url: /terms-of-service.md
+        - link "Privacy Policy" [ref=f5e193] [cursor=pointer]:
+          - /url: /privacy-policy.md
+        - link "Donate ♥" [ref=f5e195] [cursor=pointer]:
+          - /url: https://ko-fi.com/manasync
+        - generic [ref=f5e196]: © 2025 ManaSync
+  - button "Support Us" [ref=f5e201] [cursor=pointer]

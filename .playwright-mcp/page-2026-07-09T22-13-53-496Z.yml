@@ -1,0 +1,54 @@
+- generic [ref=f18e2]:
+  - navigation [ref=f18e3]:
+    - generic [ref=f18e4]:
+      - generic [ref=f18e5]:
+        - link "⚡ ManaSync" [ref=f18e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f18e7]: ⚡
+          - generic [ref=f18e8]: ManaSync
+        - generic [ref=f18e9]:
+          - link "Home" [ref=f18e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f18e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f18e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f18e13]:
+        - button "Open notifications" [ref=f18e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f18e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f18e24] [cursor=pointer]
+  - main [ref=f18e27]:
+    - generic [ref=f18e29]:
+      - generic [ref=f18e30]:
+        - heading "Welcome back" [level=3] [ref=f18e31]
+        - generic [ref=f18e32]:
+          - generic [ref=f18e33]: Email
+          - textbox "m@example.com" [ref=f18e34]
+        - generic [ref=f18e35]:
+          - generic [ref=f18e36]:
+            - generic [ref=f18e37]: Password
+            - link "Forgot your password?" [ref=f18e38] [cursor=pointer]:
+              - /url: /forgot-password
+          - textbox "••••••••" [ref=f18e39]
+        - button "Let's go!" [ref=f18e40] [cursor=pointer]
+        - paragraph [ref=f18e41]:
+          - text: Don't have an account?
+          - link "Sign up" [ref=f18e42] [cursor=pointer]:
+            - /url: /register
+      - paragraph [ref=f18e43]:
+        - text: By clicking continue, you agree to our
+        - link "Terms of Service" [ref=f18e44] [cursor=pointer]:
+          - /url: "#"
+        - text: and
+        - link "Privacy Policy" [ref=f18e45] [cursor=pointer]:
+          - /url: "#"
+        - text: .
+  - contentinfo [ref=f18e46]:
+    - generic [ref=f18e47]:
+      - generic [ref=f18e48]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f18e49] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f18e50] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f18e51] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

@@ -1,0 +1,47 @@
+<div class="my-events-page">
+  <div class="page-header">
+    <h1>My Events</h1>
+    <a routerLink="/create" class="btn btn-primary">+ Create Event</a>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab() === 'owned'" (click)="activeTab.set('owned')">
+      Organized ({{ owned().length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'joined'" (click)="activeTab.set('joined')">
+      Joined ({{ joined().length }})
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading"><div class="spinner"></div></div>
+  } @else {
+    @if (activeTab() === 'owned') {
+      @if (owned().length === 0) {
+        <div class="empty-state">
+          <p>You haven't created any events yet.</p>
+          <a routerLink="/create" class="btn btn-primary">Create your first event</a>
+        </div>
+      } @else {
+        <div class="events-list">
+          @for (ev of owned(); track ev.id) {
+            <app-event-card [event]="ev" />
+          }
+        </div>
+      }
+    } @else {
+      @if (joined().length === 0) {
+        <div class="empty-state">
+          <p>You haven't joined any events yet.</p>
+          <a routerLink="/" class="btn btn-ghost">Browse Events</a>
+        </div>
+      } @else {
+        <div class="events-list">
+          @for (ev of joined(); track ev.id) {
+            <app-event-card [event]="ev" />
+          }
+        </div>
+      }
+    }
+  }
+</div>

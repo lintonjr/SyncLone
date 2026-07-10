@@ -1,0 +1,364 @@
+@if (loading()) {
+  <div class="detail-loading"><div class="spinner"></div></div>
+} @else if (event()) {
+  <div class="detail-page">
+    <!-- Header Banner -->
+    <div class="event-banner">
+      @if (event()!.thumbnail) {
+        <img [src]="thumbnailUrl()" class="banner-img" [alt]="event()!.name" />
+      } @else {
+        <div class="banner-placeholder">{{ event()!.game.charAt(0) }}</div>
+      }
+      <div class="banner-overlay">
+        <div class="banner-content">
+          <div class="badges">
+            <span class="badge badge-purple">{{ event()!.game }}</span>
+            @if (event()!.format) { <span class="badge badge-purple">{{ event()!.format }}</span> }
+            <span class="badge" [class]="'badge badge-' + (event()!.status === 'upcoming' ? 'purple' : event()!.status === 'ongoing' ? 'yellow' : 'green')">{{ event()!.status }}</span>
+          </div>
+          <h1 class="event-title">{{ event()!.name }}</h1>
+          <p class="event-meta">
+            📅 {{ event()!.date | date:'MMM d, y · h:mm a' }} &nbsp;•&nbsp;
+            📍 {{ event()!.online ? 'Online' : (event()!.city || 'TBD') }}
+            &nbsp;•&nbsp; 👥 {{ event()!.players?.length ?? 0 }} Players
+          </p>
+          @if (event()!.description) {
+            <p class="event-desc">{{ event()!.description }}</p>
+          }
+        </div>
+        <div class="banner-actions">
+          @if (!auth.isLoggedIn()) {
+            <a routerLink="/login" class="btn btn-primary">Login to Join</a>
+          } @else if (isOwner()) {
+            <div class="owner-actions">
+              <div class="owner-row">
+                <button class="btn btn-primary" (click)="startRound()" [disabled]="actionLoading()">
+                  ▶ Start Round {{ (event()?.current_round ?? 0) + 1 }}
+                </button>
+                <button class="btn btn-ghost icon-only" (click)="openAddPlayer()" title="Add Player">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/>
+                    <line x1="22" y1="11" x2="16" y2="11"/>
+                  </svg>
+                </button>
+                <a [routerLink]="['/event', id(), 'edit']" class="btn btn-ghost icon-only" title="Edit Event">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </a>
+                <button class="btn btn-ghost icon-only danger-icon" (click)="deleteEvent()" title="Delete Event">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          } @else if (isJoined()) {
+            <button class="btn btn-ghost" (click)="leave()" [disabled]="actionLoading()">Leave Event</button>
+          } @else {
+            <button class="btn btn-primary" (click)="join()" [disabled]="actionLoading()">Join Event</button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (error()) { <div class="error-msg">{{ error() }}</div> }
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn" [class.active]="tab() === 'standings'" (click)="tab.set('standings')">
+        Standings ({{ event()!.players?.length ?? 0 }})
+      </button>
+      <button class="tab-btn" [class.active]="tab() === 'results'" (click)="tab.set('results')">
+        Results ({{ event()!.rounds?.length ?? 0 }} rounds)
+      </button>
+      @if (auth.isLoggedIn() && isJoined()) {
+        <button class="tab-btn" [class.active]="tab() === 'myround'" (click)="tab.set('myround')">
+          My Round
+        </button>
+      }
+    </div>
+
+    <div class="tab-content">
+      <!-- STANDINGS TAB -->
+      @if (tab() === 'standings') {
+        @if (sortedStandings().length === 0) {
+          <p class="empty">No players yet. Be the first to join!</p>
+        } @else {
+          <div class="standings-table card">
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-rank">Rank</th>
+                  <th>Player</th>
+                  <th>Deck</th>
+                  <th class="col-num">W</th>
+                  <th class="col-num">L</th>
+                  <th class="col-num">D</th>
+                  <th class="col-pts">Pts</th>
+                  <th class="col-tb">Tiebreakers</th>
+                  @if (isOwner()) { <th class="col-actions"></th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (player of sortedStandings(); track player.id; let i = $index) {
+                  <tr [class.top-row]="i === 0">
+                    <td class="rank-cell">
+                      <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
+                    </td>
+                    <td class="player-cell">
+                      <span class="player-name">{{ player.display_name }}</span>
+                    </td>
+                    <td class="deck-cell">
+                      @if (player.deck_name) {
+                        @if (isOwner() || player.user_id === auth.currentUser()?.id) {
+                          <button class="deck-badge" (click)="openDeckEdit(player)">{{ player.deck_name }}</button>
+                        } @else {
+                          <span class="deck-badge-static">{{ player.deck_name }}</span>
+                        }
+                      } @else if (isOwner() || player.user_id === auth.currentUser()?.id) {
+                        <button class="deck-edit-btn" (click)="openDeckEdit(player)">+ Set Deck</button>
+                      } @else {
+                        <span class="text-muted-sm">—</span>
+                      }
+                    </td>
+                    <td class="col-num"><span class="stat-win">{{ player.wins }}</span></td>
+                    <td class="col-num"><span class="stat-loss">{{ player.losses }}</span></td>
+                    <td class="col-num"><span class="stat-draw">{{ player.draws }}</span></td>
+                    <td class="col-pts"><strong class="pts-val">{{ player.points }}</strong></td>
+                    <td class="col-tb tiebreaker-cell">0.0% | 0.00 | 0.0%</td>
+                    @if (isOwner()) {
+                      <td class="col-actions actions-cell">
+                        <button class="drop-btn" (click)="dropPlayer(player.id)" title="Drop player">Drop</button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (event()!.players && event()!.players!.length > sortedStandings().length) {
+            <div class="dropped-section">
+              <h4 class="dropped-title">Dropped Players</h4>
+              <div class="dropped-list">
+                @for (player of event()!.players!; track player.id) {
+                  @if (player.status !== 'active') {
+                    <span class="dropped-name">{{ player.display_name }}</span>
+                  }
+                }
+              </div>
+            </div>
+          }
+        }
+      }
+
+      <!-- RESULTS TAB -->
+      @if (tab() === 'results') {
+        @if (roundsGrouped().length === 0) {
+          <p class="empty">No rounds started yet.</p>
+        } @else {
+          @for (round of roundsGrouped(); track round.id) {
+            <div class="round-section">
+              <div class="round-header">
+                <h3 class="round-title">Round {{ round.round_number }}</h3>
+                <span class="round-status-badge" [class]="round.status === 'open' ? 'status-open' : 'status-done'">
+                  {{ round.status === 'open' ? 'In Progress' : 'Completed' }}
+                </span>
+              </div>
+              <div class="pairings-table card">
+                <table>
+                  <thead>
+                    <tr>
+                      <th class="col-table">Table</th>
+                      <th>Player 1</th>
+                      <th class="col-vs"></th>
+                      <th>Player 2</th>
+                      <th>Result</th>
+                      @if (isOwner()) { <th></th> }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of round.pairings; track p.id) {
+                      <tr>
+                        <td class="col-table table-num">{{ p.table_number }}</td>
+                        <td class="player-col">{{ p.p1_name }}</td>
+                        <td class="col-vs vs">vs</td>
+                        <td class="player-col">{{ p.p2_name || 'Bye' }}</td>
+                        <td>
+                          <span class="result-pill" [class]="p.result ? 'pill-done' : 'pill-pending'">
+                            {{ resultLabel(p.result) }}
+                          </span>
+                        </td>
+                        @if (isOwner()) {
+                          <td>
+                            @if (!p.result) {
+                              <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairingId: p.id})">Set Result</button>
+                            }
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+        }
+      }
+
+      <!-- MY ROUND TAB -->
+      @if (tab() === 'myround') {
+        @if (!myRound()) {
+          <div class="myround-empty">
+            <div class="myround-icon">🏆</div>
+            <p>{{ event()!.rounds?.length ? "You have no active pairing in the current round." : "The event hasn't started yet. Wait for the organizer to start Round 1." }}</p>
+          </div>
+        } @else {
+          <div class="myround-card card">
+            <div class="myround-header">
+              <span class="round-label">Round {{ myRound()!.round.round_number }}</span>
+              <span class="table-label">Table {{ myRound()!.pairing.table_number }}</span>
+            </div>
+            <div class="matchup">
+              <div class="player-side" [class.is-me]="myRound()!.pairing.player1_id === myRound()!.myPlayer.id">
+                <div class="player-avatar">{{ myRound()!.pairing.p1_name?.charAt(0) }}</div>
+                <div class="player-info">
+                  <span class="player-label">{{ myRound()!.pairing.p1_name }}</span>
+                  @if (myRound()!.pairing.player1_id === myRound()!.myPlayer.id) {
+                    <span class="you-tag">You</span>
+                  }
+                </div>
+              </div>
+              <div class="vs-divider">VS</div>
+              <div class="player-side" [class.is-me]="myRound()!.pairing.player2_id === myRound()!.myPlayer.id">
+                <div class="player-avatar">{{ (myRound()!.pairing.p2_name || 'B').charAt(0) }}</div>
+                <div class="player-info">
+                  <span class="player-label">{{ myRound()!.pairing.p2_name || 'Bye' }}</span>
+                  @if (myRound()!.pairing.player2_id === myRound()!.myPlayer.id) {
+                    <span class="you-tag">You</span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="myround-result">
+              @if (myRound()!.pairing.result) {
+                <span class="my-result-badge" [class]="myResultLabel(myRound()!.pairing, myRound()!.myPlayer.id).cls">
+                  {{ myResultLabel(myRound()!.pairing, myRound()!.myPlayer.id).label }}
+                </span>
+              } @else {
+                <span class="result-pill pill-pending">Awaiting Result</span>
+              }
+            </div>
+          </div>
+
+          <div class="my-standings card">
+            <h4>Your Record</h4>
+            <div class="my-stats">
+              <div class="stat-box">
+                <span class="stat-num">{{ myRound()!.myPlayer.wins }}</span>
+                <span class="stat-lbl">Wins</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-num">{{ myRound()!.myPlayer.losses }}</span>
+                <span class="stat-lbl">Losses</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-num">{{ myRound()!.myPlayer.draws }}</span>
+                <span class="stat-lbl">Draws</span>
+              </div>
+              <div class="stat-box accent">
+                <span class="stat-num">{{ myRound()!.myPlayer.points }}</span>
+                <span class="stat-lbl">Points</span>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Result Modal -->
+  @if (resultModal()) {
+    <div class="modal-overlay" (click)="resultModal.set(null)">
+      <div class="modal card" (click)="$event.stopPropagation()">
+        <h3>Set Result</h3>
+        <p class="modal-sub">Who won this match?</p>
+        <div class="modal-btns">
+          <button class="btn btn-primary" (click)="submitResult(resultModal()!.pairingId, 'player1')">Player 1 Win</button>
+          <button class="btn btn-primary" (click)="submitResult(resultModal()!.pairingId, 'player2')">Player 2 Win</button>
+          <button class="btn btn-ghost" (click)="submitResult(resultModal()!.pairingId, 'draw')">Draw</button>
+          <button class="btn btn-ghost" (click)="submitResult(resultModal()!.pairingId, 'bye')">Bye</button>
+          <button class="btn btn-danger" (click)="resultModal.set(null)">Cancel</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Add Player Modal -->
+  @if (addPlayerModal()) {
+    <div class="modal-overlay" (click)="addPlayerModal.set(false)">
+      <div class="modal card" (click)="$event.stopPropagation()">
+        <h3>Add Player</h3>
+        <p class="modal-sub">Add a registered user by email, or add a guest by name.</p>
+        @if (addPlayerError()) { <div class="error-msg" style="margin-bottom:12px">{{ addPlayerError() }}</div> }
+        <div class="form-field" style="margin-bottom:12px">
+          <label>Email (registered user)</label>
+          <input
+            type="email"
+            placeholder="player@example.com"
+            [value]="addPlayerEmail()"
+            (input)="addPlayerEmail.set($any($event.target).value)"
+          />
+        </div>
+        <div class="form-field" style="margin-bottom:16px">
+          <label>Or Guest Display Name</label>
+          <input
+            type="text"
+            placeholder="Guest name"
+            [value]="addPlayerName()"
+            (input)="addPlayerName.set($any($event.target).value)"
+            (keyup.enter)="submitAddPlayer()"
+          />
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-primary" (click)="submitAddPlayer()" [disabled]="addPlayerLoading()">
+            @if (addPlayerLoading()) { <span class="spinner-sm"></span> } Add Player
+          </button>
+          <button class="btn btn-ghost" (click)="addPlayerModal.set(false)">Cancel</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Deck Name Modal -->
+  @if (editDeckModal()) {
+    <div class="modal-overlay" (click)="editDeckModal.set(null)">
+      <div class="modal card" (click)="$event.stopPropagation()">
+        <h3>Set Deck Name</h3>
+        <p class="modal-sub">Enter the name of your deck for this event.</p>
+        <div class="form-field" style="margin: 16px 0;">
+          <input
+            type="text"
+            placeholder="e.g. Atraxa Superfriends"
+            [value]="deckNameInput()"
+            (input)="deckNameInput.set($any($event.target).value)"
+            (keyup.enter)="saveDeckName()"
+          />
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-primary" (click)="saveDeckName()">Save</button>
+          <button class="btn btn-ghost" (click)="editDeckModal.set(null)">Cancel</button>
+        </div>
+      </div>
+    </div>
+  }
+} @else {
+  <div class="detail-loading"><p>Event not found.</p></div>
+}

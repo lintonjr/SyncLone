@@ -1,0 +1,67 @@
+- generic [ref=f36e2]:
+  - navigation [ref=f36e3]:
+    - generic [ref=f36e4]:
+      - generic [ref=f36e5]:
+        - link "⚡ ManaSync" [ref=f36e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f36e7]: ⚡
+          - generic [ref=f36e8]: ManaSync
+        - generic [ref=f36e9]:
+          - link "Home" [ref=f36e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f36e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f36e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f36e13]:
+        - button "Open notifications" [ref=f36e15] [cursor=pointer]
+        - button "Player Two" [ref=f36e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f36e24] [cursor=pointer]
+  - main [ref=f36e27]:
+    - generic [ref=f36e35]:
+      - textbox "Search by name, game, or description..." [ref=f36e40]
+      - generic [ref=f36e41]:
+        - heading "UPCOMING EVENTS" [level=2] [ref=f36e42]
+        - generic [ref=f36e43]:
+          - generic [ref=f36e45] [cursor=pointer]:
+            - generic [ref=f36e46]: M
+            - generic [ref=f36e49]:
+              - generic [ref=f36e50]:
+                - heading "Test" [level=3] [ref=f36e51]
+                - paragraph [ref=f36e52]: MTG
+                - paragraph [ref=f36e53]: Jul 20, 2026, 6:00 PM
+                - paragraph [ref=f36e54]: TBD
+                - paragraph [ref=f36e55]: 0 Players
+              - generic [ref=f36e56]: upcoming
+          - generic [ref=f36e58] [cursor=pointer]:
+            - generic [ref=f36e59]: M
+            - generic [ref=f36e62]:
+              - generic [ref=f36e63]:
+                - heading "Commander 500 Test" [level=3] [ref=f36e64]
+                - paragraph [ref=f36e65]: MTG - Commander500
+                - paragraph [ref=f36e66]: Jul 20, 2026, 6:00 PM
+                - paragraph [ref=f36e67]: Manaus
+                - paragraph [ref=f36e68]: 0 Players
+              - generic [ref=f36e69]: upcoming
+          - generic [ref=f36e71] [cursor=pointer]:
+            - generic [ref=f36e72]: M
+            - generic [ref=f36e75]:
+              - generic [ref=f36e76]:
+                - 'heading "Commander Night #5" [level=3] [ref=f36e77]'
+                - paragraph [ref=f36e78]: MTG - Commander
+                - paragraph [ref=f36e79]: Aug 15, 2026, 12:00 AM
+                - paragraph [ref=f36e80]: São Paulo
+                - paragraph [ref=f36e81]: 3 Players
+              - generic [ref=f36e82]: ongoing
+      - generic [ref=f36e83]:
+        - heading "PAST EVENTS" [level=2] [ref=f36e84]
+        - paragraph [ref=f36e85]: No past events found.
+  - contentinfo [ref=f36e28]:
+    - generic [ref=f36e29]:
+      - generic [ref=f36e30]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f36e31] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f36e32] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f36e33] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

@@ -1,0 +1,68 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - link "⚡ ManaSync" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: ⚡
+          - generic [ref=e8]: ManaSync
+        - generic [ref=e9]:
+          - link "Home" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=e13]:
+        - button "Open notifications" [ref=e15] [cursor=pointer]
+        - group [ref=e19]:
+          - generic "Player Two" [ref=e20] [cursor=pointer]
+        - button "Toggle theme" [ref=e24] [cursor=pointer]
+  - main [ref=e27]:
+    - generic [ref=e29]:
+      - textbox "Search by name, game, or description..." [ref=e34]
+      - generic [ref=e35]:
+        - heading "UPCOMING EVENTS" [level=2] [ref=e36]
+        - generic [ref=e37]:
+          - generic [ref=e40] [cursor=pointer]:
+            - generic [ref=e41]: M
+            - generic [ref=e43]:
+              - generic [ref=e44]: upcoming
+              - generic [ref=e46]:
+                - paragraph [ref=e47]: MTG
+                - heading "Test" [level=3] [ref=e48]
+                - generic [ref=e49]:
+                  - generic [ref=e50]: Jul 20, 2026
+                  - generic [ref=e53]: 0 players
+          - generic [ref=e61] [cursor=pointer]:
+            - generic [ref=e62]: M
+            - generic [ref=e64]:
+              - generic [ref=e65]: upcoming
+              - generic [ref=e67]:
+                - paragraph [ref=e68]: MTG · Commander500
+                - heading "Commander 500 Test" [level=3] [ref=e69]
+                - generic [ref=e70]:
+                  - generic [ref=e71]: Jul 20, 2026
+                  - generic [ref=e74]: 0 players
+          - generic [ref=e82] [cursor=pointer]:
+            - generic [ref=e83]: M
+            - generic [ref=e85]:
+              - generic [ref=e86]: ongoing
+              - generic [ref=e88]:
+                - paragraph [ref=e89]: MTG · Commander
+                - 'heading "Commander Night #5" [level=3] [ref=e90]'
+                - generic [ref=e91]:
+                  - generic [ref=e92]: Aug 15, 2026
+                  - generic [ref=e95]: 3 players
+      - generic [ref=e101]:
+        - heading "PAST EVENTS" [level=2] [ref=e102]
+        - paragraph [ref=e103]: No past events found.
+  - contentinfo [ref=e104]:
+    - generic [ref=e105]:
+      - generic [ref=e106]: © 2025 ManaSync
+      - link "Terms of Service" [ref=e107] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=e108] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=e109] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

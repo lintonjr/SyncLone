@@ -1,0 +1,30 @@
+- generic [ref=f12e2]:
+  - navigation [ref=f12e3]:
+    - generic [ref=f12e4]:
+      - generic [ref=f12e5]:
+        - link "⚡ ManaSync" [ref=f12e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f12e7]: ⚡
+          - generic [ref=f12e8]: ManaSync
+        - generic [ref=f12e9]:
+          - link "Home" [ref=f12e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f12e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f12e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f12e13]:
+        - button "Open notifications" [ref=f12e15] [cursor=pointer]
+        - group [ref=f12e19]:
+          - generic "Linton Junior" [ref=f12e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f12e24] [cursor=pointer]
+  - main [ref=f12e27]
+  - contentinfo [ref=f12e31]:
+    - generic [ref=f12e32]:
+      - generic [ref=f12e33]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f12e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f12e35] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f12e36] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

@@ -1,0 +1,77 @@
+- generic [ref=f2e2]:
+  - navigation [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - link "⚡ ManaSync" [ref=f2e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f2e7]: ⚡
+          - generic [ref=f2e8]: ManaSync
+        - generic [ref=f2e9]:
+          - link "Home" [ref=f2e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f2e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f2e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f2e13]:
+        - button "Open notifications" [ref=f2e15] [cursor=pointer]
+        - group [ref=f2e19]:
+          - generic "Player Two" [ref=f2e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f2e24] [cursor=pointer]
+  - main [ref=f2e27]:
+    - generic [ref=f2e29]:
+      - generic [ref=f2e30]:
+        - generic [ref=f2e31]: M
+        - generic [ref=f2e32]:
+          - generic [ref=f2e33]:
+            - generic [ref=f2e34]:
+              - generic [ref=f2e35]: MTG
+              - generic [ref=f2e36]: Commander
+              - generic [ref=f2e37]: ongoing
+            - 'heading "Commander Night #5" [level=1] [ref=f2e38]'
+            - paragraph [ref=f2e39]: 📅 Aug 15, 2026 · 12:00 AM • 📍 São Paulo • 👥 3 Players
+          - button "Leave Event" [ref=f2e41] [cursor=pointer]
+      - generic [ref=f2e42]:
+        - button "Standings (3)" [ref=f2e43] [cursor=pointer]
+        - button "Results (2 rounds)" [ref=f2e44] [cursor=pointer]
+        - button "My Round" [active] [ref=f2e45] [cursor=pointer]
+      - generic [ref=f2e46]:
+        - generic [ref=f2e156]:
+          - generic [ref=f2e157]:
+            - generic [ref=f2e158]: Round 2
+            - generic [ref=f2e159]: Table 2
+          - generic [ref=f2e160]:
+            - generic [ref=f2e161]:
+              - generic [ref=f2e162]: P
+              - generic [ref=f2e163]:
+                - generic [ref=f2e164]: Player Two
+                - generic [ref=f2e165]: You
+            - generic [ref=f2e166]: VS
+            - generic [ref=f2e167]:
+              - generic [ref=f2e168]: B
+              - generic [ref=f2e169]: Bye
+          - generic [ref=f2e171]: Loss
+        - generic [ref=f2e173]:
+          - heading "Your Record" [level=4] [ref=f2e174]
+          - generic [ref=f2e175]:
+            - generic [ref=f2e176]:
+              - generic [ref=f2e177]: "0"
+              - generic [ref=f2e178]: Wins
+            - generic [ref=f2e179]:
+              - generic [ref=f2e180]: "1"
+              - generic [ref=f2e181]: Losses
+            - generic [ref=f2e182]:
+              - generic [ref=f2e183]: "0"
+              - generic [ref=f2e184]: Draws
+            - generic [ref=f2e185]:
+              - generic [ref=f2e186]: "0"
+              - generic [ref=f2e187]: Points
+  - contentinfo [ref=f2e94]:
+    - generic [ref=f2e95]:
+      - generic [ref=f2e96]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f2e97] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f2e98] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f2e99] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

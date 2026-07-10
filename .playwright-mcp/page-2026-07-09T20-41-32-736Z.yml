@@ -1,0 +1,37 @@
+- generic [ref=f11e2]:
+  - navigation [ref=f11e3]:
+    - generic [ref=f11e4]:
+      - generic [ref=f11e5]:
+        - link "⚡ ManaSync" [ref=f11e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f11e7]: ⚡
+          - generic [ref=f11e8]: ManaSync
+        - generic [ref=f11e9]:
+          - link "Home" [ref=f11e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f11e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f11e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f11e13]:
+        - button "Open notifications" [ref=f11e50] [cursor=pointer]
+        - button "Linton Junior" [ref=f11e54] [cursor=pointer]
+        - button "Toggle theme" [ref=f11e15] [cursor=pointer]
+  - main [ref=f11e18]:
+    - generic [ref=f11e60]:
+      - textbox "Search by name, game, or description..." [ref=f11e65]
+      - generic [ref=f11e66]:
+        - heading "UPCOMING EVENTS" [level=2] [ref=f11e67]
+        - paragraph [ref=f11e68]: No upcoming events found.
+      - generic [ref=f11e69]:
+        - heading "PAST EVENTS" [level=2] [ref=f11e70]
+        - paragraph [ref=f11e71]: No past events found.
+  - contentinfo [ref=f11e43]:
+    - generic [ref=f11e44]:
+      - generic [ref=f11e45]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f11e46] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f11e47] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f11e48] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

@@ -1,0 +1,40 @@
+<div class="auth-page">
+  <div class="auth-card card">
+    <div class="auth-header">
+      <h3 class="auth-title">Create an account</h3>
+      <p class="auth-sub">Sign up to start organizing and joining events</p>
+    </div>
+
+    @if (error()) {
+      <div class="error-msg">{{ error() }}</div>
+    }
+
+    <div class="form-field">
+      <label>Display Name</label>
+      <input type="text" placeholder="John Doe" [value]="displayName()" (input)="displayName.set($any($event.target).value)" />
+    </div>
+    <div class="form-field">
+      <label>Email</label>
+      <input type="email" placeholder="m@example.com" [value]="email()" (input)="email.set($any($event.target).value)" />
+    </div>
+    <div class="form-field">
+      <label>Password</label>
+      <input type="password" placeholder="••••••••" [value]="password()" (input)="password.set($any($event.target).value)" />
+    </div>
+    <div class="form-field">
+      <label>Confirm Password</label>
+      <input type="password" placeholder="••••••••" [value]="confirmPassword()" (input)="confirmPassword.set($any($event.target).value)" (keyup.enter)="submit()" />
+    </div>
+
+    <button class="btn btn-primary w-full" (click)="submit()" [disabled]="loading()">
+      @if (loading()) { <span class="spinner-sm"></span> } Let's go!
+    </button>
+
+    <p class="auth-footer">
+      Already have an account? <a routerLink="/login">Sign in</a>
+    </p>
+  </div>
+  <p class="terms">
+    By clicking create account, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+  </p>
+</div>

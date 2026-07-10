@@ -1,0 +1,114 @@
+- generic [ref=f19e2]:
+  - navigation [ref=f19e3]:
+    - generic [ref=f19e4]:
+      - generic [ref=f19e5]:
+        - link "⚡ ManaSync" [ref=f19e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f19e7]: ⚡
+          - generic [ref=f19e8]: ManaSync
+        - generic [ref=f19e9]:
+          - link "Home" [ref=f19e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f19e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f19e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f19e13]:
+        - button "Open notifications" [ref=f19e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f19e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f19e24] [cursor=pointer]
+  - main [ref=f19e27]:
+    - generic [ref=f19e29]:
+      - heading "Create New Event" [level=1] [ref=f19e30]
+      - generic [ref=f19e31]:
+        - generic [ref=f19e32]:
+          - generic [ref=f19e33]: Event Name
+          - textbox "Event Name (3-50 characters)" [ref=f19e34]: "Commander Night #5"
+        - generic [ref=f19e35]:
+          - generic [ref=f19e36]:
+            - generic [ref=f19e37]: City
+            - textbox "City" [active] [ref=f19e38]: São Paulo
+            - generic [ref=f19e39] [cursor=pointer]:
+              - checkbox "Online" [ref=f19e40]
+              - text: Online
+          - generic [ref=f19e41]:
+            - generic [ref=f19e42]: Address (Optional)
+            - textbox "Street address, building, etc." [ref=f19e43]
+        - generic [ref=f19e44]:
+          - generic [ref=f19e45]: Description (Optional)
+          - textbox "Event description (max 100 characters)" [ref=f19e46]
+        - generic [ref=f19e47]:
+          - generic [ref=f19e48]: Event Thumbnail
+          - generic [ref=f19e49]:
+            - generic [ref=f19e50]: No image selected
+            - generic [ref=f19e51] [cursor=pointer]: Upload Image
+        - generic [ref=f19e52]:
+          - generic [ref=f19e53]:
+            - generic [ref=f19e54]: Date
+            - textbox [ref=f19e55]: 2026-08-15
+          - generic [ref=f19e56]:
+            - generic [ref=f19e57]: Time
+            - textbox [ref=f19e58]
+          - generic [ref=f19e59]:
+            - generic [ref=f19e60]: Game
+            - combobox [ref=f19e61]:
+              - option "Select a game"
+              - option "MTG" [selected]
+              - option "Pokémon"
+              - option "Yu-Gi-Oh!"
+              - option "Lorcana"
+              - option "Flesh and Blood"
+              - option "Other"
+        - generic [ref=f19e88]:
+          - generic [ref=f19e89]: Format
+          - combobox [ref=f19e90]:
+            - option "Select a format" [selected]
+            - option "Commander"
+            - option "Commander500"
+            - option "cEDH"
+            - option "Conquest"
+            - option "Standard"
+            - option "Modern"
+            - option "Legacy"
+            - option "Pioneer"
+            - option "Pauper"
+        - generic [ref=f19e62]:
+          - generic [ref=f19e63]:
+            - generic [ref=f19e64]: Pairing Method
+            - combobox [ref=f19e65]:
+              - option "Swiss (Performance Pairing)" [selected]
+              - option "Round Robin"
+              - option "Single Elimination"
+          - generic [ref=f19e66]:
+            - generic [ref=f19e67]: Playoff Structure
+            - combobox [ref=f19e68]:
+              - option "No Playoffs" [selected]
+              - option "Top 4"
+              - option "Top 8"
+        - heading "Optionals" [level=3] [ref=f19e69]
+        - generic [ref=f19e70]:
+          - generic [ref=f19e71] [cursor=pointer]:
+            - checkbox "Allow Byes" [ref=f19e72]
+            - text: Allow Byes
+          - generic [ref=f19e73] [cursor=pointer]:
+            - checkbox "Test Event" [ref=f19e74]
+            - text: Test Event
+          - generic [ref=f19e75] [cursor=pointer]:
+            - checkbox "Collaborative Deck Registering" [ref=f19e76]
+            - text: Collaborative Deck Registering
+          - generic [ref=f19e77] [cursor=pointer]:
+            - checkbox "Asynchronous Draws" [ref=f19e78]
+            - text: Asynchronous Draws
+          - generic [ref=f19e79] [cursor=pointer]:
+            - checkbox "Confirm New Players" [ref=f19e80]
+            - text: Confirm New Players
+        - button "Create Event" [ref=f19e81] [cursor=pointer]
+  - contentinfo [ref=f19e82]:
+    - generic [ref=f19e83]:
+      - generic [ref=f19e84]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f19e85] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f19e86] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f19e87] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

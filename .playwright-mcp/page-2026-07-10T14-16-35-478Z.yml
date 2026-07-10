@@ -1,0 +1,38 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - banner [ref=f3e89]:
+      - generic [ref=f3e90]:
+        - link [ref=f3e93] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=f3e94]
+        - generic [ref=f3e95]:
+          - link [ref=f3e96] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=f3e97]
+          - link [ref=f3e98] [cursor=pointer]:
+            - /url: /events
+            - button "My Events" [ref=f3e99]
+          - link [ref=f3e100] [cursor=pointer]:
+            - /url: /create
+            - button "Create Event" [ref=f3e101]
+        - generic [ref=f3e102]:
+          - button "Open notifications" [ref=f3e103]:
+            - button [ref=f3e104]
+          - button "Open user menu" [ref=f3e109]:
+            - button [ref=f3e110]
+          - button "Toggle theme" [ref=f3e113]
+    - generic [ref=f3e119]:
+      - textbox "Search by name, game, or description..." [ref=f3e123]
+      - button [ref=f3e127]
+    - contentinfo [ref=f3e199]:
+      - generic [ref=f3e200]:
+        - button "Report a Bug" [ref=f3e204]
+        - link "Terms of Service" [ref=f3e206] [cursor=pointer]:
+          - /url: /terms-of-service.md
+        - link "Privacy Policy" [ref=f3e208] [cursor=pointer]:
+          - /url: /privacy-policy.md
+        - link "Donate ♥" [ref=f3e210] [cursor=pointer]:
+          - /url: https://ko-fi.com/manasync
+        - generic [ref=f3e211]: © 2025 ManaSync
+  - button "Support Us" [ref=f3e216] [cursor=pointer]
+  - button "Support Us" [ref=f3e220] [cursor=pointer]

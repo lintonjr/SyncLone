@@ -1,0 +1,66 @@
+- generic [ref=f20e2]:
+  - navigation [ref=f20e3]:
+    - generic [ref=f20e4]:
+      - generic [ref=f20e5]:
+        - link "⚡ ManaSync" [ref=f20e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f20e7]: ⚡
+          - generic [ref=f20e8]: ManaSync
+        - generic [ref=f20e9]:
+          - link "Home" [ref=f20e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f20e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f20e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f20e13]:
+        - button "Open notifications" [ref=f20e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f20e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f20e24] [cursor=pointer]
+  - main [ref=f20e27]:
+    - generic [ref=f20e29]:
+      - generic [ref=f20e30]:
+        - generic [ref=f20e31]: M
+        - generic [ref=f20e32]:
+          - generic [ref=f20e33]:
+            - generic [ref=f20e34]:
+              - generic [ref=f20e35]: MTG
+              - generic [ref=f20e36]: Commander
+              - generic [ref=f20e37]: upcoming
+            - 'heading "Commander Night #5" [level=1] [ref=f20e38]'
+            - paragraph [ref=f20e39]: 📅 Saturday, August 15, 2026, 12:00:00 AM GMT-04:00 • 📍 São Paulo • 👥 3 Players
+          - button "Start Round 1" [ref=f20e41] [cursor=pointer]
+      - generic [ref=f20e42]:
+        - button "Info" [ref=f20e43] [cursor=pointer]
+        - button "Players (3)" [ref=f20e44] [cursor=pointer]
+        - button "Rounds (0)" [ref=f20e45] [cursor=pointer]
+      - generic [ref=f20e48]:
+        - heading "Event Details" [level=3] [ref=f20e49]
+        - generic [ref=f20e50]:
+          - generic [ref=f20e51]:
+            - term [ref=f20e52]: Organizer
+            - definition [ref=f20e53]: Linton Junior
+          - generic [ref=f20e54]:
+            - term [ref=f20e55]: Pairing Method
+            - definition [ref=f20e56]: swiss
+          - generic [ref=f20e57]:
+            - term [ref=f20e58]: Playoff Structure
+            - definition [ref=f20e59]: none
+          - generic [ref=f20e60]:
+            - term [ref=f20e61]: Allow Byes
+            - definition [ref=f20e62]: "Yes"
+          - generic [ref=f20e63]:
+            - term [ref=f20e64]: Async Draws
+            - definition [ref=f20e65]: "Yes"
+          - generic [ref=f20e66]:
+            - term [ref=f20e67]: Collaborative Decks
+            - definition [ref=f20e68]: "Yes"
+  - contentinfo [ref=f20e69]:
+    - generic [ref=f20e70]:
+      - generic [ref=f20e71]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f20e72] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f20e73] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f20e74] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

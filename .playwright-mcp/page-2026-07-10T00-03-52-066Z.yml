@@ -1,0 +1,71 @@
+- generic [ref=f22e2]:
+  - navigation [ref=f22e3]:
+    - generic [ref=f22e4]:
+      - generic [ref=f22e5]:
+        - link "⚡ ManaSync" [ref=f22e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f22e7]: ⚡
+          - generic [ref=f22e8]: ManaSync
+        - generic [ref=f22e9]:
+          - link "Home" [ref=f22e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f22e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f22e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f22e13]:
+        - button "Open notifications" [ref=f22e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f22e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f22e24] [cursor=pointer]
+  - main [ref=f22e27]:
+    - generic [ref=f22e174]:
+      - generic [ref=f22e175]:
+        - generic [ref=f22e176]: M
+        - generic [ref=f22e177]:
+          - generic [ref=f22e178]:
+            - generic [ref=f22e179]:
+              - generic [ref=f22e180]: MTG
+              - generic [ref=f22e181]: Commander
+              - generic [ref=f22e182]: ongoing
+            - 'heading "Commander Night #5" [level=1] [ref=f22e183]'
+            - paragraph [ref=f22e184]: 📅 Saturday, August 15, 2026, 12:00:00 AM GMT-04:00 • 📍 São Paulo • 👥 3 Players
+          - button "Start Round 2" [ref=f22e186] [cursor=pointer]
+      - generic [ref=f22e187]:
+        - button "Info" [ref=f22e188] [cursor=pointer]
+        - button "Players (3)" [ref=f22e189] [cursor=pointer]
+        - button "Rounds (1)" [ref=f22e190] [cursor=pointer]
+      - generic [ref=f22e192]:
+        - heading "Round 1" [level=3] [ref=f22e193]
+        - table [ref=f22e195]:
+          - rowgroup [ref=f22e196]:
+            - row [ref=f22e197]:
+              - columnheader "Table" [ref=f22e198]
+              - columnheader "Player 1" [ref=f22e199]
+              - columnheader "vs" [ref=f22e200]
+              - columnheader "Player 2" [ref=f22e201]
+              - columnheader "Result" [ref=f22e202]
+              - columnheader [ref=f22e203]
+          - rowgroup [ref=f22e204]:
+            - row [ref=f22e205]:
+              - cell "1" [ref=f22e206]
+              - cell "Player Four" [ref=f22e207]
+              - cell "vs" [ref=f22e208]
+              - cell "Player Two" [ref=f22e209]
+              - cell "P1 Win" [ref=f22e210]
+              - cell [ref=f22e212]
+            - row [ref=f22e213]:
+              - cell "2" [ref=f22e214]
+              - cell "Player Three" [ref=f22e215]
+              - cell "vs" [ref=f22e216]
+              - cell "Bye" [ref=f22e217]
+              - cell "Bye" [ref=f22e218]
+              - cell [ref=f22e220]
+  - contentinfo [ref=f22e69]:
+    - generic [ref=f22e70]:
+      - generic [ref=f22e71]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f22e72] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f22e73] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f22e74] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

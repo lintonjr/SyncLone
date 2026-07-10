@@ -1,0 +1,59 @@
+- generic [ref=f10e2]:
+  - navigation [ref=f10e3]:
+    - generic [ref=f10e4]:
+      - generic [ref=f10e5]:
+        - link "⚡ ManaSync" [ref=f10e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f10e7]: ⚡
+          - generic [ref=f10e8]: ManaSync
+        - generic [ref=f10e9]:
+          - link "Home" [ref=f10e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f10e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f10e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f10e13]:
+        - link "Login" [ref=f10e14] [cursor=pointer]:
+          - /url: /login
+        - button "Toggle theme" [ref=f10e15] [cursor=pointer]
+  - main [ref=f10e18]:
+    - generic [ref=f10e20]:
+      - generic [ref=f10e21]:
+        - generic [ref=f10e22]:
+          - heading "Create an account" [level=3] [ref=f10e23]
+          - paragraph [ref=f10e24]: Sign up to start organizing and joining events
+        - generic [ref=f10e25]:
+          - generic [ref=f10e26]: Display Name
+          - textbox "John Doe" [ref=f10e27]
+        - generic [ref=f10e28]:
+          - generic [ref=f10e29]: Email
+          - textbox "m@example.com" [ref=f10e30]
+        - generic [ref=f10e31]:
+          - generic [ref=f10e32]: Password
+          - textbox "••••••••" [ref=f10e33]
+        - generic [ref=f10e34]:
+          - generic [ref=f10e35]: Confirm Password
+          - textbox "••••••••" [ref=f10e36]
+        - button "Let's go!" [ref=f10e37] [cursor=pointer]
+        - paragraph [ref=f10e38]:
+          - text: Already have an account?
+          - link "Sign in" [ref=f10e39] [cursor=pointer]:
+            - /url: /login
+      - paragraph [ref=f10e40]:
+        - text: By clicking create account, you agree to our
+        - link "Terms of Service" [ref=f10e41] [cursor=pointer]:
+          - /url: "#"
+        - text: and
+        - link "Privacy Policy" [ref=f10e42] [cursor=pointer]:
+          - /url: "#"
+        - text: .
+  - contentinfo [ref=f10e43]:
+    - generic [ref=f10e44]:
+      - generic [ref=f10e45]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f10e46] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f10e47] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f10e48] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

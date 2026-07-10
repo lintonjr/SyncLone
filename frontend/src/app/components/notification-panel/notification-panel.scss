@@ -1,0 +1,53 @@
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 14px;
+  border-radius: 6px;
+  &:hover { background: var(--surface2); }
+}
+
+.panel-body {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+
+  &.unread { background: rgba(139, 92, 246, 0.06); }
+  &:last-child { border-bottom: none; }
+}
+
+.msg { font-size: 13px; color: var(--text); line-height: 1.4; }
+.time { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block; }
+.empty { padding: 24px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }

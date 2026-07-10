@@ -1,0 +1,21 @@
+<div class="panel card">
+  <div class="panel-header">
+    <span>Notifications</span>
+    <div class="header-actions">
+      <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="markAll()">Mark all read</button>
+      <button class="icon-btn" (click)="close.emit()">✕</button>
+    </div>
+  </div>
+  <div class="panel-body">
+    @if (notif.notifications().length === 0) {
+      <p class="empty">No notifications</p>
+    } @else {
+      @for (n of notif.notifications(); track n.id) {
+        <div class="notif-item" [class.unread]="!n.read">
+          <p class="msg">{{ n.message }}</p>
+          <span class="time">{{ n.created_at | date:'short' }}</span>
+        </div>
+      }
+    }
+  </div>
+</div>
