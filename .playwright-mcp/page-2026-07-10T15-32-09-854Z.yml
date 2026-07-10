@@ -1,0 +1,87 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - link "⚡ ManaSync" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: ⚡
+          - generic [ref=e8]: ManaSync
+        - generic [ref=e9]:
+          - link "Home" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=e13]:
+        - button "Open notifications" [ref=e15] [cursor=pointer]
+        - group [ref=e19]:
+          - generic "Linton Junior" [ref=e20] [cursor=pointer]
+        - button "Toggle theme" [ref=e24] [cursor=pointer]
+  - main [ref=e27]:
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e39]: M
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - generic [ref=e43]: MTG
+              - generic [ref=e44]: Commander500
+              - generic [ref=e45]: ongoing
+            - heading "Commander500 Pod Test" [level=1] [ref=e46]
+            - paragraph [ref=e47]: 📅 Dec 1, 2026 · 2:00 PM • 📍 TBD • 👥 9 Players
+          - button "Join Event" [ref=e49] [cursor=pointer]
+      - generic [ref=e50]:
+        - button "Standings (9)" [ref=e51] [cursor=pointer]
+        - button "Pairings" [active] [ref=e52] [cursor=pointer]
+        - button "Results (2 rounds)" [ref=e53] [cursor=pointer]
+      - generic [ref=e167]:
+        - generic [ref=e168]:
+          - heading "Round 2 — Pairings" [level=3] [ref=e169]
+          - generic [ref=e170]: Completed
+        - generic [ref=e171]:
+          - generic [ref=e172]:
+            - generic [ref=e173]: Pod 1
+            - generic [ref=e175]:
+              - generic [ref=e176]:
+                - generic [ref=e177]: "1"
+                - generic [ref=e178]: Jogador 2
+              - generic [ref=e179]:
+                - generic [ref=e180]: "2"
+                - generic [ref=e181]: Jogador 1
+              - generic [ref=e182]:
+                - generic [ref=e183]: "3"
+                - generic [ref=e184]: Jogador 6
+              - generic [ref=e185]:
+                - generic [ref=e186]: "4"
+                - generic [ref=e187]: Jogador 9
+          - generic [ref=e188]:
+            - generic [ref=e189]: Pod 2
+            - generic [ref=e191]:
+              - generic [ref=e192]:
+                - generic [ref=e193]: "1"
+                - generic [ref=e194]: Jogador 5
+              - generic [ref=e195]:
+                - generic [ref=e196]: "2"
+                - generic [ref=e197]: Jogador 7
+              - generic [ref=e198]:
+                - generic [ref=e199]: "3"
+                - generic [ref=e200]: Jogador 4
+          - generic [ref=e201]:
+            - generic [ref=e202]: Pod 3
+            - generic [ref=e204]:
+              - generic [ref=e205]:
+                - generic [ref=e206]: "1"
+                - generic [ref=e207]: Jogador 8
+              - generic [ref=e208]:
+                - generic [ref=e209]: "2"
+                - generic [ref=e210]: Jogador 3
+  - contentinfo [ref=e31]:
+    - generic [ref=e32]:
+      - generic [ref=e33]: © 2025 ManaSync
+      - link "Terms of Service" [ref=e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=e35] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=e36] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

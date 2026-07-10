@@ -67,7 +67,7 @@
     @if (game() && formats().length) {
       <div class="form-field">
         <label>Format</label>
-        <select [value]="format()" (change)="format.set($any($event.target).value)">
+        <select [value]="format()" (change)="onFormatChange($any($event.target).value)">
           <option value="">Select a format</option>
           @for (f of formats(); track f) {
             <option [value]="f">{{ f }}</option>
@@ -86,13 +86,22 @@
         </select>
       </div>
       <div class="form-field">
-        <label>Playoff Structure</label>
-        <select [value]="playoffStructure()" (change)="playoffStructure.set($any($event.target).value)">
-          <option value="none">No Playoffs</option>
-          <option value="top4">Top 4</option>
-          <option value="top8">Top 8</option>
+        <label>Players per Pod</label>
+        <select [value]="podSize()" (change)="podSize.set(+$any($event.target).value)">
+          <option [value]="2">2 — 1v1 (Standard)</option>
+          <option [value]="3">3 — 3-player Pod</option>
+          <option [value]="4">4 — 4-player Pod (Commander)</option>
         </select>
       </div>
+    </div>
+
+    <div class="form-field">
+      <label>Playoff Structure</label>
+      <select [value]="playoffStructure()" (change)="playoffStructure.set($any($event.target).value)">
+        <option value="none">No Playoffs</option>
+        <option value="top4">Top 4</option>
+        <option value="top8">Top 8</option>
+      </select>
     </div>
 
     <h3 class="optionals-title">Optionals</h3>

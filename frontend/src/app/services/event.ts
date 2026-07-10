@@ -20,6 +20,7 @@ export interface TournamentEvent {
   collaborative_deck: number;
   async_draws: number;
   confirm_players: number;
+  pod_size: number;
   status: string;
   current_round: number;
   owner_id: string;
@@ -56,10 +57,14 @@ export interface Pairing {
   event_id: string;
   player1_id: string;
   player2_id?: string;
+  player3_id?: string;
+  player4_id?: string;
   result?: string;
   table_number: number;
   p1_name?: string;
   p2_name?: string;
+  p3_name?: string;
+  p4_name?: string;
 }
 
 @Injectable({ providedIn: 'root' })

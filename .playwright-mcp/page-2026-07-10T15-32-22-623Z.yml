@@ -1,0 +1,144 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - link "⚡ ManaSync" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: ⚡
+          - generic [ref=e8]: ManaSync
+        - generic [ref=e9]:
+          - link "Home" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=e13]:
+        - button "Open notifications" [ref=e15] [cursor=pointer]
+        - group [ref=e19]:
+          - generic "Linton Junior" [ref=e20] [cursor=pointer]
+        - button "Toggle theme" [ref=e24] [cursor=pointer]
+  - main [ref=e27]:
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e39]: M
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - generic [ref=e43]: MTG
+              - generic [ref=e44]: Commander500
+              - generic [ref=e45]: ongoing
+            - heading "Commander500 Pod Test" [level=1] [ref=e46]
+            - paragraph [ref=e47]: 📅 Dec 1, 2026 · 2:00 PM • 📍 TBD • 👥 9 Players
+          - button "Join Event" [ref=e49] [cursor=pointer]
+      - generic [ref=e50]:
+        - button "Standings (9)" [ref=e51] [cursor=pointer]
+        - button "Pairings" [ref=e52] [cursor=pointer]
+        - button "Results (2 rounds)" [active] [ref=e53] [cursor=pointer]
+      - generic [ref=e54]:
+        - generic [ref=e211]:
+          - generic [ref=e212]:
+            - heading "Round 1" [level=3] [ref=e213]
+            - generic [ref=e214]: Completed
+          - generic [ref=e215]:
+            - generic [ref=e216]:
+              - generic [ref=e217]:
+                - generic [ref=e218]: Pod 1
+                - generic [ref=e219]: Done
+              - generic [ref=e220]:
+                - generic [ref=e221]:
+                  - generic [ref=e222]: "1"
+                  - generic [ref=e223]: Jogador 4
+                  - generic [ref=e224]: LOSS
+                - generic [ref=e225]:
+                  - generic [ref=e226]: "2"
+                  - generic [ref=e227]: Jogador 2
+                  - generic [ref=e228]: WIN
+                - generic [ref=e229]:
+                  - generic [ref=e230]: "3"
+                  - generic [ref=e231]: Jogador 8
+                  - generic [ref=e232]: LOSS
+                - generic [ref=e233]:
+                  - generic [ref=e234]: "4"
+                  - generic [ref=e235]: Jogador 3
+                  - generic [ref=e236]: LOSS
+            - generic [ref=e237]:
+              - generic [ref=e238]:
+                - generic [ref=e239]: Pod 2
+                - generic [ref=e240]: DRAW
+              - generic [ref=e241]:
+                - generic [ref=e242]:
+                  - generic [ref=e243]: "1"
+                  - generic [ref=e244]: Jogador 9
+                  - generic [ref=e245]: DRAW
+                - generic [ref=e246]:
+                  - generic [ref=e247]: "2"
+                  - generic [ref=e248]: Jogador 6
+                  - generic [ref=e249]: DRAW
+                - generic [ref=e250]:
+                  - generic [ref=e251]: "3"
+                  - generic [ref=e252]: Jogador 5
+                  - generic [ref=e253]: DRAW
+            - generic [ref=e254]:
+              - generic [ref=e255]:
+                - generic [ref=e256]: Pod 3
+                - generic [ref=e257]: Done
+              - generic [ref=e258]:
+                - generic [ref=e259]:
+                  - generic [ref=e260]: "1"
+                  - generic [ref=e261]: Jogador 1
+                  - generic [ref=e262]: WIN
+                - generic [ref=e263]:
+                  - generic [ref=e264]: "2"
+                  - generic [ref=e265]: Jogador 7
+                  - generic [ref=e266]: LOSS
+        - generic [ref=e267]:
+          - generic [ref=e268]:
+            - heading "Round 2" [level=3] [ref=e269]
+            - generic [ref=e270]: Completed
+          - generic [ref=e271]:
+            - generic [ref=e272]:
+              - generic [ref=e273]: Pod 1
+              - generic [ref=e275]:
+                - generic [ref=e276]:
+                  - generic [ref=e277]: "1"
+                  - generic [ref=e278]: Jogador 2
+                - generic [ref=e279]:
+                  - generic [ref=e280]: "2"
+                  - generic [ref=e281]: Jogador 1
+                - generic [ref=e282]:
+                  - generic [ref=e283]: "3"
+                  - generic [ref=e284]: Jogador 6
+                - generic [ref=e285]:
+                  - generic [ref=e286]: "4"
+                  - generic [ref=e287]: Jogador 9
+            - generic [ref=e288]:
+              - generic [ref=e289]: Pod 2
+              - generic [ref=e291]:
+                - generic [ref=e292]:
+                  - generic [ref=e293]: "1"
+                  - generic [ref=e294]: Jogador 5
+                - generic [ref=e295]:
+                  - generic [ref=e296]: "2"
+                  - generic [ref=e297]: Jogador 7
+                - generic [ref=e298]:
+                  - generic [ref=e299]: "3"
+                  - generic [ref=e300]: Jogador 4
+            - generic [ref=e301]:
+              - generic [ref=e302]: Pod 3
+              - generic [ref=e304]:
+                - generic [ref=e305]:
+                  - generic [ref=e306]: "1"
+                  - generic [ref=e307]: Jogador 8
+                - generic [ref=e308]:
+                  - generic [ref=e309]: "2"
+                  - generic [ref=e310]: Jogador 3
+  - contentinfo [ref=e31]:
+    - generic [ref=e32]:
+      - generic [ref=e33]: © 2025 ManaSync
+      - link "Terms of Service" [ref=e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=e35] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=e36] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

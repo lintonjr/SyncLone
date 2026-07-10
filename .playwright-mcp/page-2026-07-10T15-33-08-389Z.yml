@@ -1,0 +1,108 @@
+- generic [ref=f3e2]:
+  - navigation [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link "⚡ ManaSync" [ref=f3e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f3e7]: ⚡
+          - generic [ref=f3e8]: ManaSync
+        - generic [ref=f3e9]:
+          - link "Home" [ref=f3e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f3e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f3e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f3e13]:
+        - button "Open notifications" [ref=f3e15] [cursor=pointer]
+        - group [ref=f3e19]:
+          - generic "Test User" [ref=f3e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f3e24] [cursor=pointer]
+  - main [ref=f3e27]:
+    - generic [ref=f3e29]:
+      - heading "Create New Event" [level=1] [ref=f3e30]
+      - generic [ref=f3e31]:
+        - generic [ref=f3e32]:
+          - generic [ref=f3e33]: Event Name
+          - textbox "Event Name (3-50 characters)" [ref=f3e34]
+        - generic [ref=f3e35]:
+          - generic [ref=f3e36]:
+            - generic [ref=f3e37]: City
+            - textbox "City" [ref=f3e38]
+            - generic [ref=f3e39] [cursor=pointer]:
+              - checkbox "Online" [ref=f3e40]
+              - text: Online
+          - generic [ref=f3e41]:
+            - generic [ref=f3e42]: Address (Optional)
+            - textbox "Street address, building, etc." [ref=f3e43]
+        - generic [ref=f3e44]:
+          - generic [ref=f3e45]: Description (Optional)
+          - textbox "Event description (max 100 characters)" [ref=f3e46]
+        - generic [ref=f3e47]:
+          - generic [ref=f3e48]: Event Thumbnail
+          - generic [ref=f3e49]:
+            - generic [ref=f3e50]: No image selected
+            - generic [ref=f3e51] [cursor=pointer]: Upload Image
+        - generic [ref=f3e52]:
+          - generic [ref=f3e53]:
+            - generic [ref=f3e54]: Date
+            - textbox [ref=f3e55]
+          - generic [ref=f3e56]:
+            - generic [ref=f3e57]: Time
+            - textbox [ref=f3e58]
+          - generic [ref=f3e59]:
+            - generic [ref=f3e60]: Game
+            - combobox [ref=f3e61]:
+              - option "Select a game" [selected]
+              - option "MTG"
+              - option "Pokémon"
+              - option "Yu-Gi-Oh!"
+              - option "Lorcana"
+              - option "Flesh and Blood"
+              - option "Other"
+        - generic [ref=f3e62]:
+          - generic [ref=f3e63]:
+            - generic [ref=f3e64]: Pairing Method
+            - combobox [ref=f3e65]:
+              - option "Swiss (Performance Pairing)" [selected]
+              - option "Round Robin"
+              - option "Single Elimination"
+          - generic [ref=f3e66]:
+            - generic [ref=f3e67]: Players per Pod
+            - combobox [ref=f3e68]:
+              - option "2 — 1v1 (Standard)"
+              - option "3 — 3-player Pod"
+              - option "4 — 4-player Pod (Commander)"
+        - generic [ref=f3e69]:
+          - generic [ref=f3e70]: Playoff Structure
+          - combobox [ref=f3e71]:
+            - option "No Playoffs" [selected]
+            - option "Top 4"
+            - option "Top 8"
+        - heading "Optionals" [level=3] [ref=f3e72]
+        - generic [ref=f3e73]:
+          - generic [ref=f3e74] [cursor=pointer]:
+            - checkbox "Allow Byes" [ref=f3e75]
+            - text: Allow Byes
+          - generic [ref=f3e76] [cursor=pointer]:
+            - checkbox "Test Event" [ref=f3e77]
+            - text: Test Event
+          - generic [ref=f3e78] [cursor=pointer]:
+            - checkbox "Collaborative Deck Registering" [ref=f3e79]
+            - text: Collaborative Deck Registering
+          - generic [ref=f3e80] [cursor=pointer]:
+            - checkbox "Asynchronous Draws" [ref=f3e81]
+            - text: Asynchronous Draws
+          - generic [ref=f3e82] [cursor=pointer]:
+            - checkbox "Confirm New Players" [ref=f3e83]
+            - text: Confirm New Players
+        - button "Create Event" [ref=f3e84] [cursor=pointer]
+  - contentinfo [ref=f3e85]:
+    - generic [ref=f3e86]:
+      - generic [ref=f3e87]: © 2025 ManaSync
+      - link "Terms of Service" [ref=f3e88] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f3e89] [cursor=pointer]:
+        - /url: /privacy-policy
+      - link "Donate ♥" [ref=f3e90] [cursor=pointer]:
+        - /url: https://ko-fi.com/manasync

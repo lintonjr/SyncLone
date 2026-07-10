@@ -571,6 +571,142 @@
   text-align: center;
 }
 
+/* ── Pod Cards (Results/Pairings tabs) ── */
+.pods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.pod-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.pod-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.pod-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.pod-players { padding: 6px 0; }
+
+.pod-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+
+  &:last-child { border-bottom: none; }
+
+  &.pr-win  { background: rgba(34, 197, 94, 0.06); }
+  &.pr-loss { background: rgba(239, 68, 68, 0.04); }
+  &.pr-draw { background: rgba(234, 179, 8, 0.04); }
+  &.pr-bye  { background: rgba(99, 102, 241, 0.06); }
+}
+
+.pod-seat {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pod-name {
+  flex: 1;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.pod-result-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 999px;
+
+  &.prb-win  { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+  &.prb-loss { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+  &.prb-draw { background: rgba(234, 179, 8, 0.2); color: #fbbf24; }
+  &.prb-bye  { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+}
+
+.pill-bye { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+
+/* ── My Round: Pod Layout ── */
+.pod-matchup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 24px;
+}
+
+.pod-matchup-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+
+  &.is-me {
+    border-color: var(--accent);
+    background: rgba(139, 92, 246, 0.06);
+  }
+}
+
+.pod-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.pod-matchup-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.ml-auto { margin-left: auto; }
+
+/* ── Result badge aliases used in My Round ── */
+.result-win  { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+.result-loss { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.result-draw { background: rgba(234, 179, 8, 0.2); color: #fbbf24; }
+.result-bye  { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+
 @media (max-width: 640px) {
   .event-banner { height: 220px; }
   .banner-overlay { flex-direction: column; align-items: flex-start; }
@@ -578,4 +714,5 @@
   .matchup { flex-direction: column; }
   .my-stats { flex-wrap: wrap; }
   .stat-box { min-width: 80px; }
+  .pods-grid { grid-template-columns: 1fr; }
 }

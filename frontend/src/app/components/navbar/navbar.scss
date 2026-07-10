@@ -87,15 +87,12 @@
 
 .user-menu-wrapper {
   position: relative;
-
-  &[open] .user-btn { background: var(--surface2); color: var(--text); }
 }
 
 .user-btn {
   padding: 6px 10px;
   font-size: 13px;
   border-radius: 8px;
-  list-style: none;
   cursor: pointer;
   border: none;
   background: transparent;
@@ -105,8 +102,7 @@
   align-items: center;
   gap: 6px;
 
-  &:hover { background: var(--surface2); color: var(--text); }
-  &::-webkit-details-marker { display: none; }
+  &:hover, &.active { background: var(--surface2); color: var(--text); }
 }
 
 .user-dropdown {

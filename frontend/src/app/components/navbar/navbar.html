@@ -25,18 +25,22 @@
             <app-notification-panel (close)="showNotifications.set(false)" />
           }
         </div>
-        <details class="user-menu-wrapper">
-          <summary class="icon-btn user-btn">
+        <div class="user-menu-wrapper" (click)="$event.stopPropagation()">
+          <button class="icon-btn user-btn" [class.active]="showUserMenu()" (click)="toggleUserMenu($event)">
             <span class="user-name">{{ auth.currentUser()?.display_name }}</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 [style.transform]="showUserMenu() ? 'rotate(180deg)' : 'rotate(0deg)'"
+                 style="transition: transform 0.15s">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
-          </summary>
-          <div class="user-dropdown">
-            <a routerLink="/events" class="dropdown-item">My Events</a>
-            <button class="dropdown-item danger" (click)="auth.logout()">Logout</button>
-          </div>
-        </details>
+          </button>
+          @if (showUserMenu()) {
+            <div class="user-dropdown">
+              <a routerLink="/events" class="dropdown-item" (click)="closeUserMenu()">My Events</a>
+              <button class="dropdown-item danger" (click)="closeUserMenu(); auth.logout()">Logout</button>
+            </div>
+          }
+        </div>
       } @else {
         <a routerLink="/login" class="btn btn-primary">Login</a>
       }

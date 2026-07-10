@@ -75,10 +75,16 @@ router.get('/:id', async (req, res) => {
     );
     const pairings = rounds.length
       ? await db.query(
-          `SELECT p.*, ep1.display_name as p1_name, ep2.display_name as p2_name
+          `SELECT p.*,
+             ep1.display_name as p1_name,
+             ep2.display_name as p2_name,
+             ep3.display_name as p3_name,
+             ep4.display_name as p4_name
            FROM pairings p
            LEFT JOIN event_players ep1 ON ep1.id = p.player1_id
            LEFT JOIN event_players ep2 ON ep2.id = p.player2_id
+           LEFT JOIN event_players ep3 ON ep3.id = p.player3_id
+           LEFT JOIN event_players ep4 ON ep4.id = p.player4_id
            WHERE p.event_id = ? ORDER BY p.table_number`,
           [req.params.id]
         )
@@ -94,26 +100,27 @@ router.post('/', auth, upload.single('thumbnail'), async (req, res) => {
     const {
       name, description, city, address, online, date, game, format,
       pairing_method, playoff_structure, allow_byes, test_event,
-      collaborative_deck, async_draws, confirm_players,
+      collaborative_deck, async_draws, confirm_players, pod_size,
     } = req.body;
     if (!name || !date || !game)
       return res.status(400).json({ error: 'Name, date and game are required' });
 
     const id = uuidv4();
     const thumbnail = req.file ? `/uploads/${req.file.filename}` : null;
+    const podSizeVal = parseInt(pod_size) || 2;
 
     await db.run(`
       INSERT INTO events (id, name, description, city, address, online, thumbnail, date, game, format,
         pairing_method, playoff_structure, allow_byes, test_event, collaborative_deck, async_draws,
-        confirm_players, owner_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        confirm_players, pod_size, owner_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       id, name, description || null, city || null, address || null,
       parseBool(online) ? 1 : 0, thumbnail, date, game, format || null,
       pairing_method || 'swiss', playoff_structure || 'none',
       parseBool(allow_byes) ? 1 : 0, parseBool(test_event) ? 1 : 0,
       parseBool(collaborative_deck) ? 1 : 0, parseBool(async_draws) ? 1 : 0,
-      parseBool(confirm_players) ? 1 : 0, req.user.id,
+      parseBool(confirm_players) ? 1 : 0, podSizeVal, req.user.id,
     ]);
 
     res.status(201).json(await db.get('SELECT * FROM events WHERE id = ?', [id]));
@@ -129,7 +136,7 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
 
     const {
       name, description, city, address, online, date, game, format,
-      pairing_method, playoff_structure, allow_byes, test_event,
+      pairing_method, pod_size, playoff_structure, allow_byes, test_event,
       collaborative_deck, async_draws, confirm_players, status,
     } = req.body;
 
@@ -137,13 +144,14 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
 
     await db.run(`
       UPDATE events SET name=?, description=?, city=?, address=?, online=?, thumbnail=?, date=?,
-      game=?, format=?, pairing_method=?, playoff_structure=?, allow_byes=?, test_event=?,
+      game=?, format=?, pairing_method=?, pod_size=?, playoff_structure=?, allow_byes=?, test_event=?,
       collaborative_deck=?, async_draws=?, confirm_players=?, status=? WHERE id=?
     `, [
       name || event.name, description ?? event.description, city ?? event.city,
       address ?? event.address, online !== undefined ? (parseBool(online) ? 1 : 0) : event.online,
       thumbnail, date || event.date, game || event.game, format ?? event.format,
-      pairing_method || event.pairing_method, playoff_structure || event.playoff_structure,
+      pairing_method || event.pairing_method, pod_size ? parseInt(pod_size) : event.pod_size,
+      playoff_structure || event.playoff_structure,
       allow_byes !== undefined ? (parseBool(allow_byes) ? 1 : 0) : event.allow_byes,
       test_event !== undefined ? (parseBool(test_event) ? 1 : 0) : event.test_event,
       collaborative_deck !== undefined ? (parseBool(collaborative_deck) ? 1 : 0) : event.collaborative_deck,
@@ -279,18 +287,33 @@ router.post('/:id/rounds', auth, async (req, res) => {
     );
     if (players.length < 2) return res.status(400).json({ error: 'Need at least 2 active players' });
 
+    const podSize = event.pod_size || 2;
     const roundNumber = event.current_round + 1;
     const roundId = uuidv4();
     await db.run('INSERT INTO rounds (id, event_id, round_number) VALUES (?, ?, ?)',
       [roundId, req.params.id, roundNumber]);
 
-    const pairs = generateSwissPairings(players);
-    for (let idx = 0; idx < pairs.length; idx++) {
-      const pair = pairs[idx];
+    const pods = generateSwissPairings(players, podSize);
+    for (let idx = 0; idx < pods.length; idx++) {
+      const pod = pods[idx];
+      const isBye = !pod.player2;
       await db.run(
-        'INSERT INTO pairings (id, round_id, event_id, player1_id, player2_id, table_number) VALUES (?, ?, ?, ?, ?, ?)',
-        [uuidv4(), roundId, req.params.id, pair.player1.id, pair.player2 ? pair.player2.id : null, idx + 1]
+        `INSERT INTO pairings (id, round_id, event_id, player1_id, player2_id, player3_id, player4_id, table_number, result)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          uuidv4(), roundId, req.params.id,
+          pod.player1?.id ?? null,
+          pod.player2?.id ?? null,
+          pod.player3?.id ?? null,
+          pod.player4?.id ?? null,
+          idx + 1,
+          isBye ? 'bye' : null,
+        ]
       );
+      // Auto-award bye win
+      if (isBye && pod.player1) {
+        await db.run('UPDATE event_players SET wins=wins+1, points=points+3 WHERE id=?', [pod.player1.id]);
+      }
     }
 
     await db.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
@@ -303,6 +326,7 @@ router.post('/:id/rounds', auth, async (req, res) => {
 });
 
 // Auth: submit result (owner only)
+// result: 'player1'|'player2'|'player3'|'player4' = that player won; 'draw' = all draw; 'bye' = auto win
 router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
   try {
     const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
@@ -312,32 +336,29 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
     if (!pairing) return res.status(404).json({ error: 'Pairing not found' });
 
     const { result } = req.body;
-    if (!['player1', 'player2', 'draw', 'bye'].includes(result))
-      return res.status(400).json({ error: 'Invalid result' });
+    const valid = ['player1', 'player2', 'player3', 'player4', 'draw', 'bye'];
+    if (!valid.includes(result)) return res.status(400).json({ error: 'Invalid result' });
 
     await db.run('UPDATE pairings SET result = ? WHERE id = ?', [result, req.params.pairingId]);
 
-    const updatePlayer = async (playerId, win, loss, draw) => {
-      const pts = win ? 3 : draw ? 1 : 0;
-      await db.run(
-        'UPDATE event_players SET wins=wins+?, losses=losses+?, draws=draws+?, points=points+? WHERE id=?',
-        [win ? 1 : 0, loss ? 1 : 0, draw ? 1 : 0, pts, playerId]
-      );
-    };
+    const win  = async (id) => id && await db.run('UPDATE event_players SET wins=wins+1,   points=points+3 WHERE id=?', [id]);
+    const loss = async (id) => id && await db.run('UPDATE event_players SET losses=losses+1             WHERE id=?', [id]);
+    const draw = async (id) => id && await db.run('UPDATE event_players SET draws=draws+1,  points=points+1 WHERE id=?', [id]);
 
-    if (result === 'player1') {
-      await updatePlayer(pairing.player1_id, true, false, false);
-      if (pairing.player2_id) await updatePlayer(pairing.player2_id, false, true, false);
-    } else if (result === 'player2') {
-      if (pairing.player2_id) {
-        await updatePlayer(pairing.player2_id, true, false, false);
-        await updatePlayer(pairing.player1_id, false, true, false);
-      }
-    } else if (result === 'draw') {
-      await updatePlayer(pairing.player1_id, false, false, true);
-      if (pairing.player2_id) await updatePlayer(pairing.player2_id, false, false, true);
+    // Collect all players in this pod (non-null)
+    const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
+    const winnerKey = { player1: pairing.player1_id, player2: pairing.player2_id, player3: pairing.player3_id, player4: pairing.player4_id };
+
+    if (result === 'draw') {
+      for (const id of allPlayers) await draw(id);
     } else if (result === 'bye') {
-      await updatePlayer(pairing.player1_id, true, false, false);
+      for (const id of allPlayers) await win(id);
+    } else {
+      const winnerId = winnerKey[result];
+      for (const id of allPlayers) {
+        if (id === winnerId) await win(id);
+        else await loss(id);
+      }
     }
 
     res.json(await db.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]));

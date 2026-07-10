@@ -26,6 +26,7 @@ export class CreateEventComponent implements OnInit {
   game = signal('');
   format = signal('');
   pairingMethod = signal('swiss');
+  podSize = signal(2);
   playoffStructure = signal('none');
   allowByes = signal(false);
   testEvent = signal(false);
@@ -66,6 +67,7 @@ export class CreateEventComponent implements OnInit {
           this.game.set(ev.game);
           this.format.set(ev.format ?? '');
           this.pairingMethod.set(ev.pairing_method);
+          this.podSize.set(ev.pod_size ?? 2);
           this.playoffStructure.set(ev.playoff_structure);
           this.allowByes.set(!!ev.allow_byes);
           this.testEvent.set(!!ev.test_event);
@@ -82,8 +84,15 @@ export class CreateEventComponent implements OnInit {
     }
   }
 
+  private readonly POD4_FORMATS = ['Commander', 'Commander500', 'cEDH', 'Conquest'];
+
   formats(): string[] {
     return this.FORMATS[this.game()] ?? [];
+  }
+
+  onFormatChange(f: string) {
+    this.format.set(f);
+    this.podSize.set(this.POD4_FORMATS.includes(f) ? 4 : 2);
   }
 
   onFile(event: Event) {
@@ -114,6 +123,7 @@ export class CreateEventComponent implements OnInit {
     fd.append('game', this.game());
     fd.append('format', this.format());
     fd.append('pairing_method', this.pairingMethod());
+    fd.append('pod_size', String(this.podSize()));
     fd.append('playoff_structure', this.playoffStructure());
     fd.append('allow_byes', String(this.allowByes()));
     fd.append('test_event', String(this.testEvent()));

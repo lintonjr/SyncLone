@@ -20,10 +20,10 @@ export class EventDetailComponent implements OnInit {
 
   event = signal<TournamentEvent | null>(null);
   loading = signal(true);
-  tab = signal<'standings' | 'results' | 'myround'>('standings');
+  tab = signal<'standings' | 'pairings' | 'results' | 'myround'>('standings');
   actionLoading = signal(false);
   error = signal('');
-  resultModal = signal<{ pairingId: string } | null>(null);
+  resultModal = signal<{ pairing: Pairing } | null>(null);
   editDeckModal = signal<{ playerId: string; current: string } | null>(null);
   deckNameInput = signal('');
   addPlayerModal = signal(false);
@@ -60,6 +60,15 @@ export class EventDetailComponent implements OnInit {
     }));
   });
 
+  isPodMode = computed(() => (this.event()?.pod_size ?? 2) >= 3);
+
+  currentRoundPairings = computed(() => {
+    const ev = this.event();
+    if (!ev?.rounds?.length) return null;
+    const latest = ev.rounds[ev.rounds.length - 1];
+    return { round: latest, pairings: (ev.pairings ?? []).filter(p => p.round_id === latest.id) };
+  });
+
   myRound = computed(() => {
     const user = this.auth.currentUser();
     const ev = this.event();
@@ -69,10 +78,28 @@ export class EventDetailComponent implements OnInit {
     const myPlayer = ev.players?.find((p) => p.user_id === user.id);
     if (!myPlayer) return null;
     const pairing = pairings.find(
-      (p) => p.player1_id === myPlayer.id || p.player2_id === myPlayer.id
+      (p) => p.player1_id === myPlayer.id || p.player2_id === myPlayer.id ||
+             p.player3_id === myPlayer.id || p.player4_id === myPlayer.id
     );
     return pairing ? { round: latestRound, pairing, myPlayer } : null;
   });
+
+  podPlayers(p: Pairing): { id: string; name: string; slot: string }[] {
+    const ev = this.event();
+    const entries: { id: string; name: string; slot: string }[] = [];
+    if (p.player1_id) entries.push({ id: p.player1_id, name: p.p1_name ?? '?', slot: 'player1' });
+    if (p.player2_id) entries.push({ id: p.player2_id, name: p.p2_name ?? '?', slot: 'player2' });
+    if (p.player3_id) entries.push({ id: p.player3_id, name: p.p3_name ?? '?', slot: 'player3' });
+    if (p.player4_id) entries.push({ id: p.player4_id, name: p.p4_name ?? '?', slot: 'player4' });
+    return entries;
+  }
+
+  podPlayerResult(p: Pairing, slot: string): 'win' | 'loss' | 'draw' | 'bye' | null {
+    if (!p.result) return null;
+    if (p.result === 'bye') return 'bye';
+    if (p.result === 'draw') return 'draw';
+    return p.result === slot ? 'win' : 'loss';
+  }
 
   ngOnInit() {
     this.load();
@@ -115,6 +142,10 @@ export class EventDetailComponent implements OnInit {
       next: () => { this.load(); this.resultModal.set(null); },
       error: (err) => this.error.set(err.error?.error || 'Failed to submit result'),
     });
+  }
+
+  startRoundTab() {
+    this.startRound();
   }
 
   dropPlayer(playerId: string) {

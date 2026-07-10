@@ -75,6 +75,11 @@
       <button class="tab-btn" [class.active]="tab() === 'standings'" (click)="tab.set('standings')">
         Standings ({{ event()!.players?.length ?? 0 }})
       </button>
+      @if (event()!.rounds?.length) {
+        <button class="tab-btn" [class.active]="tab() === 'pairings'" (click)="tab.set('pairings')">
+          Pairings
+        </button>
+      }
       <button class="tab-btn" [class.active]="tab() === 'results'" (click)="tab.set('results')">
         Results ({{ event()!.rounds?.length ?? 0 }} rounds)
       </button>
@@ -159,19 +164,52 @@
         }
       }
 
-      <!-- RESULTS TAB -->
-      @if (tab() === 'results') {
-        @if (roundsGrouped().length === 0) {
+      <!-- PAIRINGS TAB: current round only -->
+      @if (tab() === 'pairings') {
+        @if (!currentRoundPairings()) {
           <p class="empty">No rounds started yet.</p>
         } @else {
-          @for (round of roundsGrouped(); track round.id) {
-            <div class="round-section">
-              <div class="round-header">
-                <h3 class="round-title">Round {{ round.round_number }}</h3>
-                <span class="round-status-badge" [class]="round.status === 'open' ? 'status-open' : 'status-done'">
-                  {{ round.status === 'open' ? 'In Progress' : 'Completed' }}
-                </span>
+          <div class="round-section">
+            <div class="round-header">
+              <h3 class="round-title">Round {{ currentRoundPairings()!.round.round_number }} — Pairings</h3>
+              <span class="round-status-badge" [class]="currentRoundPairings()!.round.status === 'open' ? 'status-open' : 'status-done'">
+                {{ currentRoundPairings()!.round.status === 'open' ? 'In Progress' : 'Completed' }}
+              </span>
+            </div>
+            @if (isPodMode()) {
+              <div class="pods-grid">
+                @for (p of currentRoundPairings()!.pairings; track p.id) {
+                  <div class="pod-card card">
+                    <div class="pod-header">
+                      <span class="pod-label">Pod {{ p.table_number }}</span>
+                      @if (!p.result && isOwner()) {
+                        <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
+                      }
+                      @if (p.result) {
+                        <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : 'pill-done'">
+                          {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : 'Done' }}
+                        </span>
+                      }
+                    </div>
+                    <div class="pod-players">
+                      @for (player of podPlayers(p); track player.id) {
+                        <div class="pod-player" [class]="'pr-' + (podPlayerResult(p, player.slot) ?? 'pending')">
+                          <span class="pod-seat">{{ $index + 1 }}</span>
+                          <span class="pod-name">{{ player.name }}</span>
+                          @if (p.result) {
+                            <span class="pod-result-badge" [class]="'prb-' + podPlayerResult(p, player.slot)">
+                              {{ podPlayerResult(p, player.slot) === 'win' ? 'WIN' :
+                                 podPlayerResult(p, player.slot) === 'draw' ? 'DRAW' :
+                                 podPlayerResult(p, player.slot) === 'bye' ? 'BYE' : 'LOSS' }}
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
               </div>
+            } @else {
               <div class="pairings-table card">
                 <table>
                   <thead>
@@ -185,7 +223,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (p of round.pairings; track p.id) {
+                    @for (p of currentRoundPairings()!.pairings; track p.id) {
                       <tr>
                         <td class="col-table table-num">{{ p.table_number }}</td>
                         <td class="player-col">{{ p.p1_name }}</td>
@@ -199,7 +237,7 @@
                         @if (isOwner()) {
                           <td>
                             @if (!p.result) {
-                              <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairingId: p.id})">Set Result</button>
+                              <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
                             }
                           </td>
                         }
@@ -208,6 +246,97 @@
                   </tbody>
                 </table>
               </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- RESULTS TAB -->
+      @if (tab() === 'results') {
+        @if (roundsGrouped().length === 0) {
+          <p class="empty">No rounds started yet.</p>
+        } @else {
+          @for (round of roundsGrouped(); track round.id) {
+            <div class="round-section">
+              <div class="round-header">
+                <h3 class="round-title">Round {{ round.round_number }}</h3>
+                <span class="round-status-badge" [class]="round.status === 'open' ? 'status-open' : 'status-done'">
+                  {{ round.status === 'open' ? 'In Progress' : 'Completed' }}
+                </span>
+              </div>
+              @if (isPodMode()) {
+                <!-- POD VIEW -->
+                <div class="pods-grid">
+                  @for (p of round.pairings; track p.id) {
+                    <div class="pod-card card">
+                      <div class="pod-header">
+                        <span class="pod-label">Pod {{ p.table_number }}</span>
+                        @if (!p.result && isOwner()) {
+                          <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
+                        }
+                        @if (p.result) {
+                          <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : 'pill-done'">
+                            {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : 'Done' }}
+                          </span>
+                        }
+                      </div>
+                      <div class="pod-players">
+                        @for (player of podPlayers(p); track player.id) {
+                          <div class="pod-player" [class]="'pr-' + (podPlayerResult(p, player.slot) ?? 'pending')">
+                            <span class="pod-seat">{{ $index + 1 }}</span>
+                            <span class="pod-name">{{ player.name }}</span>
+                            @if (p.result) {
+                              <span class="pod-result-badge" [class]="'prb-' + podPlayerResult(p, player.slot)">
+                                {{ podPlayerResult(p, player.slot) === 'win' ? 'WIN' :
+                                   podPlayerResult(p, player.slot) === 'draw' ? 'DRAW' :
+                                   podPlayerResult(p, player.slot) === 'bye' ? 'BYE' : 'LOSS' }}
+                              </span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <!-- 1v1 VIEW -->
+                <div class="pairings-table card">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th class="col-table">Table</th>
+                        <th>Player 1</th>
+                        <th class="col-vs"></th>
+                        <th>Player 2</th>
+                        <th>Result</th>
+                        @if (isOwner()) { <th></th> }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (p of round.pairings; track p.id) {
+                        <tr>
+                          <td class="col-table table-num">{{ p.table_number }}</td>
+                          <td class="player-col">{{ p.p1_name }}</td>
+                          <td class="col-vs vs">vs</td>
+                          <td class="player-col">{{ p.p2_name || 'Bye' }}</td>
+                          <td>
+                            <span class="result-pill" [class]="p.result ? 'pill-done' : 'pill-pending'">
+                              {{ resultLabel(p.result) }}
+                            </span>
+                          </td>
+                          @if (isOwner()) {
+                            <td>
+                              @if (!p.result) {
+                                <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
+                              }
+                            </td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
             </div>
           }
         }
@@ -224,34 +353,57 @@
           <div class="myround-card card">
             <div class="myround-header">
               <span class="round-label">Round {{ myRound()!.round.round_number }}</span>
-              <span class="table-label">Table {{ myRound()!.pairing.table_number }}</span>
+              <span class="table-label">{{ isPodMode() ? 'Pod' : 'Table' }} {{ myRound()!.pairing.table_number }}</span>
             </div>
-            <div class="matchup">
-              <div class="player-side" [class.is-me]="myRound()!.pairing.player1_id === myRound()!.myPlayer.id">
-                <div class="player-avatar">{{ myRound()!.pairing.p1_name?.charAt(0) }}</div>
-                <div class="player-info">
-                  <span class="player-label">{{ myRound()!.pairing.p1_name }}</span>
-                  @if (myRound()!.pairing.player1_id === myRound()!.myPlayer.id) {
-                    <span class="you-tag">You</span>
-                  }
+
+            @if (isPodMode()) {
+              <!-- Pod layout: list of all players -->
+              <div class="pod-matchup">
+                @for (player of podPlayers(myRound()!.pairing); track player.id) {
+                  <div class="pod-matchup-row" [class.is-me]="player.id === myRound()!.myPlayer.id">
+                    <div class="pod-avatar">{{ player.name.charAt(0) }}</div>
+                    <span class="pod-matchup-name">{{ player.name }}</span>
+                    @if (player.id === myRound()!.myPlayer.id) { <span class="you-tag">You</span> }
+                    @if (myRound()!.pairing.result) {
+                      @if (podPlayerResult(myRound()!.pairing, player.slot); as pr) {
+                        <span class="pod-result-badge ml-auto" [class]="'prb-' + pr">
+                          {{ pr === 'win' ? 'WIN' : pr === 'draw' ? 'DRAW' : pr === 'bye' ? 'BYE' : 'LOSS' }}
+                        </span>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <!-- 1v1 layout -->
+              <div class="matchup">
+                <div class="player-side" [class.is-me]="myRound()!.pairing.player1_id === myRound()!.myPlayer.id">
+                  <div class="player-avatar">{{ myRound()!.pairing.p1_name?.charAt(0) }}</div>
+                  <div class="player-info">
+                    <span class="player-label">{{ myRound()!.pairing.p1_name }}</span>
+                    @if (myRound()!.pairing.player1_id === myRound()!.myPlayer.id) { <span class="you-tag">You</span> }
+                  </div>
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="player-side" [class.is-me]="myRound()!.pairing.player2_id === myRound()!.myPlayer.id">
+                  <div class="player-avatar">{{ (myRound()!.pairing.p2_name || 'B').charAt(0) }}</div>
+                  <div class="player-info">
+                    <span class="player-label">{{ myRound()!.pairing.p2_name || 'Bye' }}</span>
+                    @if (myRound()!.pairing.player2_id === myRound()!.myPlayer.id) { <span class="you-tag">You</span> }
+                  </div>
                 </div>
               </div>
-              <div class="vs-divider">VS</div>
-              <div class="player-side" [class.is-me]="myRound()!.pairing.player2_id === myRound()!.myPlayer.id">
-                <div class="player-avatar">{{ (myRound()!.pairing.p2_name || 'B').charAt(0) }}</div>
-                <div class="player-info">
-                  <span class="player-label">{{ myRound()!.pairing.p2_name || 'Bye' }}</span>
-                  @if (myRound()!.pairing.player2_id === myRound()!.myPlayer.id) {
-                    <span class="you-tag">You</span>
-                  }
-                </div>
-              </div>
-            </div>
+            }
+
             <div class="myround-result">
               @if (myRound()!.pairing.result) {
-                <span class="my-result-badge" [class]="myResultLabel(myRound()!.pairing, myRound()!.myPlayer.id).cls">
-                  {{ myResultLabel(myRound()!.pairing, myRound()!.myPlayer.id).label }}
-                </span>
+                @if (podPlayers(myRound()!.pairing).find(p => p.id === myRound()!.myPlayer.id); as me) {
+                  @if (podPlayerResult(myRound()!.pairing, me.slot); as pr) {
+                    <span class="my-result-badge" [class]="'result-' + pr">
+                      {{ pr === 'win' ? 'Win' : pr === 'draw' ? 'Draw' : pr === 'bye' ? 'Bye (Win)' : 'Loss' }}
+                    </span>
+                  }
+                }
               } @else {
                 <span class="result-pill pill-pending">Awaiting Result</span>
               }
@@ -289,12 +441,16 @@
     <div class="modal-overlay" (click)="resultModal.set(null)">
       <div class="modal card" (click)="$event.stopPropagation()">
         <h3>Set Result</h3>
-        <p class="modal-sub">Who won this match?</p>
+        <p class="modal-sub">Who won this {{ isPodMode() ? 'pod' : 'match' }}?</p>
         <div class="modal-btns">
-          <button class="btn btn-primary" (click)="submitResult(resultModal()!.pairingId, 'player1')">Player 1 Win</button>
-          <button class="btn btn-primary" (click)="submitResult(resultModal()!.pairingId, 'player2')">Player 2 Win</button>
-          <button class="btn btn-ghost" (click)="submitResult(resultModal()!.pairingId, 'draw')">Draw</button>
-          <button class="btn btn-ghost" (click)="submitResult(resultModal()!.pairingId, 'bye')">Bye</button>
+          @for (player of podPlayers(resultModal()!.pairing); track player.id) {
+            <button class="btn btn-primary" (click)="submitResult(resultModal()!.pairing.id, player.slot)">
+              {{ player.name }} Won
+            </button>
+          }
+          <button class="btn btn-ghost" (click)="submitResult(resultModal()!.pairing.id, 'draw')">
+            All Draw
+          </button>
           <button class="btn btn-danger" (click)="resultModal.set(null)">Cancel</button>
         </div>
       </div>
