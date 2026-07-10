@@ -14,6 +14,14 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 const parseBool = (v) => v === 'true' || v === true || v === 1 || v === '1';
 
+async function pendingResultsCount(roundId) {
+  const row = await db.get(
+    'SELECT COUNT(*) as cnt FROM pairings WHERE round_id = ? AND result IS NULL',
+    [roundId]
+  );
+  return row.cnt;
+}
+
 // Auth: get my events (must be before /:id)
 router.get('/user/mine', auth, async (req, res) => {
   try {
@@ -292,6 +300,19 @@ router.post('/:id/rounds', auth, async (req, res) => {
     if (!event) return res.status(404).json({ error: 'Event not found' });
     if (event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
 
+    if (event.current_round > 0) {
+      const currentRoundRow = await db.get(
+        'SELECT id FROM rounds WHERE event_id = ? AND round_number = ?',
+        [req.params.id, event.current_round]
+      );
+      if (currentRoundRow) {
+        const pending = await pendingResultsCount(currentRoundRow.id);
+        if (pending > 0) {
+          return res.status(400).json({ error: `Round ${event.current_round} ainda tem ${pending} resultado(s) pendente(s)` });
+        }
+      }
+    }
+
     const players = await db.query(
       "SELECT * FROM event_players WHERE event_id = ? AND status = 'active'",
       [req.params.id]
@@ -350,15 +371,34 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
     const valid = ['player1', 'player2', 'player3', 'player4', 'draw', 'bye'];
     if (!valid.includes(result)) return res.status(400).json({ error: 'Invalid result' });
 
-    await db.run('UPDATE pairings SET result = ? WHERE id = ?', [result, req.params.pairingId]);
-
     const win  = async (id) => id && await db.run('UPDATE event_players SET wins=wins+1,   points=points+3 WHERE id=?', [id]);
     const loss = async (id) => id && await db.run('UPDATE event_players SET losses=losses+1             WHERE id=?', [id]);
     const draw = async (id) => id && await db.run('UPDATE event_players SET draws=draws+1,  points=points+1 WHERE id=?', [id]);
+    const undoWin  = async (id) => id && await db.run('UPDATE event_players SET wins=wins-1,   points=points-3 WHERE id=?', [id]);
+    const undoLoss = async (id) => id && await db.run('UPDATE event_players SET losses=losses-1             WHERE id=?', [id]);
+    const undoDraw = async (id) => id && await db.run('UPDATE event_players SET draws=draws-1,  points=points-1 WHERE id=?', [id]);
 
     // Collect all players in this pod (non-null)
     const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
     const winnerKey = { player1: pairing.player1_id, player2: pairing.player2_id, player3: pairing.player3_id, player4: pairing.player4_id };
+
+    // Revert the previous result's effect, if any, before applying the new one
+    // (prevents double-counting points when an owner corrects a result)
+    if (pairing.result) {
+      if (pairing.result === 'draw') {
+        for (const id of allPlayers) await undoDraw(id);
+      } else if (pairing.result === 'bye') {
+        for (const id of allPlayers) await undoWin(id);
+      } else if (winnerKey[pairing.result] !== undefined) {
+        const prevWinnerId = winnerKey[pairing.result];
+        for (const id of allPlayers) {
+          if (id === prevWinnerId) await undoWin(id);
+          else await undoLoss(id);
+        }
+      }
+    }
+
+    await db.run('UPDATE pairings SET result = ? WHERE id = ?', [result, req.params.pairingId]);
 
     if (result === 'draw') {
       for (const id of allPlayers) await draw(id);
@@ -371,6 +411,10 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
         else await loss(id);
       }
     }
+
+    const pending = await pendingResultsCount(pairing.round_id);
+    await db.run('UPDATE rounds SET status = ? WHERE id = ?',
+      [pending === 0 ? 'completed' : 'active', pairing.round_id]);
 
     res.json(await db.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]));
   } catch (err) { res.status(500).json({ error: err.message }); }

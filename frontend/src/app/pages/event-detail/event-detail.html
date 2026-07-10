@@ -186,8 +186,8 @@
           <div class="round-section">
             <div class="round-header">
               <h3 class="round-title">Round {{ currentRoundPairings()!.round.round_number }} — Pairings</h3>
-              <span class="round-status-badge" [class]="currentRoundPairings()!.round.status === 'open' ? 'status-open' : 'status-done'">
-                {{ currentRoundPairings()!.round.status === 'open' ? 'In Progress' : 'Completed' }}
+              <span class="round-status-badge" [class]="currentRoundPairings()!.round.status !== 'completed' ? 'status-open' : 'status-done'">
+                {{ currentRoundPairings()!.round.status !== 'completed' ? 'In Progress' : 'Completed' }}
               </span>
             </div>
             @if (isPodMode()) {
@@ -274,8 +274,8 @@
             <div class="round-section">
               <div class="round-header">
                 <h3 class="round-title">Round {{ round.round_number }}</h3>
-                <span class="round-status-badge" [class]="round.status === 'open' ? 'status-open' : 'status-done'">
-                  {{ round.status === 'open' ? 'In Progress' : 'Completed' }}
+                <span class="round-status-badge" [class]="round.status !== 'completed' ? 'status-open' : 'status-done'">
+                  {{ round.status !== 'completed' ? 'In Progress' : 'Completed' }}
                 </span>
               </div>
               @if (isPodMode()) {
