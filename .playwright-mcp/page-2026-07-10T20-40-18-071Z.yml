@@ -1,0 +1,478 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - generic:
+              - link:
+                - /url: /
+          - generic:
+            - link:
+              - /url: /
+              - button: Home
+            - link:
+              - /url: /events
+              - button: My Events
+            - link:
+              - /url: /create
+              - button: Create Event
+            - generic:
+              - button:
+                - generic: Install App
+          - generic:
+            - button:
+              - button
+            - button:
+              - button:
+                - generic: LI
+            - button:
+              - generic: Toggle theme
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=2]: n=manaus
+                  - paragraph: MTG - Commander500
+                  - generic:
+                    - generic: 7/10/2026, 1:00:00 AM
+                    - generic: Manaus
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: AA
+                          - generic: BB
+                          - generic: HH
+                          - generic: JJ
+                          - generic: MM
+                          - generic: MM
+                          - generic: OO
+                          - generic: CC
+                          - generic: "+17"
+                        - generic: 25 Players
+                - generic:
+                  - button:
+                    - generic: Add Player
+                  - button:
+                    - generic: Share
+                  - button:
+                    - generic: Register
+                  - button
+                  - button:
+                    - generic: Toggle visibility
+                  - button:
+                    - button
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - tablist:
+                - tab:
+                  - generic: Standings
+                - tab [selected]:
+                  - generic: Results
+                - tab:
+                  - generic: Pairings
+          - tabpanel:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=3]: Round 2
+                    - generic:
+                      - button [expanded]
+                      - button:
+                        - generic: Swap
+                      - button [expanded]:
+                        - button:
+                          - generic: Undo
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Pod 1
+                          - generic:
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - cell: "1"
+                                    - cell:
+                                      - generic:
+                                        - generic: KK
+                                        - generic: Kamala Khan
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "2"
+                                    - cell:
+                                      - generic:
+                                        - generic: HH
+                                        - generic: Hank Hall
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "3"
+                                    - cell:
+                                      - generic:
+                                        - generic: WW
+                                        - generic: Wade Wilson
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "4"
+                                    - cell:
+                                      - generic:
+                                        - generic: BB
+                                        - generic: Bucky Barnes
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                      - generic:
+                        - generic:
+                          - generic: Pod 2
+                          - generic:
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - cell: "1"
+                                    - cell:
+                                      - generic:
+                                        - generic: BB
+                                        - generic: Bruce Banner
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "2"
+                                    - cell:
+                                      - generic:
+                                        - generic: DD
+                                        - generic: Damien Darhk
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "3"
+                                    - cell:
+                                      - generic:
+                                        - generic: EE
+                                        - generic: Eve Eden
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "4"
+                                    - cell:
+                                      - generic:
+                                        - generic: GG
+                                        - generic: Green Goblin
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                      - generic:
+                        - generic:
+                          - generic: Pod 3
+                          - generic:
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - cell: "1"
+                                    - cell:
+                                      - generic:
+                                        - generic: MM
+                                        - generic: Miles Morales
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "2"
+                                    - cell:
+                                      - generic:
+                                        - generic: HH
+                                        - generic: Happy Hogan
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "3"
+                                    - cell:
+                                      - generic:
+                                        - generic: SS
+                                        - generic: Stephen Strange
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "4"
+                                    - cell:
+                                      - generic:
+                                        - generic: LL
+                                        - generic: Loki Laufeyson
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                      - generic:
+                        - generic:
+                          - generic: Pod 4
+                          - generic:
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - cell: "1"
+                                    - cell:
+                                      - generic:
+                                        - generic: FF
+                                        - generic: Fin Fang Foom
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "2"
+                                    - cell:
+                                      - generic:
+                                        - generic: RR
+                                        - generic: Reed Richards
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "3"
+                                    - cell:
+                                      - generic:
+                                        - generic: SS
+                                        - generic: Sue Storm
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "4"
+                                    - cell:
+                                      - generic:
+                                        - generic: MM
+                                        - generic: Matt Murdock
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                      - generic:
+                        - generic:
+                          - generic: Pod 5
+                          - generic:
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - cell: "1"
+                                    - cell:
+                                      - generic:
+                                        - generic: PP
+                                        - generic: Peter Parker
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "2"
+                                    - cell:
+                                      - generic:
+                                        - generic: JJ
+                                        - generic: Jessica Jones
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "3"
+                                    - cell:
+                                      - generic:
+                                        - generic: RR
+                                        - generic: Richard Rider
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "4"
+                                    - cell:
+                                      - generic:
+                                        - generic: VV
+                                        - generic: Viv Vision
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                      - generic:
+                        - generic:
+                          - generic: Pod 6
+                          - generic:
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - cell: "1"
+                                    - cell:
+                                      - generic:
+                                        - generic: PP
+                                        - generic: Pepper Potts
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "2"
+                                    - cell:
+                                      - generic:
+                                        - generic: OO
+                                        - generic: Otto Octavius
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "3"
+                                    - cell:
+                                      - generic:
+                                        - generic: TT
+                                        - generic: Tom Thumb
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                                  - row:
+                                    - cell: "4"
+                                    - cell:
+                                      - generic:
+                                        - generic: CC
+                                        - generic: Curt Connors
+                                    - cell:
+                                      - generic:
+                                        - button:
+                                          - generic: WON
+                                        - button:
+                                          - generic: DRAW
+                      - generic:
+                        - generic:
+                          - generic: Pod 7
+                          - generic:
+                            - generic:
+                              - table:
+                                - rowgroup:
+                                  - row:
+                                    - cell: "1"
+                                    - cell:
+                                      - generic:
+                                        - generic: AA
+                                        - generic: Arthur Allen
+                                    - cell:
+                                      - generic: BYE
+                                    - cell
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=3]: Round 1
+                    - generic:
+                      - button
+    - generic:
+      - contentinfo:
+        - generic:
+          - generic:
+            - button: Report a Bug
+          - generic:
+            - link:
+              - /url: /terms-of-service.md
+              - text: Terms of Service
+          - generic:
+            - link:
+              - /url: /privacy-policy.md
+              - text: Privacy Policy
+          - generic:
+            - link:
+              - /url: https://ko-fi.com/manasync
+              - text: Donate ♥
+          - generic: © 2025 ManaSync
+  - generic:
+    - button:
+      - generic: Support Us
+  - dialog [ref=f3e1228]:
+    - generic [ref=f3e1230]:
+      - generic [ref=f3e1231]:
+        - heading "Are you absolutely sure?" [level=2] [ref=f3e1232]
+        - paragraph [ref=f3e1233]:
+          - generic [ref=f3e1234]: This will remove all matches and results from Round 2. This action cannot be undone.
+          - generic [ref=f3e1235]:
+            - button [active] [ref=f3e1236]:
+              - button "Cancel" [ref=f3e1237]
+            - button [ref=f3e1239]:
+              - button "I'm Sure" [ref=f3e1240]
+      - button "Close" [ref=f3e1242]

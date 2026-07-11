@@ -1,0 +1,315 @@
+- generic [ref=f3e2]:
+  - navigation [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link "⚡ Mercadia" [ref=f3e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f3e7]: ⚡
+          - generic [ref=f3e8]: Mercadia
+        - generic [ref=f3e9]:
+          - link "Home" [ref=f3e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f3e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f3e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f3e13]:
+        - button "Open notifications" [ref=f3e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f3e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f3e24] [cursor=pointer]
+  - main [ref=f3e27]:
+    - generic [ref=f3e34]:
+      - generic [ref=f3e35]:
+        - generic [ref=f3e36]: M
+        - generic [ref=f3e37]:
+          - generic [ref=f3e38]:
+            - generic [ref=f3e39]:
+              - generic [ref=f3e40]: MTG
+              - generic [ref=f3e41]: Commander500
+              - generic [ref=f3e42]: ongoing
+            - heading "Mercadia 500 cedh" [level=1] [ref=f3e43]
+            - paragraph [ref=f3e44]: 📅 Jul 10, 2026 · 2:35 PM • 📍 manaus • 👥 18 Players
+          - generic [ref=f3e47]:
+            - button "▶ Start Round 3" [ref=f3e48] [cursor=pointer]
+            - button "✓ Finish" [ref=f3e49] [cursor=pointer]
+            - button "Add Player" [ref=f3e50] [cursor=pointer]
+            - button "👻 Add Phantom" [ref=f3e54] [cursor=pointer]
+            - link "Edit Event" [ref=f3e55] [cursor=pointer]:
+              - /url: /event/73f8f046-a671-476b-997b-e10d4b44fa1a/edit
+            - button "Delete Event" [ref=f3e59] [cursor=pointer]
+      - generic [ref=f3e64]:
+        - button "Standings (18)" [ref=f3e65] [cursor=pointer]
+        - button "Pairings" [ref=f3e66] [cursor=pointer]
+        - button "Results (2 rounds)" [ref=f3e67] [cursor=pointer]
+      - table [ref=f3e70]:
+        - rowgroup [ref=f3e71]:
+          - row [ref=f3e337]:
+            - columnheader "Rank" [ref=f3e73]
+            - columnheader "Player" [ref=f3e74]
+            - columnheader "Deck" [ref=f3e75]
+            - columnheader "W" [ref=f3e76]
+            - columnheader "L" [ref=f3e77]
+            - columnheader "D" [ref=f3e78]
+            - columnheader "Pts" [ref=f3e79]
+            - columnheader [ref=f3e338]:
+              - generic [ref=f3e81]:
+                - text: Tie Breaker
+                - generic [ref=f3e82]:
+                  - text: ⓘ
+                  - generic [ref=f3e339]:
+                    - heading "Understanding Tie Breakers" [level=4] [ref=f3e340]
+                    - paragraph [ref=f3e341]: "When players have equal points, tiebreakers are used in this order:"
+                    - list [ref=f3e342]:
+                      - listitem [ref=f3e343]:
+                        - strong [ref=f3e344]: "Match Win %:"
+                        - text: Percentage of matches won
+                      - listitem [ref=f3e345]:
+                        - strong [ref=f3e346]: "Opponents' Avg Points:"
+                        - text: Average points of all opponents faced
+                      - listitem [ref=f3e347]:
+                        - strong [ref=f3e348]: "Opponents' Win %:"
+                        - text: Average win percentage of all opponents
+                    - paragraph [ref=f3e349]: Higher values in each category indicate stronger performance.
+            - columnheader [ref=f3e83]
+        - rowgroup [ref=f3e84]:
+          - row [ref=f3e85]:
+            - cell "1st" [ref=f3e86]
+            - cell "Caio Silva" [ref=f3e88]
+            - cell [ref=f3e89]:
+              - button "+ Set Deck" [ref=f3e90] [cursor=pointer]
+            - cell "1" [ref=f3e91]
+            - cell "0" [ref=f3e92]
+            - cell "0" [ref=f3e93]
+            - cell [ref=f3e94]:
+              - strong [ref=f3e95]: "3"
+            - cell "100.0% | 0.00 | 0.0%" [ref=f3e96]
+            - cell [ref=f3e97]:
+              - button "Drop" [ref=f3e98] [cursor=pointer]
+          - row [ref=f3e99]:
+            - cell "2nd" [ref=f3e100]
+            - cell "Wendy Moreira" [ref=f3e102]
+            - cell [ref=f3e103]:
+              - button "+ Set Deck" [ref=f3e104] [cursor=pointer]
+            - cell "1" [ref=f3e105]
+            - cell "0" [ref=f3e106]
+            - cell "0" [ref=f3e107]
+            - cell [ref=f3e108]:
+              - strong [ref=f3e109]: "3"
+            - cell "100.0% | 3.00 | 100.0%" [ref=f3e110]
+            - cell [ref=f3e111]:
+              - button "Drop" [ref=f3e112] [cursor=pointer]
+          - row [ref=f3e113]:
+            - cell "3rd" [ref=f3e114]
+            - cell "Helena Costa" [ref=f3e116]
+            - cell [ref=f3e117]:
+              - button "+ Set Deck" [ref=f3e118] [cursor=pointer]
+            - cell "1" [ref=f3e119]
+            - cell "0" [ref=f3e120]
+            - cell "0" [ref=f3e121]
+            - cell [ref=f3e122]:
+              - strong [ref=f3e123]: "3"
+            - cell "100.0% | 3.00 | 100.0%" [ref=f3e124]
+            - cell [ref=f3e125]:
+              - button "Drop" [ref=f3e126] [cursor=pointer]
+          - row [ref=f3e127]:
+            - cell "4th" [ref=f3e128]
+            - cell "Hígor Melo" [ref=f3e130]
+            - cell [ref=f3e131]:
+              - button "+ Set Deck" [ref=f3e132] [cursor=pointer]
+            - cell "1" [ref=f3e133]
+            - cell "0" [ref=f3e134]
+            - cell "0" [ref=f3e135]
+            - cell [ref=f3e136]:
+              - strong [ref=f3e137]: "3"
+            - cell "100.0% | 0.00 | 0.0%" [ref=f3e138]
+            - cell [ref=f3e139]:
+              - button "Drop" [ref=f3e140] [cursor=pointer]
+          - row [ref=f3e141]:
+            - cell "5th" [ref=f3e142]
+            - cell "Isabela Cavalcanti" [ref=f3e144]
+            - cell [ref=f3e145]:
+              - button "+ Set Deck" [ref=f3e146] [cursor=pointer]
+            - cell "1" [ref=f3e147]
+            - cell "0" [ref=f3e148]
+            - cell "0" [ref=f3e149]
+            - cell [ref=f3e150]:
+              - strong [ref=f3e151]: "3"
+            - cell "100.0% | 1.50 | 66.7%" [ref=f3e152]
+            - cell [ref=f3e153]:
+              - button "Drop" [ref=f3e154] [cursor=pointer]
+          - row [ref=f3e155]:
+            - cell "6th" [ref=f3e156]
+            - cell "Ugo Cardoso" [ref=f3e158]
+            - cell [ref=f3e159]:
+              - button "+ Set Deck" [ref=f3e160] [cursor=pointer]
+            - cell "1" [ref=f3e161]
+            - cell "0" [ref=f3e162]
+            - cell "0" [ref=f3e163]
+            - cell [ref=f3e164]:
+              - strong [ref=f3e165]: "3"
+            - cell "100.0% | 1.50 | 66.7%" [ref=f3e166]
+            - cell [ref=f3e167]:
+              - button "Drop" [ref=f3e168] [cursor=pointer]
+          - row [ref=f3e169]:
+            - cell "7th" [ref=f3e170]
+            - cell "Keila Nunes" [ref=f3e172]
+            - cell [ref=f3e173]:
+              - button "+ Set Deck" [ref=f3e174] [cursor=pointer]
+            - cell "0" [ref=f3e175]
+            - cell "0" [ref=f3e176]
+            - cell "0" [ref=f3e177]
+            - cell [ref=f3e178]:
+              - strong [ref=f3e179]: "0"
+            - cell "33.3% | 0.00 | 33.3%" [ref=f3e180]
+            - cell [ref=f3e181]:
+              - button "Drop" [ref=f3e182] [cursor=pointer]
+          - row [ref=f3e183]:
+            - cell "8th" [ref=f3e184]
+            - cell "Hígor Carvalho" [ref=f3e186]
+            - cell [ref=f3e187]:
+              - button "+ Set Deck" [ref=f3e188] [cursor=pointer]
+            - cell "0" [ref=f3e189]
+            - cell "0" [ref=f3e190]
+            - cell "0" [ref=f3e191]
+            - cell [ref=f3e192]:
+              - strong [ref=f3e193]: "0"
+            - cell "33.3% | 0.00 | 33.3%" [ref=f3e194]
+            - cell [ref=f3e195]:
+              - button "Drop" [ref=f3e196] [cursor=pointer]
+          - row [ref=f3e197]:
+            - cell "9th" [ref=f3e198]
+            - cell "Helena Freitas" [ref=f3e200]
+            - cell [ref=f3e201]:
+              - button "+ Set Deck" [ref=f3e202] [cursor=pointer]
+            - cell "0" [ref=f3e203]
+            - cell "0" [ref=f3e204]
+            - cell "0" [ref=f3e205]
+            - cell [ref=f3e206]:
+              - strong [ref=f3e207]: "0"
+            - cell "33.3% | 0.00 | 33.3%" [ref=f3e208]
+            - cell [ref=f3e209]:
+              - button "Drop" [ref=f3e210] [cursor=pointer]
+          - row [ref=f3e211]:
+            - cell "10th" [ref=f3e212]
+            - cell "Fernanda Ribeiro" [ref=f3e214]
+            - cell [ref=f3e215]:
+              - button "+ Set Deck" [ref=f3e216] [cursor=pointer]
+            - cell "0" [ref=f3e217]
+            - cell "1" [ref=f3e218]
+            - cell "0" [ref=f3e219]
+            - cell [ref=f3e220]:
+              - strong [ref=f3e221]: "0"
+            - cell "33.3% | 0.60 | 46.7%" [ref=f3e222]
+            - cell [ref=f3e223]:
+              - button "Drop" [ref=f3e224] [cursor=pointer]
+          - row [ref=f3e225]:
+            - cell "11th" [ref=f3e226]
+            - cell "Ursula Moreira" [ref=f3e228]
+            - cell [ref=f3e229]:
+              - button "+ Set Deck" [ref=f3e230] [cursor=pointer]
+            - cell "0" [ref=f3e231]
+            - cell "0" [ref=f3e232]
+            - cell "0" [ref=f3e233]
+            - cell [ref=f3e234]:
+              - strong [ref=f3e235]: "0"
+            - cell "33.3% | 0.00 | 33.3%" [ref=f3e236]
+            - cell [ref=f3e237]:
+              - button "Drop" [ref=f3e238] [cursor=pointer]
+          - row [ref=f3e239]:
+            - cell "12th" [ref=f3e240]
+            - cell "Rafael Nascimento" [ref=f3e242]
+            - cell [ref=f3e243]:
+              - button "+ Set Deck" [ref=f3e244] [cursor=pointer]
+            - cell "0" [ref=f3e245]
+            - cell "1" [ref=f3e246]
+            - cell "0" [ref=f3e247]
+            - cell [ref=f3e248]:
+              - strong [ref=f3e249]: "0"
+            - cell "33.3% | 0.60 | 46.7%" [ref=f3e250]
+            - cell [ref=f3e251]:
+              - button "Drop" [ref=f3e252] [cursor=pointer]
+          - row [ref=f3e253]:
+            - cell "13th" [ref=f3e254]
+            - cell "Sofia Ferreira" [ref=f3e256]
+            - cell [ref=f3e257]:
+              - button "+ Set Deck" [ref=f3e258] [cursor=pointer]
+            - cell "0" [ref=f3e259]
+            - cell "0" [ref=f3e260]
+            - cell "0" [ref=f3e261]
+            - cell [ref=f3e262]:
+              - strong [ref=f3e263]: "0"
+            - cell "33.3% | 0.00 | 33.3%" [ref=f3e264]
+            - cell [ref=f3e265]:
+              - button "Drop" [ref=f3e266] [cursor=pointer]
+          - row [ref=f3e267]:
+            - cell "14th" [ref=f3e268]
+            - cell "Sofia Ribeiro" [ref=f3e270]
+            - cell [ref=f3e271]:
+              - button "+ Set Deck" [ref=f3e272] [cursor=pointer]
+            - cell "0" [ref=f3e273]
+            - cell "0" [ref=f3e274]
+            - cell "0" [ref=f3e275]
+            - cell [ref=f3e276]:
+              - strong [ref=f3e277]: "0"
+            - cell "33.3% | 0.00 | 33.3%" [ref=f3e278]
+            - cell [ref=f3e279]:
+              - button "Drop" [ref=f3e280] [cursor=pointer]
+          - row [ref=f3e281]:
+            - cell "15th" [ref=f3e282]
+            - cell "Thiago Cavalcanti" [ref=f3e284]
+            - cell [ref=f3e285]:
+              - button "+ Set Deck" [ref=f3e286] [cursor=pointer]
+            - cell "0" [ref=f3e287]
+            - cell "1" [ref=f3e288]
+            - cell "0" [ref=f3e289]
+            - cell [ref=f3e290]:
+              - strong [ref=f3e291]: "0"
+            - cell "33.3% | 0.50 | 44.4%" [ref=f3e292]
+            - cell [ref=f3e293]:
+              - button "Drop" [ref=f3e294] [cursor=pointer]
+          - row [ref=f3e295]:
+            - cell "16th" [ref=f3e296]
+            - cell "Paula Nascimento" [ref=f3e298]
+            - cell [ref=f3e299]:
+              - button "+ Set Deck" [ref=f3e300] [cursor=pointer]
+            - cell "0" [ref=f3e301]
+            - cell "1" [ref=f3e302]
+            - cell "0" [ref=f3e303]
+            - cell [ref=f3e304]:
+              - strong [ref=f3e305]: "0"
+            - cell "33.3% | 0.60 | 46.7%" [ref=f3e306]
+            - cell [ref=f3e307]:
+              - button "Drop" [ref=f3e308] [cursor=pointer]
+          - row [ref=f3e309]:
+            - cell "17th" [ref=f3e310]
+            - cell "Carlos Moreira" [ref=f3e312]
+            - cell [ref=f3e313]:
+              - button "+ Set Deck" [ref=f3e314] [cursor=pointer]
+            - cell "0" [ref=f3e315]
+            - cell "1" [ref=f3e316]
+            - cell "0" [ref=f3e317]
+            - cell [ref=f3e318]:
+              - strong [ref=f3e319]: "0"
+            - cell "33.3% | 0.60 | 46.7%" [ref=f3e320]
+            - cell [ref=f3e321]:
+              - button "Drop" [ref=f3e322] [cursor=pointer]
+          - row [ref=f3e323]:
+            - cell "18th" [ref=f3e324]
+            - cell "Gustavo Carvalho" [ref=f3e326]
+            - cell [ref=f3e327]:
+              - button "+ Set Deck" [ref=f3e328] [cursor=pointer]
+            - cell "0" [ref=f3e329]
+            - cell "1" [ref=f3e330]
+            - cell "0" [ref=f3e331]
+            - cell [ref=f3e332]:
+              - strong [ref=f3e333]: "0"
+            - cell "33.3% | 0.50 | 44.4%" [ref=f3e334]
+            - cell [ref=f3e335]:
+              - button "Drop" [ref=f3e336] [cursor=pointer]
+  - contentinfo [ref=f3e28]:
+    - generic [ref=f3e29]:
+      - generic [ref=f3e30]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f3e31] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f3e32] [cursor=pointer]:
+        - /url: /privacy-policy

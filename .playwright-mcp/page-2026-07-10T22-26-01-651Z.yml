@@ -1,0 +1,77 @@
+- generic [ref=f13e2]:
+  - navigation [ref=f13e3]:
+    - generic [ref=f13e4]:
+      - generic [ref=f13e5]:
+        - link "⚡ Mercadia" [ref=f13e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f13e7]: ⚡
+          - generic [ref=f13e8]: Mercadia
+        - generic [ref=f13e9]:
+          - link "Home" [ref=f13e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f13e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f13e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f13e13]:
+        - button "Open notifications" [ref=f13e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f13e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f13e24] [cursor=pointer]
+  - main [ref=f13e27]:
+    - generic [ref=f13e293]:
+      - generic [ref=f13e294]:
+        - generic [ref=f13e295]: M
+        - generic [ref=f13e296]:
+          - generic [ref=f13e297]:
+            - generic [ref=f13e298]:
+              - generic [ref=f13e299]: MTG
+              - generic [ref=f13e300]: ongoing
+            - heading "Scoring Test Event" [level=1] [ref=f13e301]
+            - paragraph [ref=f13e302]: 📅 Jul 14, 2026 · 8:00 PM • 📍 TBD • 👥 4 Players
+          - generic [ref=f13e305]:
+            - button "▶ Start Round 2" [ref=f13e306] [cursor=pointer]
+            - button "✓ Finish" [ref=f13e307] [cursor=pointer]
+            - button "Add Player" [ref=f13e308] [cursor=pointer]
+            - link "Edit Event" [ref=f13e312] [cursor=pointer]:
+              - /url: /event/84382740-fbf2-4a0a-9c06-2d85a6603a8a/edit
+            - button "Delete Event" [ref=f13e316] [cursor=pointer]
+      - generic [ref=f13e321]:
+        - button "Standings (4)" [ref=f13e322] [cursor=pointer]
+        - button "Pairings" [ref=f13e323] [cursor=pointer]
+        - button "Results (1 rounds)" [ref=f13e324] [cursor=pointer]
+      - generic [ref=f13e326]:
+        - generic [ref=f13e327]:
+          - heading "Round 1" [level=3] [ref=f13e328]
+          - generic [ref=f13e329]: Completed
+          - button "↺ Undo" [ref=f13e331] [cursor=pointer]
+        - table [ref=f13e333]:
+          - rowgroup [ref=f13e334]:
+            - row [ref=f13e335]:
+              - columnheader "Table" [ref=f13e336]
+              - columnheader "Player 1" [ref=f13e337]
+              - columnheader [ref=f13e338]
+              - columnheader "Player 2" [ref=f13e339]
+              - columnheader "Result" [ref=f13e340]
+              - columnheader [ref=f13e341]
+          - rowgroup [ref=f13e342]:
+            - row [ref=f13e343]:
+              - cell "1" [ref=f13e344]
+              - cell "Dave" [ref=f13e345]
+              - cell "vs" [ref=f13e346]
+              - cell "Bob" [ref=f13e347]
+              - cell "P1 Win" [ref=f13e348]
+              - cell [ref=f13e350]
+            - row [ref=f13e351]:
+              - cell "2" [ref=f13e352]
+              - cell "Carol" [ref=f13e353]
+              - cell "vs" [ref=f13e354]
+              - cell "Alice" [ref=f13e355]
+              - cell "Draw" [ref=f13e356]
+              - cell [ref=f13e358]
+  - contentinfo [ref=f13e133]:
+    - generic [ref=f13e134]:
+      - generic [ref=f13e135]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f13e136] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f13e137] [cursor=pointer]:
+        - /url: /privacy-policy

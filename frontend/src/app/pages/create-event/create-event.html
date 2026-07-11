@@ -104,6 +104,22 @@
       </select>
     </div>
 
+    <h3 class="optionals-title">Scoring</h3>
+    <div class="row-3">
+      <div class="form-field">
+        <label>Points per Win</label>
+        <input type="number" step="1" [value]="pointsWin()" (input)="pointsWin.set(+$any($event.target).value)" />
+      </div>
+      <div class="form-field">
+        <label>Points per Draw</label>
+        <input type="number" step="1" [value]="pointsDraw()" (input)="pointsDraw.set(+$any($event.target).value)" />
+      </div>
+      <div class="form-field">
+        <label>Points per Loss</label>
+        <input type="number" step="1" [value]="pointsLoss()" (input)="pointsLoss.set(+$any($event.target).value)" />
+      </div>
+    </div>
+
     <h3 class="optionals-title">Optionals</h3>
     <div class="checkboxes">
       <label class="checkbox-label"><input type="checkbox" [checked]="allowByes()" (change)="allowByes.set($any($event.target).checked)" /> Allow Byes</label>

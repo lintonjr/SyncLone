@@ -1,0 +1,89 @@
+- generic [ref=f13e2]:
+  - navigation [ref=f13e3]:
+    - generic [ref=f13e4]:
+      - generic [ref=f13e5]:
+        - link "⚡ Mercadia" [ref=f13e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f13e7]: ⚡
+          - generic [ref=f13e8]: Mercadia
+        - generic [ref=f13e9]:
+          - link "Home" [ref=f13e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f13e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f13e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f13e13]:
+        - button "Open notifications" [ref=f13e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f13e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f13e24] [cursor=pointer]
+  - main [ref=f13e27]:
+    - generic [ref=f13e28]:
+      - generic [ref=f13e216]:
+        - generic [ref=f13e217]:
+          - generic [ref=f13e218]: M
+          - generic [ref=f13e219]:
+            - generic [ref=f13e220]:
+              - generic [ref=f13e221]:
+                - generic [ref=f13e222]: MTG
+                - generic [ref=f13e223]: ongoing
+              - heading "Scoring Test Event" [level=1] [ref=f13e224]
+              - paragraph [ref=f13e225]: 📅 Jul 14, 2026 · 8:00 PM • 📍 TBD • 👥 4 Players
+            - generic [ref=f13e228]:
+              - button "▶ Start Round 2" [ref=f13e229] [cursor=pointer]
+              - button "✓ Finish" [ref=f13e230] [cursor=pointer]
+              - button "Add Player" [ref=f13e231] [cursor=pointer]
+              - link "Edit Event" [ref=f13e235] [cursor=pointer]:
+                - /url: /event/84382740-fbf2-4a0a-9c06-2d85a6603a8a/edit
+              - button "Delete Event" [ref=f13e239] [cursor=pointer]
+        - generic [ref=f13e244]:
+          - button "Standings (4)" [ref=f13e245] [cursor=pointer]
+          - button "Pairings" [ref=f13e246] [cursor=pointer]
+          - button "Results (1 rounds)" [ref=f13e247] [cursor=pointer]
+        - generic [ref=f13e249]:
+          - generic [ref=f13e250]:
+            - heading "Round 1" [level=3] [ref=f13e251]
+            - generic [ref=f13e252]: In Progress
+            - generic [ref=f13e253]:
+              - button "🔀 Swap" [ref=f13e254] [cursor=pointer]
+              - button "↺ Undo" [ref=f13e255] [cursor=pointer]
+          - table [ref=f13e257]:
+            - rowgroup [ref=f13e258]:
+              - row [ref=f13e259]:
+                - columnheader "Table" [ref=f13e260]
+                - columnheader "Player 1" [ref=f13e261]
+                - columnheader [ref=f13e262]
+                - columnheader "Player 2" [ref=f13e263]
+                - columnheader "Result" [ref=f13e264]
+                - columnheader [ref=f13e265]
+            - rowgroup [ref=f13e266]:
+              - row [ref=f13e267]:
+                - cell "1" [ref=f13e268]
+                - cell "Dave" [ref=f13e269]
+                - cell "vs" [ref=f13e270]
+                - cell "Bob" [ref=f13e271]
+                - cell "P1 Win" [ref=f13e272]
+                - cell [ref=f13e274]
+              - row [ref=f13e275]:
+                - cell "2" [ref=f13e276]
+                - cell "Carol" [ref=f13e277]
+                - cell "vs" [ref=f13e278]
+                - cell "Alice" [ref=f13e279]
+                - cell "Pending" [ref=f13e280]
+                - cell [ref=f13e282]:
+                  - button "Set Result" [active] [ref=f13e283] [cursor=pointer]
+      - generic [ref=f13e285]:
+        - heading "Set Result" [level=3] [ref=f13e286]
+        - paragraph [ref=f13e287]: Who won this match?
+        - generic [ref=f13e288]:
+          - button "Carol Won" [ref=f13e289] [cursor=pointer]
+          - button "Alice Won" [ref=f13e290] [cursor=pointer]
+          - button "All Draw" [ref=f13e291] [cursor=pointer]
+          - button "Cancel" [ref=f13e292] [cursor=pointer]
+  - contentinfo [ref=f13e133]:
+    - generic [ref=f13e134]:
+      - generic [ref=f13e135]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f13e136] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f13e137] [cursor=pointer]:
+        - /url: /privacy-policy

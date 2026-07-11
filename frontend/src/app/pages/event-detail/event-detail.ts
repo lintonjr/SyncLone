@@ -151,18 +151,15 @@ export class EventDetailComponent implements OnInit {
     return ev.players!.filter(p => ids.has(p.id));
   }
 
-  tiebreakers(player: Player): { omw: string; gw: string; ogw: string } {
+  tiebreakers(player: Player): { mw: string; oap: string; ow: string } {
     const opps = this.opponents(player.id);
-    const avg = (list: Player[]) =>
-      list.length ? list.reduce((s, o) => s + this.mwp(o), 0) / list.length : 0;
-    const omw = avg(opps);
-    const gw = this.mwp(player);
-    const ogwList = opps.flatMap(o => this.opponents(o.id).filter(x => x.id !== player.id));
-    const ogw = ogwList.length ? ogwList.reduce((s, o) => s + this.mwp(o), 0) / ogwList.length : 0;
+    const mw = this.mwp(player);
+    const oap = opps.length ? opps.reduce((s, o) => s + o.points, 0) / opps.length : 0;
+    const ow = opps.length ? opps.reduce((s, o) => s + this.mwp(o), 0) / opps.length : 0;
     return {
-      omw: (omw * 100).toFixed(1) + '%',
-      gw: gw.toFixed(2),
-      ogw: (ogw * 100).toFixed(1) + '%',
+      mw: (mw * 100).toFixed(1) + '%',
+      oap: oap.toFixed(2),
+      ow: (ow * 100).toFixed(1) + '%',
     };
   }
 
@@ -228,6 +225,45 @@ export class EventDetailComponent implements OnInit {
 
   startRoundTab() {
     this.startRound();
+  }
+
+  undoRound() {
+    const roundNum = this.event()?.current_round;
+    if (!confirm(`Desfazer a Rodada ${roundNum}? Todos os pareamentos e resultados desta rodada serão removidos e ela poderá ser pareada novamente. Esta ação não pode ser desfeita.`)) return;
+    this.actionLoading.set(true);
+    this.eventSvc.undoRound(this.id()).subscribe({
+      next: () => { this.load(); this.actionLoading.set(false); },
+      error: (err) => { this.error.set(err.error?.error || 'Failed to undo round'); this.actionLoading.set(false); },
+    });
+  }
+
+  swapMode = signal(false);
+  swapSelected = signal<string | null>(null);
+
+  toggleSwapMode() {
+    this.swapMode.update((v) => !v);
+    this.swapSelected.set(null);
+  }
+
+  selectForSwap(playerId: string) {
+    if (!this.swapMode()) return;
+    const current = this.swapSelected();
+    if (!current) { this.swapSelected.set(playerId); return; }
+    if (current === playerId) { this.swapSelected.set(null); return; }
+    this.actionLoading.set(true);
+    this.eventSvc.swapPlayers(this.id(), current, playerId).subscribe({
+      next: () => {
+        this.load();
+        this.swapMode.set(false);
+        this.swapSelected.set(null);
+        this.actionLoading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err.error?.error || 'Failed to swap players');
+        this.swapSelected.set(null);
+        this.actionLoading.set(false);
+      },
+    });
   }
 
   dropPlayer(playerId: string) {

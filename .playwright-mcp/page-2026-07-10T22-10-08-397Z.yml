@@ -1,0 +1,27 @@
+- generic [ref=f3e2]:
+  - navigation [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link "⚡ Mercadia" [ref=f3e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f3e7]: ⚡
+          - generic [ref=f3e8]: Mercadia
+        - generic [ref=f3e9]:
+          - link "Home" [ref=f3e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f3e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f3e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f3e13]:
+        - button "Open notifications" [ref=f3e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f3e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f3e24] [cursor=pointer]
+  - main [ref=f3e27]
+  - contentinfo [ref=f3e28]:
+    - generic [ref=f3e29]:
+      - generic [ref=f3e30]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f3e31] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f3e32] [cursor=pointer]:
+        - /url: /privacy-policy

@@ -1,0 +1,115 @@
+- generic [ref=f13e2]:
+  - navigation [ref=f13e3]:
+    - generic [ref=f13e4]:
+      - generic [ref=f13e5]:
+        - link "⚡ Mercadia" [ref=f13e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f13e7]: ⚡
+          - generic [ref=f13e8]: Mercadia
+        - generic [ref=f13e9]:
+          - link "Home" [ref=f13e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f13e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f13e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f13e13]:
+        - button "Open notifications" [ref=f13e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f13e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f13e24] [cursor=pointer]
+  - main [ref=f13e27]:
+    - generic [ref=f13e29]:
+      - generic [ref=f13e30]:
+        - generic [ref=f13e31]: M
+        - generic [ref=f13e32]:
+          - generic [ref=f13e33]:
+            - generic [ref=f13e34]:
+              - generic [ref=f13e35]: MTG
+              - generic [ref=f13e36]: upcoming
+            - heading "Scoring Test Event" [level=1] [ref=f13e37]
+            - paragraph [ref=f13e38]: 📅 Jul 14, 2026 · 8:00 PM • 📍 TBD • 👥 4 Players
+          - generic [ref=f13e41]:
+            - button "▶ Start Round 1" [ref=f13e42] [cursor=pointer]
+            - button "✓ Finish" [ref=f13e43] [cursor=pointer]
+            - button "Add Player" [ref=f13e44] [cursor=pointer]
+            - link "Edit Event" [ref=f13e48] [cursor=pointer]:
+              - /url: /event/84382740-fbf2-4a0a-9c06-2d85a6603a8a/edit
+            - button "Delete Event" [ref=f13e52] [cursor=pointer]
+      - generic [ref=f13e57]:
+        - button "Standings (4)" [ref=f13e58] [cursor=pointer]
+        - button "Results (0 rounds)" [ref=f13e59] [cursor=pointer]
+      - table [ref=f13e62]:
+        - rowgroup [ref=f13e63]:
+          - row [ref=f13e64]:
+            - columnheader "Rank" [ref=f13e65]
+            - columnheader "Player" [ref=f13e66]
+            - columnheader "Deck" [ref=f13e67]
+            - columnheader "W" [ref=f13e68]
+            - columnheader "L" [ref=f13e69]
+            - columnheader "D" [ref=f13e70]
+            - columnheader "Pts" [ref=f13e71]
+            - columnheader "Tie Breaker ⓘ" [ref=f13e72]:
+              - generic [ref=f13e73]:
+                - text: Tie Breaker
+                - generic [ref=f13e74]: ⓘ
+            - columnheader [ref=f13e75]
+        - rowgroup [ref=f13e76]:
+          - row [ref=f13e77]:
+            - cell "1st" [ref=f13e78]
+            - cell "Carol" [ref=f13e80]
+            - cell [ref=f13e81]:
+              - button "+ Set Deck" [ref=f13e82] [cursor=pointer]
+            - cell "0" [ref=f13e83]
+            - cell "0" [ref=f13e84]
+            - cell "0" [ref=f13e85]
+            - cell [ref=f13e86]:
+              - strong [ref=f13e87]: "0"
+            - cell "33.3% | 0.00 | 0.0%" [ref=f13e88]
+            - cell [ref=f13e89]:
+              - button "Drop" [ref=f13e90] [cursor=pointer]
+          - row [ref=f13e91]:
+            - cell "2nd" [ref=f13e92]
+            - cell "Bob" [ref=f13e94]
+            - cell [ref=f13e95]:
+              - button "+ Set Deck" [ref=f13e96] [cursor=pointer]
+            - cell "0" [ref=f13e97]
+            - cell "0" [ref=f13e98]
+            - cell "0" [ref=f13e99]
+            - cell [ref=f13e100]:
+              - strong [ref=f13e101]: "0"
+            - cell "33.3% | 0.00 | 0.0%" [ref=f13e102]
+            - cell [ref=f13e103]:
+              - button "Drop" [ref=f13e104] [cursor=pointer]
+          - row [ref=f13e105]:
+            - cell "3rd" [ref=f13e106]
+            - cell "Dave" [ref=f13e108]
+            - cell [ref=f13e109]:
+              - button "+ Set Deck" [ref=f13e110] [cursor=pointer]
+            - cell "0" [ref=f13e111]
+            - cell "0" [ref=f13e112]
+            - cell "0" [ref=f13e113]
+            - cell [ref=f13e114]:
+              - strong [ref=f13e115]: "0"
+            - cell "33.3% | 0.00 | 0.0%" [ref=f13e116]
+            - cell [ref=f13e117]:
+              - button "Drop" [ref=f13e118] [cursor=pointer]
+          - row [ref=f13e119]:
+            - cell "4th" [ref=f13e120]
+            - cell "Alice" [ref=f13e122]
+            - cell [ref=f13e123]:
+              - button "+ Set Deck" [ref=f13e124] [cursor=pointer]
+            - cell "0" [ref=f13e125]
+            - cell "0" [ref=f13e126]
+            - cell "0" [ref=f13e127]
+            - cell [ref=f13e128]:
+              - strong [ref=f13e129]: "0"
+            - cell "33.3% | 0.00 | 0.0%" [ref=f13e130]
+            - cell [ref=f13e131]:
+              - button "Drop" [ref=f13e132] [cursor=pointer]
+  - contentinfo [ref=f13e133]:
+    - generic [ref=f13e134]:
+      - generic [ref=f13e135]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f13e136] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f13e137] [cursor=pointer]:
+        - /url: /privacy-policy

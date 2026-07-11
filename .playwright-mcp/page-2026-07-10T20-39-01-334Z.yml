@@ -1,0 +1,538 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - generic:
+              - link:
+                - /url: /
+          - generic:
+            - link:
+              - /url: /
+              - button: Home
+            - link:
+              - /url: /events
+              - button: My Events
+            - link:
+              - /url: /create
+              - button: Create Event
+            - generic:
+              - button:
+                - generic: Install App
+          - generic:
+            - button:
+              - button
+            - button [expanded]:
+              - button:
+                - generic: LI
+            - button:
+              - generic: Toggle theme
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=2]: n=manaus
+                  - paragraph: MTG - Commander500
+                  - generic:
+                    - generic: 7/10/2026, 1:00:00 AM
+                    - generic: Manaus
+                    - generic:
+                      - generic:
+                        - generic: "+17"
+                        - generic: 25 Players
+                - generic:
+                  - button:
+                    - generic: Add Player
+                  - button:
+                    - generic: Share
+                  - button:
+                    - generic: Register
+                  - button
+                  - button:
+                    - generic: Toggle visibility
+                  - button:
+                    - button
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - tablist:
+                - tab [selected]:
+                  - generic: Standings
+                - tab:
+                  - generic: Results
+                - tab:
+                  - generic: Pairings
+          - tabpanel:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - table:
+                      - rowgroup:
+                        - row:
+                          - columnheader: Rank
+                          - columnheader: Player
+                          - columnheader: Deck
+                          - columnheader: Points
+                          - columnheader: Wins
+                          - columnheader: Losses
+                          - columnheader: Draws
+                          - columnheader:
+                            - generic: Tie Breaker
+                          - columnheader: Actions
+                      - rowgroup:
+                        - row:
+                          - cell: 1st
+                          - cell:
+                            - generic: Damien Darhk
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "3"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell:
+                            - generic: 100.0% | 1.67 | 33.3%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 2nd
+                          - cell:
+                            - generic: Kamala Khan
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "3"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell:
+                            - generic: 100.0% | 1.50 | 50.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 3rd
+                          - cell:
+                            - generic: Hank Hall
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "3"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell:
+                            - generic: 100.0% | 1.50 | 50.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 4th
+                          - cell:
+                            - generic: Bucky Barnes
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "3"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell:
+                            - generic: 100.0% | 1.50 | 50.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 5th
+                          - cell:
+                            - generic: Wade Wilson
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "3"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell:
+                            - generic: 100.0% | 1.50 | 50.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 6th
+                          - cell:
+                            - generic: Bruce Banner
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "3"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell:
+                            - generic: 100.0% | 0.83 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 7th
+                          - cell:
+                            - generic: Green Goblin
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell:
+                            - generic: 0.0% | 1.80 | 40.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 8th
+                          - cell:
+                            - generic: Eve Eden
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell:
+                            - generic: 0.0% | 1.80 | 40.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 9th
+                          - cell:
+                            - generic: Happy Hogan
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell:
+                            - generic: 0.0% | 0.60 | 0.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 10th
+                          - cell:
+                            - generic: Miles Morales
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "1"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell:
+                            - generic: 0.0% | 0.60 | 0.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 11th
+                          - cell:
+                            - generic: Arthur Allen
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 1.00 | 33.3%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 12th
+                          - cell:
+                            - generic: Stephen Strange
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.83 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 13th
+                          - cell:
+                            - generic: Loki Laufeyson
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.83 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 14th
+                          - cell:
+                            - generic: Curt Connors
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.60 | 20.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 15th
+                          - cell:
+                            - generic: Tom Thumb
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.60 | 20.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 16th
+                          - cell:
+                            - generic: Fin Fang Foom
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.60 | 20.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 17th
+                          - cell:
+                            - generic: Reed Richards
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.60 | 20.0%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 18th
+                          - cell:
+                            - generic: Richard Rider
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.50 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 19th
+                          - cell:
+                            - generic: Sue Storm
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.50 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 20th
+                          - cell:
+                            - generic: Otto Octavius
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.50 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 21st
+                          - cell:
+                            - generic: Jessica Jones
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.50 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 22nd
+                          - cell:
+                            - generic: Pepper Potts
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.50 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 23rd
+                          - cell:
+                            - generic: Viv Vision
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.50 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 24th
+                          - cell:
+                            - generic: Matt Murdock
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.50 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+                        - row:
+                          - cell: 25th
+                          - cell:
+                            - generic: Peter Parker
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "1"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.50 | 16.7%
+                          - cell:
+                            - generic:
+                              - button
+    - generic:
+      - contentinfo:
+        - generic:
+          - generic:
+            - button: Report a Bug
+          - generic:
+            - link:
+              - /url: /terms-of-service.md
+              - text: Terms of Service
+          - generic:
+            - link:
+              - /url: /privacy-policy.md
+              - text: Privacy Policy
+          - generic:
+            - link:
+              - /url: https://ko-fi.com/manasync
+              - text: Donate ♥
+          - generic: © 2025 ManaSync
+  - generic:
+    - button:
+      - generic: Support Us
+  - menu "Open user menu" [active] [ref=e192]:
+    - generic [ref=e194]:
+      - menuitem "Profile" [ref=e195]
+      - menuitem "Log out" [ref=e197]

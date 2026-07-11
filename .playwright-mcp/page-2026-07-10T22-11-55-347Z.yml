@@ -1,0 +1,206 @@
+- generic [ref=f3e2]:
+  - navigation [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link "⚡ Mercadia" [ref=f3e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f3e7]: ⚡
+          - generic [ref=f3e8]: Mercadia
+        - generic [ref=f3e9]:
+          - link "Home" [ref=f3e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f3e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f3e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f3e13]:
+        - button "Open notifications" [ref=f3e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f3e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f3e24] [cursor=pointer]
+  - main [ref=f3e27]:
+    - generic [ref=f3e821]:
+      - generic [ref=f3e822]:
+        - generic [ref=f3e823]: M
+        - generic [ref=f3e824]:
+          - generic [ref=f3e825]:
+            - generic [ref=f3e826]:
+              - generic [ref=f3e827]: MTG
+              - generic [ref=f3e828]: Commander500
+              - generic [ref=f3e829]: ongoing
+            - heading "Mercadia 500 cedh" [level=1] [ref=f3e830]
+            - paragraph [ref=f3e831]: 📅 Jul 10, 2026 · 2:35 PM • 📍 manaus • 👥 18 Players
+          - generic [ref=f3e834]:
+            - button "▶ Start Round 3" [ref=f3e835] [cursor=pointer]
+            - button "✓ Finish" [ref=f3e836] [cursor=pointer]
+            - button "Add Player" [ref=f3e837] [cursor=pointer]
+            - button "👻 Add Phantom" [ref=f3e841] [cursor=pointer]
+            - link "Edit Event" [ref=f3e842] [cursor=pointer]:
+              - /url: /event/73f8f046-a671-476b-997b-e10d4b44fa1a/edit
+            - button "Delete Event" [ref=f3e846] [cursor=pointer]
+      - generic [ref=f3e851]:
+        - button "Standings (18)" [ref=f3e852] [cursor=pointer]
+        - button "Pairings" [ref=f3e853] [cursor=pointer]
+        - button "Results (2 rounds)" [ref=f3e854] [cursor=pointer]
+      - generic [ref=f3e855]:
+        - generic [ref=f3e856]:
+          - generic [ref=f3e857]:
+            - heading "Round 1" [level=3] [ref=f3e858]
+            - generic [ref=f3e859]: Completed
+          - generic [ref=f3e860]:
+            - generic [ref=f3e861]:
+              - generic [ref=f3e862]:
+                - generic [ref=f3e863]: Pod 1
+                - generic [ref=f3e864]: Done
+              - generic [ref=f3e865]:
+                - generic [ref=f3e866]:
+                  - generic [ref=f3e867]: "1"
+                  - generic [ref=f3e868]: Fernanda Ribeiro
+                  - generic [ref=f3e869]: LOSS
+                - generic [ref=f3e870]:
+                  - generic [ref=f3e871]: "2"
+                  - generic [ref=f3e872]: Isabela Cavalcanti
+                  - generic [ref=f3e873]: WIN
+                - generic [ref=f3e874]:
+                  - generic [ref=f3e875]: "3"
+                  - generic [ref=f3e876]: Thiago Cavalcanti
+                  - generic [ref=f3e877]: LOSS
+                - generic [ref=f3e878]:
+                  - generic [ref=f3e879]: "4"
+                  - generic [ref=f3e880]: Carlos Moreira
+                  - generic [ref=f3e881]: LOSS
+            - generic [ref=f3e882]:
+              - generic [ref=f3e883]:
+                - generic [ref=f3e884]: Pod 2
+                - generic [ref=f3e885]: Done
+              - generic [ref=f3e886]:
+                - generic [ref=f3e887]:
+                  - generic [ref=f3e888]: "1"
+                  - generic [ref=f3e889]: Ugo Cardoso
+                  - generic [ref=f3e890]: WIN
+                - generic [ref=f3e891]:
+                  - generic [ref=f3e892]: "2"
+                  - generic [ref=f3e893]: Gustavo Carvalho
+                  - generic [ref=f3e894]: LOSS
+                - generic [ref=f3e895]:
+                  - generic [ref=f3e896]: "3"
+                  - generic [ref=f3e897]: Rafael Nascimento
+                  - generic [ref=f3e898]: LOSS
+                - generic [ref=f3e899]:
+                  - generic [ref=f3e900]: "4"
+                  - generic [ref=f3e901]: Paula Nascimento
+                  - generic [ref=f3e902]: LOSS
+            - generic [ref=f3e903]:
+              - generic [ref=f3e904]:
+                - generic [ref=f3e905]: Pod 3
+                - generic [ref=f3e906]: BYE
+              - generic [ref=f3e908]:
+                - generic [ref=f3e909]: "1"
+                - generic [ref=f3e910]: Helena Costa
+                - generic [ref=f3e911]: BYE
+            - generic [ref=f3e912]:
+              - generic [ref=f3e913]:
+                - generic [ref=f3e914]: Pod 4
+                - generic [ref=f3e915]: BYE
+              - generic [ref=f3e917]:
+                - generic [ref=f3e918]: "1"
+                - generic [ref=f3e919]: Wendy Moreira
+                - generic [ref=f3e920]: BYE
+        - generic [ref=f3e921]:
+          - generic [ref=f3e922]:
+            - heading "Round 2" [level=3] [ref=f3e923]
+            - generic [ref=f3e924]: In Progress
+            - generic [ref=f3e925]:
+              - button "🔀 Swap" [ref=f3e926] [cursor=pointer]
+              - button "↺ Undo" [ref=f3e927] [cursor=pointer]
+          - generic [ref=f3e928]:
+            - generic [ref=f3e929]:
+              - generic [ref=f3e930]:
+                - generic [ref=f3e931]: Pod 1
+                - button "Set Result" [ref=f3e932] [cursor=pointer]
+              - generic [ref=f3e933]:
+                - generic [ref=f3e934]:
+                  - generic [ref=f3e935]: "1"
+                  - generic [ref=f3e936]: Helena Costa
+                - generic [ref=f3e937]:
+                  - generic [ref=f3e938]: "2"
+                  - generic [ref=f3e939]: Isabela Cavalcanti
+                - generic [ref=f3e940]:
+                  - generic [ref=f3e941]: "3"
+                  - generic [ref=f3e942]: Wendy Moreira
+                - generic [ref=f3e943]:
+                  - generic [ref=f3e944]: "4"
+                  - generic [ref=f3e945]: Ugo Cardoso
+            - generic [ref=f3e946]:
+              - generic [ref=f3e947]:
+                - generic [ref=f3e948]: Pod 2
+                - button "Set Result" [ref=f3e949] [cursor=pointer]
+              - generic [ref=f3e950]:
+                - generic [ref=f3e951]:
+                  - generic [ref=f3e952]: "1"
+                  - generic [ref=f3e953]: Helena Freitas
+                - generic [ref=f3e954]:
+                  - generic [ref=f3e955]: "2"
+                  - generic [ref=f3e956]: Gustavo Carvalho
+                - generic [ref=f3e957]:
+                  - generic [ref=f3e958]: "3"
+                  - generic [ref=f3e959]: Hígor Melo
+                - generic [ref=f3e960]:
+                  - generic [ref=f3e961]: "4"
+                  - generic [ref=f3e962]: Rafael Nascimento
+            - generic [ref=f3e963]:
+              - generic [ref=f3e964]:
+                - generic [ref=f3e965]: Pod 3
+                - button "Set Result" [ref=f3e966] [cursor=pointer]
+              - generic [ref=f3e967]:
+                - generic [ref=f3e968]:
+                  - generic [ref=f3e969]: "1"
+                  - generic [ref=f3e970]: Hígor Carvalho
+                - generic [ref=f3e971]:
+                  - generic [ref=f3e972]: "2"
+                  - generic [ref=f3e973]: Fernanda Ribeiro
+                - generic [ref=f3e974]:
+                  - generic [ref=f3e975]: "3"
+                  - generic [ref=f3e976]: Ursula Moreira
+                - generic [ref=f3e977]:
+                  - generic [ref=f3e978]: "4"
+                  - generic [ref=f3e979]: Carlos Moreira
+            - generic [ref=f3e980]:
+              - generic [ref=f3e981]:
+                - generic [ref=f3e982]: Pod 4
+                - button "Set Result" [ref=f3e983] [cursor=pointer]
+              - generic [ref=f3e984]:
+                - generic [ref=f3e985]:
+                  - generic [ref=f3e986]: "1"
+                  - generic [ref=f3e987]: Sofia Ferreira
+                - generic [ref=f3e988]:
+                  - generic [ref=f3e989]: "2"
+                  - generic [ref=f3e990]: Keila Nunes
+                - generic [ref=f3e991]:
+                  - generic [ref=f3e992]: "3"
+                  - generic [ref=f3e993]: Paula Nascimento
+                - generic [ref=f3e994]:
+                  - generic [ref=f3e995]: "4"
+                  - generic [ref=f3e996]: Caio Silva
+            - generic [ref=f3e997]:
+              - generic [ref=f3e998]:
+                - generic [ref=f3e999]: Pod 5
+                - generic [ref=f3e1000]: BYE
+              - generic [ref=f3e1002]:
+                - generic [ref=f3e1003]: "1"
+                - generic [ref=f3e1004]: Thiago Cavalcanti
+                - generic [ref=f3e1005]: BYE
+            - generic [ref=f3e1006]:
+              - generic [ref=f3e1007]:
+                - generic [ref=f3e1008]: Pod 6
+                - generic [ref=f3e1009]: BYE
+              - generic [ref=f3e1011]:
+                - generic [ref=f3e1012]: "1"
+                - generic [ref=f3e1013]: Sofia Ribeiro
+                - generic [ref=f3e1014]: BYE
+  - contentinfo [ref=f3e28]:
+    - generic [ref=f3e29]:
+      - generic [ref=f3e30]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f3e31] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f3e32] [cursor=pointer]:
+        - /url: /privacy-policy

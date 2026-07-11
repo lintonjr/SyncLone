@@ -109,6 +109,7 @@ router.post('/', auth, upload.single('thumbnail'), async (req, res) => {
       name, description, city, address, online, date, game, format,
       pairing_method, playoff_structure, allow_byes, test_event,
       collaborative_deck, async_draws, confirm_players, pod_size,
+      points_win, points_draw, points_loss,
     } = req.body;
     if (!name || !date || !game)
       return res.status(400).json({ error: 'Name, date and game are required' });
@@ -116,19 +117,23 @@ router.post('/', auth, upload.single('thumbnail'), async (req, res) => {
     const id = uuidv4();
     const thumbnail = req.file ? `/uploads/${req.file.filename}` : null;
     const podSizeVal = parseInt(pod_size) || 2;
+    const pointsWinVal = points_win !== undefined && points_win !== '' ? parseInt(points_win) : 3;
+    const pointsDrawVal = points_draw !== undefined && points_draw !== '' ? parseInt(points_draw) : 1;
+    const pointsLossVal = points_loss !== undefined && points_loss !== '' ? parseInt(points_loss) : 0;
 
     await db.run(`
       INSERT INTO events (id, name, description, city, address, online, thumbnail, date, game, format,
         pairing_method, playoff_structure, allow_byes, test_event, collaborative_deck, async_draws,
-        confirm_players, pod_size, owner_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        confirm_players, pod_size, points_win, points_draw, points_loss, owner_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       id, name, description || null, city || null, address || null,
       parseBool(online) ? 1 : 0, thumbnail, date, game, format || null,
       pairing_method || 'swiss', playoff_structure || 'none',
       parseBool(allow_byes) ? 1 : 0, parseBool(test_event) ? 1 : 0,
       parseBool(collaborative_deck) ? 1 : 0, parseBool(async_draws) ? 1 : 0,
-      parseBool(confirm_players) ? 1 : 0, podSizeVal, req.user.id,
+      parseBool(confirm_players) ? 1 : 0, podSizeVal,
+      pointsWinVal, pointsDrawVal, pointsLossVal, req.user.id,
     ]);
 
     res.status(201).json(await db.get('SELECT * FROM events WHERE id = ?', [id]));
@@ -146,6 +151,7 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
       name, description, city, address, online, date, game, format,
       pairing_method, pod_size, playoff_structure, allow_byes, test_event,
       collaborative_deck, async_draws, confirm_players, status,
+      points_win, points_draw, points_loss,
     } = req.body;
 
     const thumbnail = req.file ? `/uploads/${req.file.filename}` : event.thumbnail;
@@ -153,7 +159,8 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
     await db.run(`
       UPDATE events SET name=?, description=?, city=?, address=?, online=?, thumbnail=?, date=?,
       game=?, format=?, pairing_method=?, pod_size=?, playoff_structure=?, allow_byes=?, test_event=?,
-      collaborative_deck=?, async_draws=?, confirm_players=?, status=? WHERE id=?
+      collaborative_deck=?, async_draws=?, confirm_players=?, points_win=?, points_draw=?, points_loss=?,
+      status=? WHERE id=?
     `, [
       name || event.name, description ?? event.description, city ?? event.city,
       address ?? event.address, online !== undefined ? (parseBool(online) ? 1 : 0) : event.online,
@@ -165,6 +172,9 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
       collaborative_deck !== undefined ? (parseBool(collaborative_deck) ? 1 : 0) : event.collaborative_deck,
       async_draws !== undefined ? (parseBool(async_draws) ? 1 : 0) : event.async_draws,
       confirm_players !== undefined ? (parseBool(confirm_players) ? 1 : 0) : event.confirm_players,
+      points_win !== undefined && points_win !== '' ? parseInt(points_win) : event.points_win,
+      points_draw !== undefined && points_draw !== '' ? parseInt(points_draw) : event.points_draw,
+      points_loss !== undefined && points_loss !== '' ? parseInt(points_loss) : event.points_loss,
       status || event.status, req.params.id,
     ]);
 
@@ -344,7 +354,7 @@ router.post('/:id/rounds', auth, async (req, res) => {
       );
       // Auto-award bye win
       if (isBye && pod.player1) {
-        await db.run('UPDATE event_players SET wins=wins+1, points=points+3 WHERE id=?', [pod.player1.id]);
+        await db.run('UPDATE event_players SET wins=wins+1, points=points+? WHERE id=?', [event.points_win, pod.player1.id]);
       }
     }
 
@@ -354,6 +364,105 @@ router.post('/:id/rounds', auth, async (req, res) => {
     const round = await db.get('SELECT * FROM rounds WHERE id = ?', [roundId]);
     const pairings = await db.query('SELECT * FROM pairings WHERE round_id = ?', [roundId]);
     res.status(201).json({ round, pairings });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Auth: undo the latest round (owner only) — removes its pairings/results and reopens it for re-pairing
+router.post('/:id/rounds/undo', auth, async (req, res) => {
+  try {
+    const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (event.current_round <= 0) return res.status(400).json({ error: 'No round to undo' });
+
+    const round = await db.get(
+      'SELECT * FROM rounds WHERE event_id = ? AND round_number = ?',
+      [req.params.id, event.current_round]
+    );
+    if (!round) return res.status(404).json({ error: 'Round not found' });
+
+    const undoWin  = async (id) => id && await db.run('UPDATE event_players SET wins=wins-1,   points=points-? WHERE id=?', [event.points_win, id]);
+    const undoLoss = async (id) => id && await db.run('UPDATE event_players SET losses=losses-1, points=points-? WHERE id=?', [event.points_loss, id]);
+    const undoDraw = async (id) => id && await db.run('UPDATE event_players SET draws=draws-1,  points=points-? WHERE id=?', [event.points_draw, id]);
+    const winnerKey = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
+
+    const pairings = await db.query('SELECT * FROM pairings WHERE round_id = ?', [round.id]);
+    for (const p of pairings) {
+      if (!p.result) continue;
+      const allPlayers = [p.player1_id, p.player2_id, p.player3_id, p.player4_id].filter(Boolean);
+      if (p.result === 'draw') {
+        for (const id of allPlayers) await undoDraw(id);
+      } else if (p.result === 'bye') {
+        for (const id of allPlayers) await undoWin(id);
+      } else if (winnerKey[p.result]) {
+        const winnerId = p[winnerKey[p.result]];
+        for (const id of allPlayers) {
+          if (id === winnerId) await undoWin(id);
+          else await undoLoss(id);
+        }
+      }
+    }
+
+    await db.run('DELETE FROM pairings WHERE round_id = ?', [round.id]);
+    await db.run('DELETE FROM rounds WHERE id = ?', [round.id]);
+
+    const newRoundNumber = event.current_round - 1;
+    await db.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?', [
+      newRoundNumber,
+      newRoundNumber === 0 ? 'upcoming' : 'ongoing',
+      req.params.id,
+    ]);
+
+    res.json(await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Auth: swap two players' seats within the current round (owner only) — both matches must still be pending
+router.post('/:id/rounds/swap', auth, async (req, res) => {
+  try {
+    const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (event.current_round <= 0) return res.status(400).json({ error: 'No active round' });
+
+    const { player1Id, player2Id } = req.body;
+    if (!player1Id || !player2Id || player1Id === player2Id)
+      return res.status(400).json({ error: 'Two different players are required' });
+
+    const round = await db.get(
+      'SELECT * FROM rounds WHERE event_id = ? AND round_number = ?',
+      [req.params.id, event.current_round]
+    );
+    if (!round) return res.status(404).json({ error: 'Round not found' });
+
+    const pairings = await db.query('SELECT * FROM pairings WHERE round_id = ?', [round.id]);
+    const seatCols = ['player1_id', 'player2_id', 'player3_id', 'player4_id'];
+    const locate = (playerId) => {
+      for (const p of pairings) {
+        for (const col of seatCols) {
+          if (p[col] === playerId) return { pairing: p, col };
+        }
+      }
+      return null;
+    };
+
+    const loc1 = locate(player1Id);
+    const loc2 = locate(player2Id);
+    if (!loc1 || !loc2) return res.status(404).json({ error: 'Player not found in current round' });
+    if (loc1.pairing.result || loc2.pairing.result)
+      return res.status(400).json({ error: 'Cannot swap players whose match already has a result' });
+
+    if (loc1.pairing.id === loc2.pairing.id) {
+      await db.run(
+        `UPDATE pairings SET ${loc1.col} = ?, ${loc2.col} = ? WHERE id = ?`,
+        [player2Id, player1Id, loc1.pairing.id]
+      );
+    } else {
+      await db.run(`UPDATE pairings SET ${loc1.col} = ? WHERE id = ?`, [player2Id, loc1.pairing.id]);
+      await db.run(`UPDATE pairings SET ${loc2.col} = ? WHERE id = ?`, [player1Id, loc2.pairing.id]);
+    }
+
+    res.json({ message: 'Players swapped' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -371,12 +480,12 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
     const valid = ['player1', 'player2', 'player3', 'player4', 'draw', 'bye'];
     if (!valid.includes(result)) return res.status(400).json({ error: 'Invalid result' });
 
-    const win  = async (id) => id && await db.run('UPDATE event_players SET wins=wins+1,   points=points+3 WHERE id=?', [id]);
-    const loss = async (id) => id && await db.run('UPDATE event_players SET losses=losses+1             WHERE id=?', [id]);
-    const draw = async (id) => id && await db.run('UPDATE event_players SET draws=draws+1,  points=points+1 WHERE id=?', [id]);
-    const undoWin  = async (id) => id && await db.run('UPDATE event_players SET wins=wins-1,   points=points-3 WHERE id=?', [id]);
-    const undoLoss = async (id) => id && await db.run('UPDATE event_players SET losses=losses-1             WHERE id=?', [id]);
-    const undoDraw = async (id) => id && await db.run('UPDATE event_players SET draws=draws-1,  points=points-1 WHERE id=?', [id]);
+    const win  = async (id) => id && await db.run('UPDATE event_players SET wins=wins+1,   points=points+? WHERE id=?', [event.points_win, id]);
+    const loss = async (id) => id && await db.run('UPDATE event_players SET losses=losses+1, points=points+? WHERE id=?', [event.points_loss, id]);
+    const draw = async (id) => id && await db.run('UPDATE event_players SET draws=draws+1,  points=points+? WHERE id=?', [event.points_draw, id]);
+    const undoWin  = async (id) => id && await db.run('UPDATE event_players SET wins=wins-1,   points=points-? WHERE id=?', [event.points_win, id]);
+    const undoLoss = async (id) => id && await db.run('UPDATE event_players SET losses=losses-1, points=points-? WHERE id=?', [event.points_loss, id]);
+    const undoDraw = async (id) => id && await db.run('UPDATE event_players SET draws=draws-1,  points=points-? WHERE id=?', [event.points_draw, id]);
 
     // Collect all players in this pod (non-null)
     const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);

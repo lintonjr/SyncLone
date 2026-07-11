@@ -21,6 +21,9 @@ export interface TournamentEvent {
   async_draws: number;
   confirm_players: number;
   pod_size: number;
+  points_win: number;
+  points_draw: number;
+  points_loss: number;
   status: string;
   current_round: number;
   owner_id: string;
@@ -122,6 +125,18 @@ export class EventService {
 
   startRound(eventId: string) {
     return this.http.post(`${this.API}/${eventId}/rounds`, {}, { headers: this.authHeaders() });
+  }
+
+  undoRound(eventId: string) {
+    return this.http.post(`${this.API}/${eventId}/rounds/undo`, {}, { headers: this.authHeaders() });
+  }
+
+  swapPlayers(eventId: string, player1Id: string, player2Id: string) {
+    return this.http.post(
+      `${this.API}/${eventId}/rounds/swap`,
+      { player1Id, player2Id },
+      { headers: this.authHeaders() }
+    );
   }
 
   submitResult(eventId: string, pairingId: string, result: string) {

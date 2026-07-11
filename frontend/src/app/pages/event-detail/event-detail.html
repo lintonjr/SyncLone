@@ -119,7 +119,24 @@
                   <th class="col-num">L</th>
                   <th class="col-num">D</th>
                   <th class="col-pts">Pts</th>
-                  <th class="col-tb">Tiebreakers</th>
+                  <th class="col-tb">
+                    <span class="tb-header">
+                      Tie Breaker
+                      <span class="tb-info-icon">
+                        ⓘ
+                        <div class="tb-info-popover">
+                          <h4>Understanding Tie Breakers</h4>
+                          <p>When players have equal points, tiebreakers are used in this order:</p>
+                          <ul>
+                            <li><strong>Match Win %:</strong> Percentage of matches won</li>
+                            <li><strong>Opponents' Avg Points:</strong> Average points of all opponents faced</li>
+                            <li><strong>Opponents' Win %:</strong> Average win percentage of all opponents</li>
+                          </ul>
+                          <p class="tb-info-footer">Higher values in each category indicate stronger performance.</p>
+                        </div>
+                      </span>
+                    </span>
+                  </th>
                   @if (isOwner()) { <th class="col-actions"></th> }
                 </tr>
               </thead>
@@ -150,7 +167,7 @@
                     <td class="col-num"><span class="stat-draw">{{ player.draws }}</span></td>
                     <td class="col-pts"><strong class="pts-val">{{ player.points }}</strong></td>
                     <td class="col-tb tiebreaker-cell">
-                      {{ tiebreakers(player).omw }} | {{ tiebreakers(player).gw }} | {{ tiebreakers(player).ogw }}
+                      {{ tiebreakers(player).mw }} | {{ tiebreakers(player).oap }} | {{ tiebreakers(player).ow }}
                     </td>
                     @if (isOwner()) {
                       <td class="col-actions actions-cell">
@@ -189,6 +206,18 @@
               <span class="round-status-badge" [class]="currentRoundPairings()!.round.status !== 'completed' ? 'status-open' : 'status-done'">
                 {{ currentRoundPairings()!.round.status !== 'completed' ? 'In Progress' : 'Completed' }}
               </span>
+              @if (isOwner() && event()!.status !== 'completed') {
+                <div class="round-actions">
+                  @if (currentRoundPairings()!.pairings.some(p => !p.result)) {
+                    <button class="btn swap-toggle-btn" [class.active]="swapMode()" (click)="toggleSwapMode()" [disabled]="actionLoading()" title="Swap players between pods">
+                      🔀 Swap
+                    </button>
+                  }
+                  <button class="btn undo-btn" (click)="undoRound()" [disabled]="actionLoading()" title="Undo this round">
+                    ↺ Undo
+                  </button>
+                </div>
+              }
             </div>
             @if (isPodMode()) {
               <div class="pods-grid">
@@ -196,7 +225,7 @@
                   <div class="pod-card card">
                     <div class="pod-header">
                       <span class="pod-label">Pod {{ p.table_number }}</span>
-                      @if (!p.result && isOwner()) {
+                      @if (!p.result && isOwner() && !swapMode()) {
                         <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
                       }
                       @if (p.result) {
@@ -216,6 +245,10 @@
                                  podPlayerResult(p, player.slot) === 'draw' ? 'DRAW' :
                                  podPlayerResult(p, player.slot) === 'bye' ? 'BYE' : 'LOSS' }}
                             </span>
+                          } @else if (isOwner() && swapMode()) {
+                            <button class="swap-select-btn" [class.selected]="swapSelected() === player.id" (click)="selectForSwap(player.id)" title="Select for swap">
+                              ↺
+                            </button>
                           }
                         </div>
                       }
@@ -240,9 +273,19 @@
                     @for (p of currentRoundPairings()!.pairings; track p.id) {
                       <tr>
                         <td class="col-table table-num">{{ p.table_number }}</td>
-                        <td class="player-col">{{ p.p1_name }}</td>
+                        <td class="player-col">
+                          {{ p.p1_name }}
+                          @if (!p.result && isOwner() && swapMode()) {
+                            <button class="swap-select-btn" [class.selected]="swapSelected() === p.player1_id" (click)="selectForSwap(p.player1_id)" title="Select for swap">↺</button>
+                          }
+                        </td>
                         <td class="col-vs vs">vs</td>
-                        <td class="player-col">{{ p.p2_name || 'Bye' }}</td>
+                        <td class="player-col">
+                          {{ p.p2_name || 'Bye' }}
+                          @if (!p.result && isOwner() && swapMode() && p.player2_id) {
+                            <button class="swap-select-btn" [class.selected]="swapSelected() === p.player2_id" (click)="selectForSwap(p.player2_id)" title="Select for swap">↺</button>
+                          }
+                        </td>
                         <td>
                           <span class="result-pill" [class]="p.result ? 'pill-done' : 'pill-pending'">
                             {{ resultLabel(p.result) }}
@@ -250,7 +293,7 @@
                         </td>
                         @if (isOwner()) {
                           <td>
-                            @if (!p.result) {
+                            @if (!p.result && !swapMode()) {
                               <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
                             }
                           </td>
@@ -277,6 +320,18 @@
                 <span class="round-status-badge" [class]="round.status !== 'completed' ? 'status-open' : 'status-done'">
                   {{ round.status !== 'completed' ? 'In Progress' : 'Completed' }}
                 </span>
+                @if (isOwner() && event()!.status !== 'completed' && round.round_number === event()!.current_round) {
+                  <div class="round-actions">
+                    @if (round.pairings.some(p => !p.result)) {
+                      <button class="btn swap-toggle-btn" [class.active]="swapMode()" (click)="toggleSwapMode()" [disabled]="actionLoading()" title="Swap players between pods">
+                        🔀 Swap
+                      </button>
+                    }
+                    <button class="btn undo-btn" (click)="undoRound()" [disabled]="actionLoading()" title="Undo this round">
+                      ↺ Undo
+                    </button>
+                  </div>
+                }
               </div>
               @if (isPodMode()) {
                 <!-- POD VIEW -->
@@ -285,7 +340,7 @@
                     <div class="pod-card card">
                       <div class="pod-header">
                         <span class="pod-label">Pod {{ p.table_number }}</span>
-                        @if (!p.result && isOwner()) {
+                        @if (!p.result && isOwner() && !(swapMode() && round.round_number === event()!.current_round)) {
                           <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
                         }
                         @if (p.result) {
@@ -305,6 +360,10 @@
                                    podPlayerResult(p, player.slot) === 'draw' ? 'DRAW' :
                                    podPlayerResult(p, player.slot) === 'bye' ? 'BYE' : 'LOSS' }}
                               </span>
+                            } @else if (isOwner() && swapMode() && round.round_number === event()!.current_round) {
+                              <button class="swap-select-btn" [class.selected]="swapSelected() === player.id" (click)="selectForSwap(player.id)" title="Select for swap">
+                                ↺
+                              </button>
                             }
                           </div>
                         }
@@ -330,9 +389,19 @@
                       @for (p of round.pairings; track p.id) {
                         <tr>
                           <td class="col-table table-num">{{ p.table_number }}</td>
-                          <td class="player-col">{{ p.p1_name }}</td>
+                          <td class="player-col">
+                            {{ p.p1_name }}
+                            @if (!p.result && isOwner() && swapMode() && round.round_number === event()!.current_round) {
+                              <button class="swap-select-btn" [class.selected]="swapSelected() === p.player1_id" (click)="selectForSwap(p.player1_id)" title="Select for swap">↺</button>
+                            }
+                          </td>
                           <td class="col-vs vs">vs</td>
-                          <td class="player-col">{{ p.p2_name || 'Bye' }}</td>
+                          <td class="player-col">
+                            {{ p.p2_name || 'Bye' }}
+                            @if (!p.result && isOwner() && swapMode() && round.round_number === event()!.current_round && p.player2_id) {
+                              <button class="swap-select-btn" [class.selected]="swapSelected() === p.player2_id" (click)="selectForSwap(p.player2_id)" title="Select for swap">↺</button>
+                            }
+                          </td>
                           <td>
                             <span class="result-pill" [class]="p.result ? 'pill-done' : 'pill-pending'">
                               {{ resultLabel(p.result) }}
@@ -340,7 +409,7 @@
                           </td>
                           @if (isOwner()) {
                             <td>
-                              @if (!p.result) {
+                              @if (!p.result && !(swapMode() && round.round_number === event()!.current_round)) {
                                 <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
                               }
                             </td>

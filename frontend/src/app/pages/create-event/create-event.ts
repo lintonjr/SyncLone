@@ -27,6 +27,9 @@ export class CreateEventComponent implements OnInit {
   format = signal('');
   pairingMethod = signal('swiss');
   podSize = signal(2);
+  pointsWin = signal(3);
+  pointsDraw = signal(1);
+  pointsLoss = signal(0);
   playoffStructure = signal('none');
   allowByes = signal(false);
   testEvent = signal(false);
@@ -68,6 +71,9 @@ export class CreateEventComponent implements OnInit {
           this.format.set(ev.format ?? '');
           this.pairingMethod.set(ev.pairing_method);
           this.podSize.set(ev.pod_size ?? 2);
+          this.pointsWin.set(ev.points_win ?? 3);
+          this.pointsDraw.set(ev.points_draw ?? 1);
+          this.pointsLoss.set(ev.points_loss ?? 0);
           this.playoffStructure.set(ev.playoff_structure);
           this.allowByes.set(!!ev.allow_byes);
           this.testEvent.set(!!ev.test_event);
@@ -124,6 +130,9 @@ export class CreateEventComponent implements OnInit {
     fd.append('format', this.format());
     fd.append('pairing_method', this.pairingMethod());
     fd.append('pod_size', String(this.podSize()));
+    fd.append('points_win', String(this.pointsWin()));
+    fd.append('points_draw', String(this.pointsDraw()));
+    fd.append('points_loss', String(this.pointsLoss()));
     fd.append('playoff_structure', this.playoffStructure());
     fd.append('allow_byes', String(this.allowByes()));
     fd.append('test_event', String(this.testEvent()));
