@@ -1,0 +1,90 @@
+- generic [ref=f46e2]:
+  - navigation [ref=f46e3]:
+    - generic [ref=f46e4]:
+      - generic [ref=f46e5]:
+        - link "⚡ Mercadia" [ref=f46e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f46e7]: ⚡
+          - generic [ref=f46e8]: Mercadia
+        - generic [ref=f46e9]:
+          - link "Home" [ref=f46e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f46e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f46e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f46e13]:
+        - button "Open notifications" [ref=f46e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f46e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f46e24] [cursor=pointer]
+  - main [ref=f46e27]:
+    - generic [ref=f46e28]:
+      - generic [ref=f46e352]:
+        - generic [ref=f46e353]:
+          - generic [ref=f46e354]: M
+          - generic [ref=f46e355]:
+            - generic [ref=f46e356]:
+              - generic [ref=f46e357]:
+                - generic [ref=f46e358]: MTG
+                - generic [ref=f46e359]: Commander
+                - generic [ref=f46e360]: ongoing
+              - heading "Playoff Test Pod2" [level=1] [ref=f46e361]
+              - paragraph [ref=f46e362]: 📅 Jul 11, 2026 · 10:50 AM • 📍 Manaus • 👥 6 Players
+            - generic [ref=f46e365]:
+              - button "✓ Finish" [ref=f46e366] [cursor=pointer]
+              - button "Add Player" [ref=f46e367] [cursor=pointer]
+              - link "Edit Event" [ref=f46e371] [cursor=pointer]:
+                - /url: /event/2fac9489-5ea6-4e3a-9551-22fecade2d54/edit
+              - button "Delete Event" [ref=f46e375] [cursor=pointer]
+        - generic [ref=f46e380]:
+          - button "Standings (6)" [ref=f46e381] [cursor=pointer]
+          - button "Pairings" [ref=f46e382] [cursor=pointer]
+          - button "Results (1 rounds)" [ref=f46e383] [cursor=pointer]
+        - generic [ref=f46e385]:
+          - generic [ref=f46e386]:
+            - heading "🏆 Playoffs — Semifinals" [level=3] [ref=f46e387]
+            - generic [ref=f46e388]: In Progress
+            - generic [ref=f46e389]:
+              - button "🔀 Swap" [ref=f46e390] [cursor=pointer]
+              - button "↺ Undo" [ref=f46e391] [cursor=pointer]
+          - table [ref=f46e393]:
+            - rowgroup [ref=f46e394]:
+              - row [ref=f46e395]:
+                - columnheader "Table" [ref=f46e396]
+                - columnheader "Player 1" [ref=f46e397]
+                - columnheader [ref=f46e398]
+                - columnheader "Player 2" [ref=f46e399]
+                - columnheader "Result" [ref=f46e400]
+                - columnheader [ref=f46e401]
+            - rowgroup [ref=f46e402]:
+              - row [ref=f46e403]:
+                - cell "1" [ref=f46e404]
+                - cell "Seed1" [ref=f46e405]
+                - cell "vs" [ref=f46e406]
+                - cell "Seed4" [ref=f46e407]
+                - cell "Draw" [ref=f46e408]
+                - cell [ref=f46e410]:
+                  - button "Edit Result" [ref=f46e411] [cursor=pointer]
+              - row [ref=f46e415]:
+                - cell "2" [ref=f46e416]
+                - cell "Seed2" [ref=f46e417]
+                - cell "vs" [ref=f46e418]
+                - cell "Seed3" [ref=f46e419]
+                - cell "Pending" [ref=f46e420]
+                - cell [ref=f46e422]:
+                  - button "Set Result" [active] [ref=f46e423] [cursor=pointer]
+      - generic [ref=f46e425]:
+        - heading "Set Result" [level=3] [ref=f46e426]
+        - paragraph [ref=f46e427]: Who won this match?
+        - generic [ref=f46e428]:
+          - button "Seed2 Won" [ref=f46e429] [cursor=pointer]
+          - button "Seed3 Won" [ref=f46e430] [cursor=pointer]
+          - button "All Draw" [ref=f46e431] [cursor=pointer]
+          - button "Cancel" [ref=f46e432] [cursor=pointer]
+  - contentinfo [ref=f46e31]:
+    - generic [ref=f46e32]:
+      - generic [ref=f46e33]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f46e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f46e35] [cursor=pointer]:
+        - /url: /privacy-policy

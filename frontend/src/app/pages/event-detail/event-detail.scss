@@ -854,6 +854,21 @@
   letter-spacing: 0.02em;
 }
 
+/* ── Playoffs ── */
+.playoffs-btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: #facc15;
+  &:hover { border-color: #facc15; background: rgba(250, 204, 21, 0.1); }
+}
+
+.champion-banner {
+  margin-top: 8px;
+  font-size: 15px;
+  color: #facc15;
+}
+
 /* ── Phantom button ── */
 .phantom-btn {
   font-size: 12px;

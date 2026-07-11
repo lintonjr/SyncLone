@@ -1,0 +1,66 @@
+- generic [active] [ref=f10e1]:
+  - generic [ref=f10e2]:
+    - banner [ref=f10e288]:
+      - generic [ref=f10e289]:
+        - link [ref=f10e292] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=f10e293]
+        - generic [ref=f10e294]:
+          - link [ref=f10e295] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=f10e296]
+          - link [ref=f10e297] [cursor=pointer]:
+            - /url: /events
+            - button "My Events" [ref=f10e298]
+          - link [ref=f10e299] [cursor=pointer]:
+            - /url: /create
+            - button "Create Event" [ref=f10e300]
+        - generic [ref=f10e301]:
+          - button "Open notifications" [ref=f10e302]:
+            - button [ref=f10e303]
+          - button "Open user menu" [ref=f10e308]:
+            - button [ref=f10e309]
+          - button "Toggle theme" [ref=f10e312]
+    - generic [ref=f10e318]:
+      - heading "Settings" [level=1] [ref=f10e319]
+      - generic [ref=f10e322]:
+        - generic [ref=f10e323]:
+          - generic [ref=f10e324]: LI
+          - generic [ref=f10e327]: Change Profile Image
+        - generic [ref=f10e329]:
+          - button [ref=f10e330]
+          - button [disabled] [ref=f10e336]
+      - generic [ref=f10e343]:
+        - heading "Account Information" [level=2] [ref=f10e344]
+        - generic [ref=f10e345]:
+          - generic [ref=f10e346]:
+            - generic [ref=f10e352]:
+              - paragraph [ref=f10e353]: Display Name
+              - paragraph [ref=f10e355]: LintonJr
+            - button "Change Display Name" [ref=f10e356]
+          - generic [ref=f10e358]:
+            - generic [ref=f10e363]:
+              - paragraph [ref=f10e364]: Email
+              - paragraph [ref=f10e365]: lintonjr@hotmail.com
+            - button [disabled]
+          - generic [ref=f10e366]:
+            - generic [ref=f10e371]:
+              - paragraph [ref=f10e372]: Password
+              - paragraph [ref=f10e373]: "********"
+            - button [disabled]
+          - generic [ref=f10e374]:
+            - generic [ref=f10e379]:
+              - paragraph [ref=f10e380]: Delete Account
+              - paragraph [ref=f10e381]: Request to delete your account and all of your data
+            - button [disabled]
+    - contentinfo [ref=f10e383]:
+      - generic [ref=f10e384]:
+        - button "Report a Bug" [ref=f10e388]
+        - link "Terms of Service" [ref=f10e390] [cursor=pointer]:
+          - /url: /terms-of-service.md
+        - link "Privacy Policy" [ref=f10e392] [cursor=pointer]:
+          - /url: /privacy-policy.md
+        - link "Donate ♥" [ref=f10e394] [cursor=pointer]:
+          - /url: https://ko-fi.com/manasync
+        - generic [ref=f10e395]: © 2025 ManaSync
+  - button "Support Us" [ref=f10e400] [cursor=pointer]

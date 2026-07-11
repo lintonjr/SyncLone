@@ -81,8 +81,9 @@
         <label>Pairing Method</label>
         <select [value]="pairingMethod()" (change)="pairingMethod.set($any($event.target).value)">
           <option value="swiss">Swiss (Performance Pairing)</option>
-          <option value="round-robin">Round Robin</option>
-          <option value="single-elimination">Single Elimination</option>
+          <option value="swiss-less-repetition">Swiss (Less Repetition)</option>
+          <option value="avoid-repetition">Avoid Repetition</option>
+          <option value="random">Random</option>
         </select>
       </div>
       <div class="form-field">
@@ -99,8 +100,9 @@
       <label>Playoff Structure</label>
       <select [value]="playoffStructure()" (change)="playoffStructure.set($any($event.target).value)">
         <option value="none">No Playoffs</option>
-        <option value="top4">Top 4</option>
-        <option value="top8">Top 8</option>
+        <option value="top4">Top 4 Playoff</option>
+        <option value="top8">Top 8 Playoff</option>
+        <option value="top16">Top 16 Playoff</option>
       </select>
     </div>
 

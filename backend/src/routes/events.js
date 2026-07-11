@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const auth = require('../middleware/auth');
-const { generateSwissPairings } = require('../services/pairing');
+const { generateSwissPairings, seedPlayoffPods } = require('../services/pairing');
 
 const storage = multer.diskStorage({
   destination: path.join(__dirname, '../../uploads'),
@@ -20,6 +20,39 @@ async function pendingResultsCount(roundId) {
     [roundId]
   );
   return row.cnt;
+}
+
+// Insert pairings for a set of pods and auto-award any bye wins
+async function insertPods(eventId, roundId, pods, pointsWin) {
+  for (let idx = 0; idx < pods.length; idx++) {
+    const pod = pods[idx];
+    const isBye = !pod.player2;
+    await db.run(
+      `INSERT INTO pairings (id, round_id, event_id, player1_id, player2_id, player3_id, player4_id, table_number, result)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        uuidv4(), roundId, eventId,
+        pod.player1?.id ?? null,
+        pod.player2?.id ?? null,
+        pod.player3?.id ?? null,
+        pod.player4?.id ?? null,
+        idx + 1,
+        isBye ? 'bye' : null,
+      ]
+    );
+    if (isBye && pod.player1) {
+      await db.run('UPDATE event_players SET wins=wins+1, points=points+? WHERE id=?', [pointsWin, pod.player1.id]);
+    }
+  }
+}
+
+// "Final" (1 pod) / "Semifinals" (2 pods) / "Quarterfinals" (4 pods) / "Round of N" otherwise
+function playoffStageLabel(playerCount, podSize) {
+  const pods = Math.ceil(playerCount / podSize);
+  if (pods <= 1) return 'Final';
+  if (pods <= 2) return 'Semifinals';
+  if (pods <= 4) return 'Quarterfinals';
+  return `Round of ${playerCount}`;
 }
 
 // Auth: get my events (must be before /:id)
@@ -303,12 +336,114 @@ router.post('/:id/finish', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Auth: start next round (owner only)
+// Auth: start next round, or advance the playoff bracket if the current round is a playoff round (owner only)
 router.post('/:id/rounds', auth, async (req, res) => {
   try {
     const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
     if (!event) return res.status(404).json({ error: 'Event not found' });
     if (event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+
+    let currentRoundRow = null;
+    if (event.current_round > 0) {
+      currentRoundRow = await db.get(
+        'SELECT * FROM rounds WHERE event_id = ? AND round_number = ?',
+        [req.params.id, event.current_round]
+      );
+      if (currentRoundRow) {
+        const pending = await pendingResultsCount(currentRoundRow.id);
+        if (pending > 0) {
+          return res.status(400).json({ error: `Round ${event.current_round} ainda tem ${pending} resultado(s) pendente(s)` });
+        }
+      }
+    }
+
+    const podSize = event.pod_size || 2;
+    const roundNumber = event.current_round + 1;
+
+    if (currentRoundRow?.is_playoff) {
+      // Advance the bracket: resolve who advances out of each pod of the current playoff round
+      const prevPairings = await db.query(
+        'SELECT * FROM pairings WHERE round_id = ? ORDER BY table_number',
+        [currentRoundRow.id]
+      );
+      const winnerKey = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
+      const advancers = [];
+      for (const p of prevPairings) {
+        if (p.result === 'bye' || p.result === 'draw') {
+          // Bye: the lone player advances. Draw: the better-seeded slot (player1) advances as tiebreak.
+          advancers.push(p.player1_id);
+        } else if (winnerKey[p.result]) {
+          advancers.push(p[winnerKey[p.result]]);
+        }
+      }
+
+      if (advancers.length <= 1) {
+        const championId = advancers[0] ?? null;
+        await db.run("UPDATE events SET status = 'completed', champion_id = ? WHERE id = ?", [championId, req.params.id]);
+        return res.json({ champion: true, event: await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]) });
+      }
+
+      const advancingPlayers = await db.query(
+        `SELECT * FROM event_players WHERE id IN (${advancers.map(() => '?').join(',')})`,
+        advancers
+      );
+      const orderedAdvancers = advancers.map((id) => advancingPlayers.find((p) => p.id === id));
+
+      const roundId = uuidv4();
+      const stage = playoffStageLabel(orderedAdvancers.length, podSize);
+      await db.run(
+        'INSERT INTO rounds (id, event_id, round_number, is_playoff, playoff_stage) VALUES (?, ?, ?, 1, ?)',
+        [roundId, req.params.id, roundNumber, stage]
+      );
+      await insertPods(req.params.id, roundId, seedPlayoffPods(orderedAdvancers, podSize), event.points_win);
+
+      await db.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
+        [roundNumber, 'ongoing', req.params.id]);
+
+      return res.status(201).json({
+        round: await db.get('SELECT * FROM rounds WHERE id = ?', [roundId]),
+        pairings: await db.query('SELECT * FROM pairings WHERE round_id = ?', [roundId]),
+      });
+    }
+
+    // Regular Swiss round
+    const players = await db.query(
+      "SELECT * FROM event_players WHERE event_id = ? AND status = 'active'",
+      [req.params.id]
+    );
+    if (players.length < 2) return res.status(400).json({ error: 'Need at least 2 active players' });
+
+    const roundId = uuidv4();
+    await db.run('INSERT INTO rounds (id, event_id, round_number) VALUES (?, ?, ?)',
+      [roundId, req.params.id, roundNumber]);
+
+    const pastPairings = await db.query('SELECT * FROM pairings WHERE event_id = ?', [req.params.id]);
+    const pods = generateSwissPairings(players, podSize, event.pairing_method, pastPairings);
+    await insertPods(req.params.id, roundId, pods, event.points_win);
+
+    await db.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
+      [roundNumber, 'ongoing', req.params.id]);
+
+    const round = await db.get('SELECT * FROM rounds WHERE id = ?', [roundId]);
+    const pairings = await db.query('SELECT * FROM pairings WHERE round_id = ?', [roundId]);
+    res.status(201).json({ round, pairings });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Auth: start the playoff bracket (owner only) — seeds top N players by standings into a single-elimination round
+router.post('/:id/playoffs/start', auth, async (req, res) => {
+  try {
+    const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (!event.playoff_structure || event.playoff_structure === 'none')
+      return res.status(400).json({ error: 'This event has no playoff structure configured' });
+
+    const existingPlayoffRound = await db.get(
+      'SELECT id FROM rounds WHERE event_id = ? AND is_playoff = 1 LIMIT 1',
+      [req.params.id]
+    );
+    if (existingPlayoffRound) return res.status(400).json({ error: 'Playoffs already started' });
 
     if (event.current_round > 0) {
       const currentRoundRow = await db.get(
@@ -323,40 +458,24 @@ router.post('/:id/rounds', auth, async (req, res) => {
       }
     }
 
-    const players = await db.query(
-      "SELECT * FROM event_players WHERE event_id = ? AND status = 'active'",
+    const PLAYOFF_SIZES = { top4: 4, top8: 8, top16: 16 };
+    const N = PLAYOFF_SIZES[event.playoff_structure] ?? 8;
+    const standings = await db.query(
+      "SELECT * FROM event_players WHERE event_id = ? AND status = 'active' ORDER BY points DESC, wins DESC",
       [req.params.id]
     );
-    if (players.length < 2) return res.status(400).json({ error: 'Need at least 2 active players' });
+    const seeds = standings.slice(0, Math.min(N, standings.length));
+    if (seeds.length < 2) return res.status(400).json({ error: 'Not enough active players for playoffs' });
 
     const podSize = event.pod_size || 2;
     const roundNumber = event.current_round + 1;
     const roundId = uuidv4();
-    await db.run('INSERT INTO rounds (id, event_id, round_number) VALUES (?, ?, ?)',
-      [roundId, req.params.id, roundNumber]);
-
-    const pods = generateSwissPairings(players, podSize);
-    for (let idx = 0; idx < pods.length; idx++) {
-      const pod = pods[idx];
-      const isBye = !pod.player2;
-      await db.run(
-        `INSERT INTO pairings (id, round_id, event_id, player1_id, player2_id, player3_id, player4_id, table_number, result)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          uuidv4(), roundId, req.params.id,
-          pod.player1?.id ?? null,
-          pod.player2?.id ?? null,
-          pod.player3?.id ?? null,
-          pod.player4?.id ?? null,
-          idx + 1,
-          isBye ? 'bye' : null,
-        ]
-      );
-      // Auto-award bye win
-      if (isBye && pod.player1) {
-        await db.run('UPDATE event_players SET wins=wins+1, points=points+? WHERE id=?', [event.points_win, pod.player1.id]);
-      }
-    }
+    const stage = playoffStageLabel(seeds.length, podSize);
+    await db.run(
+      'INSERT INTO rounds (id, event_id, round_number, is_playoff, playoff_stage) VALUES (?, ?, ?, 1, ?)',
+      [roundId, req.params.id, roundNumber, stage]
+    );
+    await insertPods(req.params.id, roundId, seedPlayoffPods(seeds, podSize), event.points_win);
 
     await db.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
       [roundNumber, 'ongoing', req.params.id]);

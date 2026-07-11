@@ -1,0 +1,83 @@
+- generic [ref=f45e2]:
+  - navigation [ref=f45e3]:
+    - generic [ref=f45e4]:
+      - generic [ref=f45e5]:
+        - link "⚡ Mercadia" [ref=f45e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f45e7]: ⚡
+          - generic [ref=f45e8]: Mercadia
+        - generic [ref=f45e9]:
+          - link "Home" [ref=f45e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f45e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f45e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f45e13]:
+        - button "Open notifications" [ref=f45e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f45e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f45e24] [cursor=pointer]
+  - main [ref=f45e27]:
+    - generic [ref=f45e33]:
+      - generic [ref=f45e196]:
+        - generic [ref=f45e197]:
+          - generic [ref=f45e198]: M
+          - generic [ref=f45e199]:
+            - generic [ref=f45e200]:
+              - generic [ref=f45e201]:
+                - generic [ref=f45e202]: MTG
+                - generic [ref=f45e203]: Commander500
+                - generic [ref=f45e204]: ongoing
+              - heading "Playoff Test Pod4" [level=1] [ref=f45e205]
+              - paragraph [ref=f45e206]: 📅 Jul 11, 2026 · 10:49 AM • 📍 Manaus • 👥 8 Players
+            - generic [ref=f45e209]:
+              - button "✓ Finish" [ref=f45e210] [cursor=pointer]
+              - button "Add Player" [ref=f45e211] [cursor=pointer]
+              - link "Edit Event" [ref=f45e215] [cursor=pointer]:
+                - /url: /event/917f664b-72d0-42db-b4fc-be46c5963e1d/edit
+              - button "Delete Event" [ref=f45e219] [cursor=pointer]
+        - generic [ref=f45e224]:
+          - button "Standings (8)" [ref=f45e225] [cursor=pointer]
+          - button "Pairings" [ref=f45e226] [cursor=pointer]
+          - button "Results (1 rounds)" [ref=f45e227] [cursor=pointer]
+        - generic [ref=f45e229]:
+          - generic [ref=f45e230]:
+            - heading "🏆 Playoffs — Final" [level=3] [ref=f45e231]
+            - generic [ref=f45e232]: In Progress
+            - generic [ref=f45e233]:
+              - button "🔀 Swap" [ref=f45e234] [cursor=pointer]
+              - button "↺ Undo" [ref=f45e235] [cursor=pointer]
+          - generic [ref=f45e237]:
+            - generic [ref=f45e238]:
+              - generic [ref=f45e239]: Pod 1
+              - button "Set Result" [active] [ref=f45e240] [cursor=pointer]
+            - generic [ref=f45e241]:
+              - generic [ref=f45e242]:
+                - generic [ref=f45e243]: "1"
+                - generic [ref=f45e244]: Alice
+              - generic [ref=f45e245]:
+                - generic [ref=f45e246]: "2"
+                - generic [ref=f45e247]: Bob
+              - generic [ref=f45e248]:
+                - generic [ref=f45e249]: "3"
+                - generic [ref=f45e250]: Carol
+              - generic [ref=f45e251]:
+                - generic [ref=f45e252]: "4"
+                - generic [ref=f45e253]: Dave
+      - generic [ref=f45e255]:
+        - heading "Set Result" [level=3] [ref=f45e256]
+        - paragraph [ref=f45e257]: Who won this pod?
+        - generic [ref=f45e258]:
+          - button "Alice Won" [ref=f45e259] [cursor=pointer]
+          - button "Bob Won" [ref=f45e260] [cursor=pointer]
+          - button "Carol Won" [ref=f45e261] [cursor=pointer]
+          - button "Dave Won" [ref=f45e262] [cursor=pointer]
+          - button "All Draw" [ref=f45e263] [cursor=pointer]
+          - button "Cancel" [ref=f45e264] [cursor=pointer]
+  - contentinfo [ref=f45e28]:
+    - generic [ref=f45e29]:
+      - generic [ref=f45e30]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f45e31] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f45e32] [cursor=pointer]:
+        - /url: /privacy-policy

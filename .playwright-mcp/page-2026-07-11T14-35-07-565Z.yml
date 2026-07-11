@@ -1,0 +1,160 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - generic:
+              - link:
+                - /url: /
+          - generic:
+            - link:
+              - /url: /
+              - button: Home
+            - link:
+              - /url: /events
+              - button: My Events
+            - link:
+              - /url: /create
+              - button: Create Event
+            - generic:
+              - button:
+                - generic: Install App
+          - generic:
+            - button:
+              - button
+            - button:
+              - button:
+                - generic: LI
+            - button:
+              - generic: Toggle theme
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - heading [level=1]: Create New Event
+            - generic:
+              - generic:
+                - generic: Event Name
+                - generic:
+                  - textbox:
+                    - /placeholder: Event Name (3-50 characters)
+              - generic:
+                - generic:
+                  - generic: City
+                  - generic:
+                    - generic:
+                      - textbox:
+                        - /placeholder: Type to search cities...
+                    - generic:
+                      - generic:
+                        - generic:
+                          - checkbox
+                          - checkbox
+                        - generic: Online
+                - generic:
+                  - generic: Address (Optional)
+                  - generic:
+                    - textbox:
+                      - /placeholder: Street address, building, etc.
+              - generic:
+                - generic: Description (Optional)
+                - generic:
+                  - generic:
+                    - textbox:
+                      - /placeholder: Event description (max 100 characters)
+              - generic:
+                - generic: Event Thumbnail
+                - generic:
+                  - generic:
+                    - generic: No image selected
+                    - generic:
+                      - button
+                      - button
+              - generic:
+                - generic:
+                  - generic: Date
+                  - generic:
+                    - button: Pick a date
+                - generic:
+                  - generic: Time
+                  - generic:
+                    - textbox:
+                      - /placeholder: "--:--"
+                - generic:
+                  - generic: Game
+                  - generic:
+                    - combobox:
+                      - generic: Select a game
+                  - combobox
+              - generic:
+                - generic:
+                  - generic: Pairing Method
+                  - generic:
+                    - combobox [expanded]:
+                      - generic: Swiss (Performance Pairing)
+                  - combobox
+                - generic:
+                  - generic: Playoff Structure
+                  - generic:
+                    - combobox:
+                      - generic: No Playoffs
+                  - combobox
+              - generic:
+                - heading [level=3]: Optionals
+              - generic:
+                - generic:
+                  - generic:
+                    - checkbox
+                    - checkbox
+                  - generic: Allow Byes
+                - generic:
+                  - generic:
+                    - checkbox
+                    - checkbox
+                  - generic: Test Event
+                - generic:
+                  - generic:
+                    - checkbox
+                    - checkbox
+                  - generic: Collaborative Deck Registering
+                - generic:
+                  - generic:
+                    - checkbox
+                    - checkbox
+                  - generic: Asynchronous Draws
+                - generic:
+                  - generic:
+                    - checkbox
+                    - checkbox
+                  - generic: Confirm New Players
+              - generic:
+                - button:
+                  - generic: Let's go!
+    - generic:
+      - contentinfo:
+        - generic:
+          - generic:
+            - button: Report a Bug
+          - generic:
+            - link:
+              - /url: /terms-of-service.md
+              - text: Terms of Service
+          - generic:
+            - link:
+              - /url: /privacy-policy.md
+              - text: Privacy Policy
+          - generic:
+            - link:
+              - /url: https://ko-fi.com/manasync
+              - text: Donate ♥
+          - generic: © 2025 ManaSync
+  - generic:
+    - button:
+      - generic: Support Us
+  - listbox [ref=f28e201]:
+    - generic [ref=f28e202]:
+      - option "Swiss (Performance Pairing)" [active] [selected] [ref=f28e203]
+      - option "Swiss (Less Repetition)" [ref=f28e207]
+      - option "Avoid Repetition" [ref=f28e210]
+      - option "Random" [ref=f28e213]

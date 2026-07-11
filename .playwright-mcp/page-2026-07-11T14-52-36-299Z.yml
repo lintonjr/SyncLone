@@ -1,0 +1,100 @@
+- generic [ref=f46e2]:
+  - navigation [ref=f46e3]:
+    - generic [ref=f46e4]:
+      - generic [ref=f46e5]:
+        - link "⚡ Mercadia" [ref=f46e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f46e7]: ⚡
+          - generic [ref=f46e8]: Mercadia
+        - generic [ref=f46e9]:
+          - link "Home" [ref=f46e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f46e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f46e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f46e13]:
+        - button "Open notifications" [ref=f46e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f46e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f46e24] [cursor=pointer]
+  - main [ref=f46e27]:
+    - generic [ref=f46e600]:
+      - generic [ref=f46e601]:
+        - generic [ref=f46e602]: M
+        - generic [ref=f46e603]:
+          - generic [ref=f46e604]:
+            - generic [ref=f46e605]:
+              - generic [ref=f46e606]: MTG
+              - generic [ref=f46e607]: Commander
+              - generic [ref=f46e608]: ongoing
+            - heading "Playoff Test Pod2" [level=1] [ref=f46e609]
+            - paragraph [ref=f46e610]: 📅 Jul 11, 2026 · 10:50 AM • 📍 Manaus • 👥 6 Players
+          - generic [ref=f46e613]:
+            - button "▶ Advance Playoffs" [ref=f46e614] [cursor=pointer]
+            - button "✓ Finish" [ref=f46e615] [cursor=pointer]
+            - button "Add Player" [ref=f46e616] [cursor=pointer]
+            - link "Edit Event" [ref=f46e620] [cursor=pointer]:
+              - /url: /event/2fac9489-5ea6-4e3a-9551-22fecade2d54/edit
+            - button "Delete Event" [ref=f46e624] [cursor=pointer]
+      - generic [ref=f46e629]:
+        - button "Standings (6)" [ref=f46e630] [cursor=pointer]
+        - button "Pairings" [ref=f46e631] [cursor=pointer]
+        - button "Results (2 rounds)" [ref=f46e632] [cursor=pointer]
+      - generic [ref=f46e633]:
+        - generic [ref=f46e634]:
+          - generic [ref=f46e635]:
+            - heading "🏆 Playoffs — Semifinals" [level=3] [ref=f46e636]
+            - generic [ref=f46e637]: Completed
+          - table [ref=f46e639]:
+            - rowgroup [ref=f46e640]:
+              - row [ref=f46e641]:
+                - columnheader "Table" [ref=f46e642]
+                - columnheader "Player 1" [ref=f46e643]
+                - columnheader [ref=f46e644]
+                - columnheader "Player 2" [ref=f46e645]
+                - columnheader "Result" [ref=f46e646]
+                - columnheader [ref=f46e647]
+            - rowgroup [ref=f46e648]:
+              - row [ref=f46e649]:
+                - cell "1" [ref=f46e650]
+                - cell "Seed1" [ref=f46e651]
+                - cell "vs" [ref=f46e652]
+                - cell "Seed4" [ref=f46e653]
+                - cell "Draw" [ref=f46e654]
+                - cell [ref=f46e656]
+              - row [ref=f46e657]:
+                - cell "2" [ref=f46e658]
+                - cell "Seed2" [ref=f46e659]
+                - cell "vs" [ref=f46e660]
+                - cell "Seed3" [ref=f46e661]
+                - cell "P2 Win" [ref=f46e662]
+                - cell [ref=f46e664]
+        - generic [ref=f46e665]:
+          - generic [ref=f46e666]:
+            - heading "🏆 Playoffs — Final" [level=3] [ref=f46e667]
+            - generic [ref=f46e668]: Completed
+            - button "↺ Undo" [ref=f46e670] [cursor=pointer]
+          - table [ref=f46e672]:
+            - rowgroup [ref=f46e673]:
+              - row [ref=f46e674]:
+                - columnheader "Table" [ref=f46e675]
+                - columnheader "Player 1" [ref=f46e676]
+                - columnheader [ref=f46e677]
+                - columnheader "Player 2" [ref=f46e678]
+                - columnheader "Result" [ref=f46e679]
+                - columnheader [ref=f46e680]
+            - rowgroup [ref=f46e681]:
+              - row [ref=f46e682]:
+                - cell "1" [ref=f46e683]
+                - cell "Seed1" [ref=f46e684]
+                - cell "vs" [ref=f46e685]
+                - cell "Seed3" [ref=f46e686]
+                - cell "P2 Win" [ref=f46e687]
+                - cell [ref=f46e689]
+  - contentinfo [ref=f46e31]:
+    - generic [ref=f46e32]:
+      - generic [ref=f46e33]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f46e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f46e35] [cursor=pointer]:
+        - /url: /privacy-policy

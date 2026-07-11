@@ -1,0 +1,138 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - generic:
+              - link:
+                - /url: /
+          - generic:
+            - link:
+              - /url: /
+              - button: Home
+            - link:
+              - /url: /events
+              - button: My Events
+            - link:
+              - /url: /create
+              - button: Create Event
+            - generic:
+              - button:
+                - generic: Install App
+          - generic:
+            - button:
+              - button
+            - button:
+              - button:
+                - generic: LI
+            - button:
+              - generic: Toggle theme
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=2]: Commander Ilimitado de Sábado na IG
+                  - paragraph: MTG - Commander
+                  - generic:
+                    - generic: 7/11/2026, 1:30:00 PM
+                    - generic: Brasília, Brazil
+                    - generic:
+                      - generic:
+                        - generic: LI
+                        - generic: 2 Players
+                - generic:
+                  - button:
+                    - generic: Share
+                  - button:
+                    - generic: Companion
+                  - button [expanded]:
+                    - generic: Drop
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - tablist:
+                - tab [selected]:
+                  - generic: Standings
+          - tabpanel:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - table:
+                      - rowgroup:
+                        - row:
+                          - columnheader: Rank
+                          - columnheader: Player
+                          - columnheader: Deck
+                          - columnheader: Points
+                          - columnheader: Wins
+                          - columnheader: Losses
+                          - columnheader: Draws
+                          - columnheader:
+                            - generic: Tie Breaker
+                      - rowgroup:
+                        - row:
+                          - cell: 1st
+                          - cell:
+                            - generic:
+                              - text: LintonJr
+                              - generic: Pending
+                          - cell:
+                            - generic:
+                              - button:
+                                - generic: Add Deck
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.00 | 0.0%
+                        - row:
+                          - cell: 2nd
+                          - cell:
+                            - generic:
+                              - text: PitBull do Samba
+                              - generic: Pending
+                          - cell
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell: "0"
+                          - cell:
+                            - generic: 0.0% | 0.00 | 0.0%
+    - generic:
+      - contentinfo:
+        - generic:
+          - generic:
+            - button: Report a Bug
+          - generic:
+            - link:
+              - /url: /terms-of-service.md
+              - text: Terms of Service
+          - generic:
+            - link:
+              - /url: /privacy-policy.md
+              - text: Privacy Policy
+          - generic:
+            - link:
+              - /url: https://ko-fi.com/manasync
+              - text: Donate ♥
+          - generic: © 2025 ManaSync
+  - generic:
+    - button:
+      - generic: Support Us
+  - dialog [ref=f3e178]:
+    - generic [ref=f3e180]:
+      - generic [ref=f3e181]:
+        - heading "Drop from Event" [level=2] [ref=f3e182]
+        - paragraph [ref=f3e183]:
+          - generic [ref=f3e184]: This action cannot be undone. This will permanently remove you from the event.
+          - generic [ref=f3e185]:
+            - button "Cancel" [active] [ref=f3e186]
+            - button "I'm Sure" [ref=f3e188]
+      - button "Close" [ref=f3e190]

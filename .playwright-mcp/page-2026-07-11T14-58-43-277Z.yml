@@ -1,0 +1,117 @@
+- generic [ref=f47e2]:
+  - navigation [ref=f47e3]:
+    - generic [ref=f47e4]:
+      - generic [ref=f47e5]:
+        - link "⚡ Mercadia" [ref=f47e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f47e7]: ⚡
+          - generic [ref=f47e8]: Mercadia
+        - generic [ref=f47e9]:
+          - link "Home" [ref=f47e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f47e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f47e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f47e13]:
+        - button "Open notifications" [ref=f47e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f47e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f47e24] [cursor=pointer]
+  - main [ref=f47e27]:
+    - generic [ref=f47e29]:
+      - heading "Create New Event" [level=1] [ref=f47e30]
+      - generic [ref=f47e31]:
+        - generic [ref=f47e32]:
+          - generic [ref=f47e33]: Event Name
+          - textbox "Event Name (3-50 characters)" [ref=f47e34]
+        - generic [ref=f47e35]:
+          - generic [ref=f47e36]:
+            - generic [ref=f47e37]: City
+            - textbox "City" [ref=f47e38]
+            - generic [ref=f47e39] [cursor=pointer]:
+              - checkbox "Online" [ref=f47e40]
+              - text: Online
+          - generic [ref=f47e41]:
+            - generic [ref=f47e42]: Address (Optional)
+            - textbox "Street address, building, etc." [ref=f47e43]
+        - generic [ref=f47e44]:
+          - generic [ref=f47e45]: Description (Optional)
+          - textbox "Event description (max 100 characters)" [ref=f47e46]
+        - generic [ref=f47e47]:
+          - generic [ref=f47e48]: Event Thumbnail
+          - generic [ref=f47e49]:
+            - generic [ref=f47e50]: No image selected
+            - generic [ref=f47e51] [cursor=pointer]: Upload Image
+        - generic [ref=f47e52]:
+          - generic [ref=f47e53]:
+            - generic [ref=f47e54]: Date
+            - textbox [ref=f47e55]
+          - generic [ref=f47e56]:
+            - generic [ref=f47e57]: Time
+            - textbox [ref=f47e58]
+          - generic [ref=f47e59]:
+            - generic [ref=f47e60]: Game
+            - combobox [ref=f47e61]:
+              - option "Select a game" [selected]
+              - option "MTG"
+              - option "Pokémon"
+              - option "Yu-Gi-Oh!"
+              - option "Lorcana"
+              - option "Flesh and Blood"
+              - option "Other"
+        - generic [ref=f47e62]:
+          - generic [ref=f47e63]:
+            - generic [ref=f47e64]: Pairing Method
+            - combobox [ref=f47e65]:
+              - option "Swiss (Performance Pairing)" [selected]
+              - option "Swiss (Less Repetition)"
+              - option "Avoid Repetition"
+              - option "Random"
+          - generic [ref=f47e66]:
+            - generic [ref=f47e67]: Players per Pod
+            - combobox [ref=f47e68]:
+              - option "2 — 1v1 (Standard)"
+              - option "3 — 3-player Pod"
+              - option "4 — 4-player Pod (Commander)"
+        - generic [ref=f47e69]:
+          - generic [ref=f47e70]: Playoff Structure
+          - combobox [ref=f47e71]:
+            - option "No Playoffs" [selected]
+            - option "Top 4 Playoff"
+            - option "Top 16 Playoff"
+        - heading "Scoring" [level=3] [ref=f47e72]
+        - generic [ref=f47e73]:
+          - generic [ref=f47e74]:
+            - generic [ref=f47e75]: Points per Win
+            - spinbutton [ref=f47e76]: "3"
+          - generic [ref=f47e77]:
+            - generic [ref=f47e78]: Points per Draw
+            - spinbutton [ref=f47e79]: "1"
+          - generic [ref=f47e80]:
+            - generic [ref=f47e81]: Points per Loss
+            - spinbutton [ref=f47e82]: "0"
+        - heading "Optionals" [level=3] [ref=f47e83]
+        - generic [ref=f47e84]:
+          - generic [ref=f47e85] [cursor=pointer]:
+            - checkbox "Allow Byes" [ref=f47e86]
+            - text: Allow Byes
+          - generic [ref=f47e87] [cursor=pointer]:
+            - checkbox "Test Event" [ref=f47e88]
+            - text: Test Event
+          - generic [ref=f47e89] [cursor=pointer]:
+            - checkbox "Collaborative Deck Registering" [ref=f47e90]
+            - text: Collaborative Deck Registering
+          - generic [ref=f47e91] [cursor=pointer]:
+            - checkbox "Asynchronous Draws" [ref=f47e92]
+            - text: Asynchronous Draws
+          - generic [ref=f47e93] [cursor=pointer]:
+            - checkbox "Confirm New Players" [ref=f47e94]
+            - text: Confirm New Players
+        - button "Create Event" [ref=f47e95] [cursor=pointer]
+  - contentinfo [ref=f47e96]:
+    - generic [ref=f47e97]:
+      - generic [ref=f47e98]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f47e99] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f47e100] [cursor=pointer]:
+        - /url: /privacy-policy

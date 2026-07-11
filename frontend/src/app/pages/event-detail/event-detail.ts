@@ -118,6 +118,38 @@ export class EventDetailComponent implements OnInit {
     return { round: latest, pairings: (ev.pairings ?? []).filter(p => p.round_id === latest.id) };
   });
 
+  pendingInCurrentRound = computed(() => {
+    const current = this.currentRoundPairings();
+    return current ? current.pairings.some((p) => !p.result) : false;
+  });
+
+  hasPlayoffRound = computed(() => (this.event()?.rounds ?? []).some((r) => r.is_playoff));
+
+  playoffLabel = computed(() => {
+    const ps = this.event()?.playoff_structure;
+    return ps === 'top4' ? 'Top 4' : ps === 'top16' ? 'Top 16' : 'Playoffs';
+  });
+
+  canStartPlayoffs = computed(() => {
+    const ev = this.event();
+    if (!ev || ev.status === 'completed') return false;
+    if (!ev.playoff_structure || ev.playoff_structure === 'none') return false;
+    if (this.hasPlayoffRound()) return false;
+    return !this.pendingInCurrentRound();
+  });
+
+  showAdvancePlayoffs = computed(() => {
+    const ev = this.event();
+    const current = this.currentRoundPairings();
+    return !!(ev && ev.status !== 'completed' && current?.round.is_playoff && !this.pendingInCurrentRound());
+  });
+
+  championName = computed(() => {
+    const ev = this.event();
+    if (!ev?.champion_id) return null;
+    return ev.players?.find((p) => p.id === ev.champion_id)?.display_name ?? null;
+  });
+
   myRound = computed(() => {
     const user = this.auth.currentUser();
     const ev = this.event();
@@ -235,6 +267,23 @@ export class EventDetailComponent implements OnInit {
     this.startRound();
   }
 
+  startPlayoffs() {
+    if (!confirm(`Iniciar os playoffs (${this.playoffLabel()})? Os jogadores mais bem colocados na classificação atual serão selecionados para o mata-mata.`)) return;
+    this.actionLoading.set(true);
+    this.eventSvc.startPlayoffs(this.id()).subscribe({
+      next: () => { this.load(); this.actionLoading.set(false); this.tab.set('results'); },
+      error: (err) => { this.error.set(err.error?.error || 'Failed to start playoffs'); this.actionLoading.set(false); },
+    });
+  }
+
+  advancePlayoffs() {
+    this.actionLoading.set(true);
+    this.eventSvc.startRound(this.id()).subscribe({
+      next: () => { this.load(); this.actionLoading.set(false); },
+      error: (err) => { this.error.set(err.error?.error || 'Failed to advance playoffs'); this.actionLoading.set(false); },
+    });
+  }
+
   undoRound() {
     const roundNum = this.event()?.current_round;
     if (!confirm(`Desfazer a Rodada ${roundNum}? Todos os pareamentos e resultados desta rodada serão removidos e ela poderá ser pareada novamente. Esta ação não pode ser desfeita.`)) return;
@@ -343,6 +392,10 @@ export class EventDetailComponent implements OnInit {
     if (!result) return 'Pending';
     const map: Record<string, string> = { player1: 'P1 Win', player2: 'P2 Win', draw: 'Draw', bye: 'Bye' };
     return map[result] ?? result;
+  }
+
+  roundLabel(round: Round): string {
+    return round.is_playoff ? `🏆 Playoffs — ${round.playoff_stage}` : `Round ${round.round_number}`;
   }
 
   ordinal(n: number): string {

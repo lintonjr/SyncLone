@@ -1,0 +1,133 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - generic:
+              - link:
+                - /url: /
+          - generic:
+            - link:
+              - /url: /
+              - button: Home
+            - link:
+              - /url: /events
+              - button: My Events
+            - link:
+              - /url: /create
+              - button: Create Event
+            - generic:
+              - button:
+                - generic: Install App
+          - generic:
+            - button:
+              - button
+            - button [expanded]:
+              - button:
+                - generic: LI
+            - button:
+              - generic: Toggle theme
+    - generic:
+      - generic:
+        - generic:
+          - heading [level=2]: UPCOMING EVENTS
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=3]: Commander Ilimitado de Sábado na IG
+                  - paragraph: MTG - Commander
+                  - generic:
+                    - paragraph: Jul 11, 2026, 1:30 PM GMT-4
+                  - generic:
+                    - paragraph: Brasília, Brazil
+                  - generic:
+                    - paragraph: 2 Players
+                  - generic: Decklist Not Submitted
+                - generic:
+                  - button:
+                    - generic: Submit Decklist
+      - generic:
+        - generic:
+          - heading [level=2]: PAST EVENTS
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=3]: Evento Test
+                  - paragraph: MTG - Commander500
+                  - generic:
+                    - paragraph: Jul 10, 2026, 3:00 AM GMT-4
+                  - generic:
+                    - paragraph: Manaus, Brazil
+                  - generic:
+                    - paragraph: 26 Players
+                  - generic: Decklist Not Submitted
+                - generic:
+                  - button
+                  - button:
+                    - generic: Submit Decklist
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=3]: n=manaus
+                  - paragraph: MTG - Commander500
+                  - generic:
+                    - paragraph: Jul 10, 2026, 1:00 AM GMT-4
+                  - generic:
+                    - paragraph: Manaus
+                  - generic:
+                    - paragraph: 25 Players
+                - generic:
+                  - button
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - heading [level=3]: Torneio 500 Mercadia - Free for All
+                  - paragraph: MTG - Commander500
+                  - paragraph: Torneio da Liga commander 500
+                  - generic:
+                    - paragraph: Jun 27, 2026, 3:00 PM GMT-4
+                  - generic:
+                    - paragraph: Manaus
+                  - generic:
+                    - paragraph: 19 Players
+                    - generic: Finished
+                  - generic: Decklist Submitted
+                - generic:
+                  - button:
+                    - generic: Edit Decklist
+    - generic:
+      - contentinfo:
+        - generic:
+          - generic:
+            - button: Report a Bug
+          - generic:
+            - link:
+              - /url: /terms-of-service.md
+              - text: Terms of Service
+          - generic:
+            - link:
+              - /url: /privacy-policy.md
+              - text: Privacy Policy
+          - generic:
+            - link:
+              - /url: https://ko-fi.com/manasync
+              - text: Donate ♥
+          - generic: © 2025 ManaSync
+  - generic:
+    - button:
+      - generic: Support Us
+  - menu "Open user menu" [active] [ref=f10e280]:
+    - generic [ref=f10e282]:
+      - menuitem "Profile" [ref=f10e283]
+      - menuitem "Log out" [ref=f10e285]

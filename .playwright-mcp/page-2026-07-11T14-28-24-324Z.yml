@@ -1,0 +1,91 @@
+- generic [active] [ref=f15e1]:
+  - generic [ref=f15e2]:
+    - banner [ref=f15e4]:
+      - generic [ref=f15e5]:
+        - link [ref=f15e8] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=f15e9]
+        - generic [ref=f15e10]:
+          - link [ref=f15e11] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=f15e12]
+          - link [ref=f15e13] [cursor=pointer]:
+            - /url: /events
+            - button "My Events" [ref=f15e14]
+          - link [ref=f15e15] [cursor=pointer]:
+            - /url: /create
+            - button "Create Event" [ref=f15e16]
+          - button [ref=f15e18]
+        - generic [ref=f15e24]:
+          - button "Open notifications" [ref=f15e25]:
+            - button [ref=f15e26]
+          - button "Open user menu" [ref=f15e31]:
+            - button [ref=f15e32]
+          - button "Toggle theme" [ref=f15e35]
+    - generic [ref=f15e40]:
+      - generic [ref=f15e42]:
+        - img "Commander Ilimitado de Sábado na IG" [ref=f15e45]
+        - generic [ref=f15e48]:
+          - generic [ref=f15e49]:
+            - heading "Commander Ilimitado de Sábado na IG" [level=2] [ref=f15e50]
+            - paragraph [ref=f15e51]: MTG - Commander
+            - generic [ref=f15e52]:
+              - generic [ref=f15e53]: 7/11/2026, 1:30:00 PM
+              - generic [ref=f15e57]: Brasília, Brazil
+              - generic [ref=f15e62]: 2 Players
+          - generic [ref=f15e65]:
+            - button [ref=f15e66]
+            - button "Companion" [ref=f15e74]
+            - button [ref=f15e81]
+      - generic [ref=f15e87]:
+        - tablist [ref=f15e90]:
+          - tab "Standings" [selected] [ref=f15e93]
+        - tabpanel "Standings" [ref=f15e100]:
+          - table [ref=f15e105]:
+            - rowgroup [ref=f15e106]:
+              - row [ref=f15e107]:
+                - columnheader "Rank" [ref=f15e108]
+                - columnheader "Player" [ref=f15e109]
+                - columnheader "Deck" [ref=f15e110]
+                - columnheader "Points" [ref=f15e111]
+                - columnheader "Wins" [ref=f15e112]
+                - columnheader "Losses" [ref=f15e113]
+                - columnheader "Draws" [ref=f15e114]
+                - columnheader [ref=f15e115]
+            - rowgroup [ref=f15e120]:
+              - row [ref=f15e121]:
+                - cell "1st" [ref=f15e122]
+                - cell "LintonJr Drop" [ref=f15e123]:
+                  - generic [ref=f15e124]:
+                    - text: LintonJr
+                    - generic [ref=f15e125]: Drop
+                - cell [ref=f15e126]:
+                  - button [ref=f15e128]
+                - cell "0" [ref=f15e131]
+                - cell "0" [ref=f15e132]
+                - cell "0" [ref=f15e133]
+                - cell "0" [ref=f15e134]
+                - cell "0.0% | 0.00 | 0.0%" [ref=f15e135]
+              - row [ref=f15e137]:
+                - cell "2nd" [ref=f15e138]
+                - cell "PitBull do Samba Pending" [ref=f15e139]:
+                  - generic [ref=f15e140]:
+                    - text: PitBull do Samba
+                    - generic [ref=f15e141]: Pending
+                - cell [ref=f15e142]
+                - cell "0" [ref=f15e143]
+                - cell "0" [ref=f15e144]
+                - cell "0" [ref=f15e145]
+                - cell "0" [ref=f15e146]
+                - cell "0.0% | 0.00 | 0.0%" [ref=f15e147]
+    - contentinfo [ref=f15e150]:
+      - generic [ref=f15e151]:
+        - button "Report a Bug" [ref=f15e155]
+        - link "Terms of Service" [ref=f15e157] [cursor=pointer]:
+          - /url: /terms-of-service.md
+        - link "Privacy Policy" [ref=f15e159] [cursor=pointer]:
+          - /url: /privacy-policy.md
+        - link "Donate ♥" [ref=f15e161] [cursor=pointer]:
+          - /url: https://ko-fi.com/manasync
+        - generic [ref=f15e162]: © 2025 ManaSync
+  - button "Support Us" [ref=f15e167] [cursor=pointer]

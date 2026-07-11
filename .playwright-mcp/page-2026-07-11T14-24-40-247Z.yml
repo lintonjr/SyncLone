@@ -1,0 +1,294 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e9]
+        - generic [ref=e10]:
+          - link [ref=e11] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=e12]
+          - link [ref=e13] [cursor=pointer]:
+            - /url: /events
+            - button "My Events" [ref=e14]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /create
+            - button "Create Event" [ref=e16]
+          - button [ref=e18]
+        - generic [ref=e24]:
+          - button "Open notifications" [ref=e25]:
+            - button [ref=e26]
+          - button "Open user menu" [ref=e31]:
+            - button [ref=e32]
+          - button "Toggle theme" [ref=e35]
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - textbox "Search by name, game, or description..." [ref=e45]
+        - button [ref=e49]
+      - heading "UPCOMING EVENTS" [level=2] [ref=e147]
+      - generic [ref=e149]:
+        - generic [ref=e152]:
+          - img "Commander Ilimitado de Sábado na IG thumbnail" [ref=e154] [cursor=pointer]
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - heading "Commander Ilimitado de Sábado na IG" [level=3] [ref=e157] [cursor=pointer]
+              - paragraph [ref=e158]: MTG - Commander
+              - paragraph [ref=e162]: Jul 11, 2026, 1:30 PM GMT-4
+              - paragraph [ref=e167]: Brasília, Brazil
+              - paragraph [ref=e174]: 1 Players
+            - button [disabled] [ref=e911]
+        - generic [ref=e183]:
+          - img "Torneio CEDH - Mercadia - Free for All thumbnail" [ref=e185] [cursor=pointer]
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - heading "Torneio CEDH - Mercadia - Free for All" [level=3] [ref=e188] [cursor=pointer]
+              - paragraph [ref=e189]: MTG - cEDH
+              - paragraph [ref=e190]: Torneio Mercadia
+              - paragraph [ref=e194]: Jul 11, 2026, 3:00 PM GMT-4
+              - paragraph [ref=e199]: Manaus, Brazil
+              - paragraph [ref=e206]: 4 Players
+            - button [ref=e208]
+        - generic [ref=e215]:
+          - img "C500 Utopia 11/07 thumbnail" [ref=e217] [cursor=pointer]
+          - generic [ref=e218]:
+            - generic [ref=e219]:
+              - heading "C500 Utopia 11/07" [level=3] [ref=e220] [cursor=pointer]
+              - paragraph [ref=e221]: MTG - Commander500
+              - paragraph [ref=e225]: Jul 11, 2026, 3:00 PM GMT-4
+              - paragraph [ref=e230]: Brasília
+              - paragraph [ref=e237]: 0 Players
+            - button [ref=e239]
+        - generic [ref=e246]:
+          - img "TORNEIO CONQUEST - SANA26 thumbnail" [ref=e248] [cursor=pointer]
+          - generic [ref=e249]:
+            - generic [ref=e250]:
+              - heading "TORNEIO CONQUEST - SANA26" [level=3] [ref=e251] [cursor=pointer]
+              - paragraph [ref=e252]: MTG - Conquest
+              - paragraph [ref=e253]: SANA 26 - Arena Dominaria - Sana Ludus Centro de Eventos do Ceará.
+              - paragraph [ref=e257]: Jul 12, 2026, 10:30 AM GMT-4
+              - paragraph [ref=e262]: Fortaleza, Brazil
+              - paragraph [ref=e269]: 22 Players
+            - button [ref=e271]
+        - generic [ref=e278]:
+          - img "Conquest Utopia 05/07 thumbnail" [ref=e280] [cursor=pointer]
+          - generic [ref=e281]:
+            - generic [ref=e282]:
+              - heading "Conquest Utopia 05/07" [level=3] [ref=e283] [cursor=pointer]
+              - paragraph [ref=e284]: MTG - Conquest
+              - paragraph [ref=e288]: Jul 12, 2026, 2:00 PM GMT-4
+              - paragraph [ref=e293]: Brasília
+              - paragraph [ref=e300]: 0 Players
+            - button [ref=e302]
+        - generic [ref=e309]:
+          - img "Conquest de Domingo na IG thumbnail" [ref=e311] [cursor=pointer]
+          - generic [ref=e312]:
+            - generic [ref=e313]:
+              - heading "Conquest de Domingo na IG" [level=3] [ref=e314] [cursor=pointer]
+              - paragraph [ref=e315]: MTG - Conquest
+              - paragraph [ref=e319]: Jul 12, 2026, 2:30 PM GMT-4
+              - paragraph [ref=e324]: Brasília
+              - paragraph [ref=e331]: 0 Players
+            - button [ref=e333]
+        - generic [ref=e340]:
+          - img "1º Conquest Showdown thumbnail" [ref=e342] [cursor=pointer]
+          - generic [ref=e343]:
+            - generic [ref=e344]:
+              - heading "1º Conquest Showdown" [level=3] [ref=e345] [cursor=pointer]
+              - paragraph [ref=e346]: MTG - Conquest
+              - paragraph [ref=e347]: "Torneio de dia único, 3 rodadas. Inscrição: R$ 10,00 Premiação dividida entre o Top 4 Via EDHPlay"
+              - paragraph [ref=e351]: Jul 13, 2026, 6:30 PM GMT-4
+              - paragraph [ref=e356]: Online
+              - paragraph [ref=e363]: 15 Players
+            - button [ref=e365]
+        - generic [ref=e372]:
+          - img "COMMANDER ILIMITADO NA MASTER thumbnail" [ref=e374] [cursor=pointer]
+          - generic [ref=e375]:
+            - generic [ref=e376]:
+              - heading "COMMANDER ILIMITADO NA MASTER" [level=3] [ref=e377] [cursor=pointer]
+              - paragraph [ref=e378]: MTG - cEDH
+              - paragraph [ref=e382]: Jul 13, 2026, 6:45 PM GMT-4
+              - paragraph [ref=e387]: Brasília, Brazil
+              - paragraph [ref=e394]: 0 Players
+            - button [ref=e396]
+        - generic [ref=e403]:
+          - img "14/07 CMD 500 Geek House Piracicaba thumbnail" [ref=e405] [cursor=pointer]
+          - generic [ref=e406]:
+            - generic [ref=e407]:
+              - heading "14/07 CMD 500 Geek House Piracicaba" [level=3] [ref=e408] [cursor=pointer]
+              - paragraph [ref=e409]: MTG - Commander500
+              - paragraph [ref=e413]: Jul 14, 2026, 7:00 PM GMT-4
+              - paragraph [ref=e418]: Piracicaba
+              - paragraph [ref=e425]: 0 Players
+            - button [ref=e427]
+        - generic [ref=e434]:
+          - img "Conquest - Vitorio Card Shop thumbnail" [ref=e436] [cursor=pointer]
+          - generic [ref=e437]:
+            - generic [ref=e438]:
+              - heading "Conquest - Vitorio Card Shop" [level=3] [ref=e439] [cursor=pointer]
+              - paragraph [ref=e440]: MTG - Conquest
+              - paragraph [ref=e441]: Conquest
+              - paragraph [ref=e445]: Jul 15, 2026, 6:30 PM GMT-4
+              - paragraph [ref=e450]: Brasília, Brazil
+              - paragraph [ref=e457]: 0 Players
+            - button [ref=e459]
+        - generic [ref=e466]:
+          - img "COMMANDER ILIMITADO NA MASTER thumbnail" [ref=e468] [cursor=pointer]
+          - generic [ref=e469]:
+            - generic [ref=e470]:
+              - heading "COMMANDER ILIMITADO NA MASTER" [level=3] [ref=e471] [cursor=pointer]
+              - paragraph [ref=e472]: MTG - cEDH
+              - paragraph [ref=e476]: Jul 16, 2026, 6:45 PM GMT-4
+              - paragraph [ref=e481]: Brasília, Brazil
+              - paragraph [ref=e488]: 0 Players
+            - button [ref=e490]
+        - generic [ref=e497]:
+          - img "GEEKS COMMANDER thumbnail" [ref=e499] [cursor=pointer]
+          - generic [ref=e500]:
+            - generic [ref=e501]:
+              - heading "GEEKS COMMANDER" [level=3] [ref=e502] [cursor=pointer]
+              - paragraph [ref=e503]: MTG - Commander
+              - paragraph [ref=e507]: Jul 17, 2026, 4:30 PM GMT-4
+              - paragraph [ref=e512]: Bay Roberts, Canada
+              - paragraph [ref=e519]: 1 Players
+            - button [ref=e521]
+        - generic [ref=e528]:
+          - img "Conquest na Fortalúdica thumbnail" [ref=e530] [cursor=pointer]
+          - generic [ref=e531]:
+            - generic [ref=e532]:
+              - heading "Conquest na Fortalúdica" [level=3] [ref=e533] [cursor=pointer]
+              - paragraph [ref=e534]: MTG - Conquest
+              - paragraph [ref=e535]: Conquest na Fortalúdica
+              - paragraph [ref=e539]: Jul 17, 2026, 7:00 PM GMT-4
+              - paragraph [ref=e544]: Brasília, Brazil
+              - paragraph [ref=e551]: 0 Players
+            - button [ref=e553]
+        - generic [ref=e560]:
+          - img "HR Vault - First Tournament thumbnail" [ref=e562] [cursor=pointer]
+          - generic [ref=e563]:
+            - generic [ref=e564]:
+              - heading "HR Vault - First Tournament" [level=3] [ref=e565] [cursor=pointer]
+              - paragraph [ref=e566]: MTG - Commander
+              - paragraph [ref=e570]: Jul 18, 2026, 1:30 PM GMT-4
+              - paragraph [ref=e575]: Online
+              - paragraph [ref=e582]: 25 Players
+            - button [ref=e584]
+        - generic [ref=e591]:
+          - img "COMMANDER ILIMITADO NA MASTER thumbnail" [ref=e593] [cursor=pointer]
+          - generic [ref=e594]:
+            - generic [ref=e595]:
+              - heading "COMMANDER ILIMITADO NA MASTER" [level=3] [ref=e596] [cursor=pointer]
+              - paragraph [ref=e597]: MTG - cEDH
+              - paragraph [ref=e601]: Jul 20, 2026, 6:45 PM GMT-4
+              - paragraph [ref=e606]: Brasília, Brazil
+              - paragraph [ref=e613]: 0 Players
+            - button [ref=e615]
+        - generic [ref=e622]:
+          - img "Conquest - Vitorio Card Shop thumbnail" [ref=e624] [cursor=pointer]
+          - generic [ref=e625]:
+            - generic [ref=e626]:
+              - heading "Conquest - Vitorio Card Shop" [level=3] [ref=e627] [cursor=pointer]
+              - paragraph [ref=e628]: MTG - Conquest
+              - paragraph [ref=e629]: Conquest
+              - paragraph [ref=e633]: Jul 22, 2026, 6:30 PM GMT-4
+              - paragraph [ref=e638]: Brasília, Brazil
+              - paragraph [ref=e645]: 0 Players
+            - button [ref=e647]
+        - generic [ref=e654]:
+          - img "COMMANDER ILIMITADO NA MASTER thumbnail" [ref=e656] [cursor=pointer]
+          - generic [ref=e657]:
+            - generic [ref=e658]:
+              - heading "COMMANDER ILIMITADO NA MASTER" [level=3] [ref=e659] [cursor=pointer]
+              - paragraph [ref=e660]: MTG - cEDH
+              - paragraph [ref=e664]: Jul 23, 2026, 6:45 PM GMT-4
+              - paragraph [ref=e669]: Brasília, Brazil
+              - paragraph [ref=e676]: 0 Players
+            - button [ref=e678]
+        - generic [ref=e685]:
+          - img "Conquest na Fortalúdica thumbnail" [ref=e687] [cursor=pointer]
+          - generic [ref=e688]:
+            - generic [ref=e689]:
+              - heading "Conquest na Fortalúdica" [level=3] [ref=e690] [cursor=pointer]
+              - paragraph [ref=e691]: MTG - Conquest
+              - paragraph [ref=e692]: Conquest na Fortalúdica
+              - paragraph [ref=e696]: Jul 24, 2026, 7:00 PM GMT-4
+              - paragraph [ref=e701]: Brasília
+              - paragraph [ref=e708]: 0 Players
+            - button [ref=e710]
+        - generic [ref=e717]:
+          - img "COMMANDER ILIMITADO NA MASTER thumbnail" [ref=e719] [cursor=pointer]
+          - generic [ref=e720]:
+            - generic [ref=e721]:
+              - heading "COMMANDER ILIMITADO NA MASTER" [level=3] [ref=e722] [cursor=pointer]
+              - paragraph [ref=e723]: MTG - cEDH
+              - paragraph [ref=e727]: Jul 27, 2026, 6:45 PM GMT-4
+              - paragraph [ref=e732]: Brasília, Brazil
+              - paragraph [ref=e739]: 0 Players
+            - button [ref=e741]
+        - generic [ref=e748]:
+          - img "Conquest - Vitorio Card Shop thumbnail" [ref=e750] [cursor=pointer]
+          - generic [ref=e751]:
+            - generic [ref=e752]:
+              - heading "Conquest - Vitorio Card Shop" [level=3] [ref=e753] [cursor=pointer]
+              - paragraph [ref=e754]: MTG - Conquest
+              - paragraph [ref=e755]: Conquest
+              - paragraph [ref=e759]: Jul 29, 2026, 6:30 PM GMT-4
+              - paragraph [ref=e764]: Brasília, Brazil
+              - paragraph [ref=e771]: 0 Players
+            - button [ref=e773]
+        - generic [ref=e780]:
+          - img "COMMANDER ILIMITADO NA MASTER thumbnail" [ref=e782] [cursor=pointer]
+          - generic [ref=e783]:
+            - generic [ref=e784]:
+              - heading "COMMANDER ILIMITADO NA MASTER" [level=3] [ref=e785] [cursor=pointer]
+              - paragraph [ref=e786]: MTG - cEDH
+              - paragraph [ref=e790]: Jul 30, 2026, 6:45 PM GMT-4
+              - paragraph [ref=e795]: Brasília, Brazil
+              - paragraph [ref=e802]: 0 Players
+            - button [ref=e804]
+        - generic [ref=e811]:
+          - img "Conquest na Fortalúdica thumbnail" [ref=e813] [cursor=pointer]
+          - generic [ref=e814]:
+            - generic [ref=e815]:
+              - heading "Conquest na Fortalúdica" [level=3] [ref=e816] [cursor=pointer]
+              - paragraph [ref=e817]: MTG - Conquest
+              - paragraph [ref=e818]: Conquest na Fortalúdica
+              - paragraph [ref=e822]: Jul 31, 2026, 7:00 PM GMT-4
+              - paragraph [ref=e827]: Brasília
+              - paragraph [ref=e834]: 0 Players
+            - button [ref=e836]
+        - generic [ref=e843]:
+          - img "COMMANDER ILIMITADO NA MASTER thumbnail" [ref=e845] [cursor=pointer]
+          - generic [ref=e846]:
+            - generic [ref=e847]:
+              - heading "COMMANDER ILIMITADO NA MASTER" [level=3] [ref=e848] [cursor=pointer]
+              - paragraph [ref=e849]: MTG - cEDH
+              - paragraph [ref=e853]: Aug 3, 2026, 6:45 PM GMT-4
+              - paragraph [ref=e858]: Brasília, Brazil
+              - paragraph [ref=e865]: 0 Players
+            - button [ref=e867]
+        - generic [ref=e874]:
+          - img "Conquest - Vitorio Card Shop thumbnail" [ref=e876] [cursor=pointer]
+          - generic [ref=e877]:
+            - generic [ref=e878]:
+              - heading "Conquest - Vitorio Card Shop" [level=3] [ref=e879] [cursor=pointer]
+              - paragraph [ref=e880]: MTG - Conquest
+              - paragraph [ref=e881]: Conquest
+              - paragraph [ref=e885]: Aug 5, 2026, 6:30 PM GMT-4
+              - paragraph [ref=e890]: Brasília, Brazil
+              - paragraph [ref=e897]: 0 Players
+            - button [ref=e899]
+      - heading "PAST EVENTS" [level=2] [ref=e906]
+      - generic [ref=e908]: No past events found.
+    - contentinfo [ref=e121]:
+      - generic [ref=e122]:
+        - button "Report a Bug" [ref=e126]
+        - link "Terms of Service" [ref=e128] [cursor=pointer]:
+          - /url: /terms-of-service.md
+        - link "Privacy Policy" [ref=e130] [cursor=pointer]:
+          - /url: /privacy-policy.md
+        - link "Donate ♥" [ref=e132] [cursor=pointer]:
+          - /url: https://ko-fi.com/manasync
+        - generic [ref=e133]: © 2025 ManaSync
+  - button "Support Us" [ref=e138] [cursor=pointer]
+  - button "Support Us" [ref=e142] [cursor=pointer]

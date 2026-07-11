@@ -26,6 +26,7 @@ export interface TournamentEvent {
   points_loss: number;
   status: string;
   current_round: number;
+  champion_id?: string;
   owner_id: string;
   owner_name?: string;
   player_count?: number;
@@ -52,6 +53,8 @@ export interface Round {
   event_id: string;
   round_number: number;
   status: string;
+  is_playoff: number;
+  playoff_stage?: string;
 }
 
 export interface Pairing {
@@ -125,6 +128,10 @@ export class EventService {
 
   startRound(eventId: string) {
     return this.http.post(`${this.API}/${eventId}/rounds`, {}, { headers: this.authHeaders() });
+  }
+
+  startPlayoffs(eventId: string) {
+    return this.http.post(`${this.API}/${eventId}/playoffs/start`, {}, { headers: this.authHeaders() });
   }
 
   undoRound(eventId: string) {

@@ -25,6 +25,9 @@
           @if (event()!.description) {
             <p class="event-desc">{{ event()!.description }}</p>
           }
+          @if (championName()) {
+            <p class="champion-banner">🏆 Champion: <strong>{{ championName() }}</strong></p>
+          }
         </div>
         <div class="banner-actions">
           @if (!auth.isLoggedIn()) {
@@ -33,9 +36,20 @@
             <div class="owner-actions">
               <div class="owner-row">
                 @if (event()!.status !== 'completed') {
-                  <button class="btn btn-primary" (click)="startRound()" [disabled]="actionLoading()">
-                    ▶ Start Round {{ (event()?.current_round ?? 0) + 1 }}
-                  </button>
+                  @if (showAdvancePlayoffs()) {
+                    <button class="btn btn-primary" (click)="advancePlayoffs()" [disabled]="actionLoading()">
+                      ▶ Advance Playoffs
+                    </button>
+                  } @else if (!hasPlayoffRound()) {
+                    <button class="btn btn-primary" (click)="startRound()" [disabled]="actionLoading()">
+                      ▶ Start Round {{ (event()?.current_round ?? 0) + 1 }}
+                    </button>
+                  }
+                  @if (canStartPlayoffs()) {
+                    <button class="btn btn-ghost playoffs-btn" (click)="startPlayoffs()" [disabled]="actionLoading()" title="Start Playoffs">
+                      🏆 Start Playoffs ({{ playoffLabel() }})
+                    </button>
+                  }
                   <button class="btn btn-ghost finish-btn" (click)="finishEvent()" [disabled]="actionLoading()" title="Finish Event">
                     ✓ Finish
                   </button>
@@ -202,7 +216,7 @@
         } @else {
           <div class="round-section">
             <div class="round-header">
-              <h3 class="round-title">Round {{ currentRoundPairings()!.round.round_number }} — Pairings</h3>
+              <h3 class="round-title">{{ roundLabel(currentRoundPairings()!.round) }} — Pairings</h3>
               <span class="round-status-badge" [class]="currentRoundPairings()!.round.status !== 'completed' ? 'status-open' : 'status-done'">
                 {{ currentRoundPairings()!.round.status !== 'completed' ? 'In Progress' : 'Completed' }}
               </span>
@@ -333,7 +347,7 @@
           @for (round of roundsGrouped(); track round.id) {
             <div class="round-section">
               <div class="round-header">
-                <h3 class="round-title">Round {{ round.round_number }}</h3>
+                <h3 class="round-title">{{ roundLabel(round) }}</h3>
                 <span class="round-status-badge" [class]="round.status !== 'completed' ? 'status-open' : 'status-done'">
                   {{ round.status !== 'completed' ? 'In Progress' : 'Completed' }}
                 </span>
@@ -469,7 +483,7 @@
         } @else {
           <div class="myround-card card">
             <div class="myround-header">
-              <span class="round-label">Round {{ myRound()!.round.round_number }}</span>
+              <span class="round-label">{{ roundLabel(myRound()!.round) }}</span>
               <span class="table-label">{{ isPodMode() ? 'Pod' : 'Table' }} {{ myRound()!.pairing.table_number }}</span>
             </div>
 
