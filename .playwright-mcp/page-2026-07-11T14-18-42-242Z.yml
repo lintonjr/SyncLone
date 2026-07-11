@@ -1,0 +1,123 @@
+- generic [ref=f4e2]:
+  - navigation [ref=f4e3]:
+    - generic [ref=f4e4]:
+      - generic [ref=f4e5]:
+        - link "⚡ Mercadia" [ref=f4e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f4e7]: ⚡
+          - generic [ref=f4e8]: Mercadia
+        - generic [ref=f4e9]:
+          - link "Home" [ref=f4e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f4e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f4e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f4e13]:
+        - button "Open notifications" [ref=f4e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f4e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f4e24] [cursor=pointer]
+  - main [ref=f4e27]:
+    - generic [ref=f4e388]:
+      - generic [ref=f4e389]:
+        - generic [ref=f4e390]: M
+        - generic [ref=f4e391]:
+          - generic [ref=f4e392]:
+            - generic [ref=f4e393]:
+              - generic [ref=f4e394]: MTG
+              - generic [ref=f4e395]: Commander500
+              - generic [ref=f4e396]: ongoing
+            - heading "Edit Result Test" [level=1] [ref=f4e397]
+            - paragraph [ref=f4e398]: 📅 Jul 11, 2026 · 10:17 AM • 📍 Manaus • 👥 8 Players
+          - generic [ref=f4e401]:
+            - button "▶ Start Round 3" [ref=f4e402] [cursor=pointer]
+            - button "✓ Finish" [ref=f4e403] [cursor=pointer]
+            - button "Add Player" [ref=f4e404] [cursor=pointer]
+            - link "Edit Event" [ref=f4e408] [cursor=pointer]:
+              - /url: /event/a8441935-8a87-4963-a7eb-0bb903066692/edit
+            - button "Delete Event" [ref=f4e412] [cursor=pointer]
+      - generic [ref=f4e417]:
+        - button "Standings (8)" [ref=f4e418] [cursor=pointer]
+        - button "Pairings" [ref=f4e419] [cursor=pointer]
+        - button "Results (2 rounds)" [ref=f4e420] [cursor=pointer]
+      - generic [ref=f4e421]:
+        - generic [ref=f4e422]:
+          - generic [ref=f4e423]:
+            - heading "Round 1" [level=3] [ref=f4e424]
+            - generic [ref=f4e425]: Completed
+          - generic [ref=f4e427]:
+            - generic [ref=f4e428]:
+              - generic [ref=f4e429]: Pod 1
+              - generic [ref=f4e430]: Done
+            - generic [ref=f4e432]:
+              - generic [ref=f4e433]:
+                - generic [ref=f4e434]: "1"
+                - generic [ref=f4e435]: Alice
+                - generic [ref=f4e436]: WIN
+              - generic [ref=f4e437]:
+                - generic [ref=f4e438]: "2"
+                - generic [ref=f4e439]: Carol
+                - generic [ref=f4e440]: LOSS
+              - generic [ref=f4e441]:
+                - generic [ref=f4e442]: "3"
+                - generic [ref=f4e443]: Dave
+                - generic [ref=f4e444]: LOSS
+              - generic [ref=f4e445]:
+                - generic [ref=f4e446]: "4"
+                - generic [ref=f4e447]: Bob
+                - generic [ref=f4e448]: LOSS
+        - generic [ref=f4e449]:
+          - generic [ref=f4e450]:
+            - heading "Round 2" [level=3] [ref=f4e451]
+            - generic [ref=f4e452]: In Progress
+            - generic [ref=f4e453]:
+              - button "🔀 Swap" [ref=f4e454] [cursor=pointer]
+              - button "↺ Undo" [ref=f4e455] [cursor=pointer]
+          - generic [ref=f4e456]:
+            - generic [ref=f4e457]:
+              - generic [ref=f4e458]:
+                - generic [ref=f4e459]: Pod 1
+                - generic [ref=f4e460]:
+                  - generic [ref=f4e461]: Done
+                  - button "Edit Result" [ref=f4e462] [cursor=pointer]
+              - generic [ref=f4e466]:
+                - generic [ref=f4e467]:
+                  - generic [ref=f4e468]: "1"
+                  - generic [ref=f4e469]: Alice
+                  - generic [ref=f4e470]: LOSS
+                - generic [ref=f4e471]:
+                  - generic [ref=f4e472]: "2"
+                  - generic [ref=f4e473]: Eve
+                  - generic [ref=f4e474]: WIN
+                - generic [ref=f4e475]:
+                  - generic [ref=f4e476]: "3"
+                  - generic [ref=f4e477]: Frank
+                  - generic [ref=f4e478]: LOSS
+                - generic [ref=f4e479]:
+                  - generic [ref=f4e480]: "4"
+                  - generic [ref=f4e481]: Bob
+                  - generic [ref=f4e482]: LOSS
+            - generic [ref=f4e483]:
+              - generic [ref=f4e484]:
+                - generic [ref=f4e485]: Pod 2
+                - button "Set Result" [ref=f4e486] [cursor=pointer]
+              - generic [ref=f4e487]:
+                - generic [ref=f4e488]:
+                  - generic [ref=f4e489]: "1"
+                  - generic [ref=f4e490]: Carol
+                - generic [ref=f4e491]:
+                  - generic [ref=f4e492]: "2"
+                  - generic [ref=f4e493]: Grace
+                - generic [ref=f4e494]:
+                  - generic [ref=f4e495]: "3"
+                  - generic [ref=f4e496]: Dave
+                - generic [ref=f4e497]:
+                  - generic [ref=f4e498]: "4"
+                  - generic [ref=f4e499]: Hank
+  - contentinfo [ref=f4e31]:
+    - generic [ref=f4e32]:
+      - generic [ref=f4e33]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f4e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f4e35] [cursor=pointer]:
+        - /url: /privacy-policy

@@ -216,6 +216,14 @@ export class EventDetailComponent implements OnInit {
     });
   }
 
+  canEditResult(pairing: Pairing, round: Round): boolean {
+    if (!pairing.result || pairing.result === 'bye') return false;
+    if (!this.isOwner() || this.swapMode()) return false;
+    const ev = this.event();
+    if (!ev || ev.status === 'completed') return false;
+    return round.round_number === ev.current_round && round.status !== 'completed';
+  }
+
   submitResult(pairingId: string, result: string) {
     this.eventSvc.submitResult(this.id(), pairingId, result).subscribe({
       next: () => { this.load(); this.resultModal.set(null); },

@@ -1,0 +1,84 @@
+- generic [ref=f4e2]:
+  - navigation [ref=f4e3]:
+    - generic [ref=f4e4]:
+      - generic [ref=f4e5]:
+        - link "⚡ Mercadia" [ref=f4e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f4e7]: ⚡
+          - generic [ref=f4e8]: Mercadia
+        - generic [ref=f4e9]:
+          - link "Home" [ref=f4e10] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f4e11] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f4e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f4e13]:
+        - button "Open notifications" [ref=f4e15] [cursor=pointer]
+        - button "Linton Junior" [ref=f4e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f4e24] [cursor=pointer]
+  - main [ref=f4e27]:
+    - generic [ref=f4e28]:
+      - generic [ref=f4e141]:
+        - generic [ref=f4e142]:
+          - generic [ref=f4e143]: M
+          - generic [ref=f4e144]:
+            - generic [ref=f4e145]:
+              - generic [ref=f4e146]:
+                - generic [ref=f4e147]: MTG
+                - generic [ref=f4e148]: Commander500
+                - generic [ref=f4e149]: ongoing
+              - heading "Edit Result Test" [level=1] [ref=f4e150]
+              - paragraph [ref=f4e151]: 📅 Jul 11, 2026 · 10:17 AM • 📍 Manaus • 👥 4 Players
+            - generic [ref=f4e154]:
+              - button "▶ Start Round 2" [ref=f4e155] [cursor=pointer]
+              - button "✓ Finish" [ref=f4e156] [cursor=pointer]
+              - button "Add Player" [ref=f4e157] [cursor=pointer]
+              - link "Edit Event" [ref=f4e161] [cursor=pointer]:
+                - /url: /event/a8441935-8a87-4963-a7eb-0bb903066692/edit
+              - button "Delete Event" [ref=f4e165] [cursor=pointer]
+        - generic [ref=f4e170]:
+          - button "Standings (4)" [ref=f4e171] [cursor=pointer]
+          - button "Pairings" [ref=f4e172] [cursor=pointer]
+          - button "Results (1 rounds)" [ref=f4e173] [cursor=pointer]
+        - generic [ref=f4e175]:
+          - generic [ref=f4e176]:
+            - heading "Round 1" [level=3] [ref=f4e177]
+            - generic [ref=f4e178]: In Progress
+            - generic [ref=f4e179]:
+              - button "🔀 Swap" [ref=f4e180] [cursor=pointer]
+              - button "↺ Undo" [ref=f4e181] [cursor=pointer]
+          - generic [ref=f4e183]:
+            - generic [ref=f4e184]:
+              - generic [ref=f4e185]: Pod 1
+              - button "Set Result" [active] [ref=f4e186] [cursor=pointer]
+            - generic [ref=f4e187]:
+              - generic [ref=f4e188]:
+                - generic [ref=f4e189]: "1"
+                - generic [ref=f4e190]: Alice
+              - generic [ref=f4e191]:
+                - generic [ref=f4e192]: "2"
+                - generic [ref=f4e193]: Carol
+              - generic [ref=f4e194]:
+                - generic [ref=f4e195]: "3"
+                - generic [ref=f4e196]: Dave
+              - generic [ref=f4e197]:
+                - generic [ref=f4e198]: "4"
+                - generic [ref=f4e199]: Bob
+      - generic [ref=f4e201]:
+        - heading "Set Result" [level=3] [ref=f4e202]
+        - paragraph [ref=f4e203]: Who won this pod?
+        - generic [ref=f4e204]:
+          - button "Alice Won" [ref=f4e205] [cursor=pointer]
+          - button "Carol Won" [ref=f4e206] [cursor=pointer]
+          - button "Dave Won" [ref=f4e207] [cursor=pointer]
+          - button "Bob Won" [ref=f4e208] [cursor=pointer]
+          - button "All Draw" [ref=f4e209] [cursor=pointer]
+          - button "Cancel" [ref=f4e210] [cursor=pointer]
+  - contentinfo [ref=f4e31]:
+    - generic [ref=f4e32]:
+      - generic [ref=f4e33]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f4e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f4e35] [cursor=pointer]:
+        - /url: /privacy-policy

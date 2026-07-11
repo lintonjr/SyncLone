@@ -760,6 +760,34 @@
 
 .pill-bye { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
 
+.pod-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-result-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: var(--surface2); color: var(--text); }
+}
+
+.current-result {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ── My Round: Pod Layout ── */
 .pod-matchup {
   display: flex;

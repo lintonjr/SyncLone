@@ -229,8 +229,18 @@
                         <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
                       }
                       @if (p.result) {
-                        <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : 'pill-done'">
-                          {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : 'Done' }}
+                        <span class="pod-header-actions">
+                          <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : 'pill-done'">
+                            {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : 'Done' }}
+                          </span>
+                          @if (canEditResult(p, currentRoundPairings()!.round)) {
+                            <button class="edit-result-btn" (click)="resultModal.set({pairing: p})" title="Edit Result">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+                          }
                         </span>
                       }
                     </div>
@@ -295,6 +305,13 @@
                           <td>
                             @if (!p.result && !swapMode()) {
                               <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
+                            } @else if (canEditResult(p, currentRoundPairings()!.round)) {
+                              <button class="edit-result-btn" (click)="resultModal.set({pairing: p})" title="Edit Result">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                              </button>
                             }
                           </td>
                         }
@@ -344,8 +361,18 @@
                           <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
                         }
                         @if (p.result) {
-                          <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : 'pill-done'">
-                            {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : 'Done' }}
+                          <span class="pod-header-actions">
+                            <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : 'pill-done'">
+                              {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : 'Done' }}
+                            </span>
+                            @if (canEditResult(p, round)) {
+                              <button class="edit-result-btn" (click)="resultModal.set({pairing: p})" title="Edit Result">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                              </button>
+                            }
                           </span>
                         }
                       </div>
@@ -411,6 +438,13 @@
                             <td>
                               @if (!p.result && !(swapMode() && round.round_number === event()!.current_round)) {
                                 <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
+                              } @else if (canEditResult(p, round)) {
+                                <button class="edit-result-btn" (click)="resultModal.set({pairing: p})" title="Edit Result">
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                  </svg>
+                                </button>
                               }
                             </td>
                           }
@@ -523,15 +557,15 @@
   @if (resultModal()) {
     <div class="modal-overlay" (click)="resultModal.set(null)">
       <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>Set Result</h3>
+        <h3>{{ resultModal()!.pairing.result ? 'Edit Result' : 'Set Result' }}</h3>
         <p class="modal-sub">Who won this {{ isPodMode() ? 'pod' : 'match' }}?</p>
         <div class="modal-btns">
           @for (player of podPlayers(resultModal()!.pairing); track player.id) {
-            <button class="btn btn-primary" (click)="submitResult(resultModal()!.pairing.id, player.slot)">
+            <button class="btn btn-primary" [class.current-result]="resultModal()!.pairing.result === player.slot" (click)="submitResult(resultModal()!.pairing.id, player.slot)">
               {{ player.name }} Won
             </button>
           }
-          <button class="btn btn-ghost" (click)="submitResult(resultModal()!.pairing.id, 'draw')">
+          <button class="btn btn-ghost" [class.current-result]="resultModal()!.pairing.result === 'draw'" (click)="submitResult(resultModal()!.pairing.id, 'draw')">
             All Draw
           </button>
           <button class="btn btn-danger" (click)="resultModal.set(null)">Cancel</button>
