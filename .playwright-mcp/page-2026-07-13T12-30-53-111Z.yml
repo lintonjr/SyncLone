@@ -1,0 +1,80 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - banner [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link [ref=f3e8] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=f3e9]
+        - generic [ref=f3e10]:
+          - link [ref=f3e11] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=f3e12]
+          - link [ref=f3e13] [cursor=pointer]:
+            - /url: /events
+            - button "My Events" [ref=f3e14]
+          - link [ref=f3e15] [cursor=pointer]:
+            - /url: /create
+            - button "Create Event" [ref=f3e16]
+          - button [ref=f3e18]
+        - generic [ref=f3e24]:
+          - button "Open notifications" [ref=f3e25]:
+            - button [ref=f3e26]
+          - button "Open user menu" [ref=f3e31]:
+            - button [ref=f3e32]
+          - button "Toggle theme" [ref=f3e35]
+    - generic [ref=f3e40]:
+      - generic [ref=f3e42]:
+        - img "Test Event" [ref=f3e45]
+        - generic [ref=f3e48]:
+          - generic [ref=f3e49]:
+            - heading "Test Event" [level=2] [ref=f3e50]
+            - paragraph [ref=f3e51]: MTG - Commander500
+            - generic [ref=f3e52]:
+              - generic [ref=f3e53]: 7/13/2026, 9:00:00 PM
+              - generic [ref=f3e57]: Manaus, Brazil
+              - generic [ref=f3e63]:
+                - generic [ref=f3e64]: "+17"
+                - generic [ref=f3e68]: 25 Players
+          - generic [ref=f3e69]:
+            - button [ref=f3e70]
+            - button [ref=f3e75]
+            - button [ref=f3e83]
+            - button [ref=f3e88]
+            - button "Hide Buttons" [ref=f3e93]:
+              - generic [ref=f3e94]: Toggle visibility
+            - button [ref=f3e99]:
+              - button [ref=f3e100]
+      - generic [ref=f3e106]:
+        - tablist [ref=f3e109]:
+          - tab "Standings" [selected] [ref=f3e112]
+          - tab "Results" [ref=f3e121]
+        - tabpanel "Standings" [ref=f3e128]:
+          - generic [ref=f3e130]:
+            - table [ref=f3e133]:
+              - rowgroup [ref=f3e134]:
+                - row [ref=f3e135]:
+                  - columnheader "Rank" [ref=f3e136]
+                  - columnheader "Player" [ref=f3e137]
+                  - columnheader "Deck" [ref=f3e138]
+                  - columnheader "Points" [ref=f3e139]
+                  - columnheader "Wins" [ref=f3e140]
+                  - columnheader "Losses" [ref=f3e141]
+                  - columnheader "Draws" [ref=f3e142]
+                  - columnheader [ref=f3e143]
+                  - columnheader "Actions" [ref=f3e148]
+              - rowgroup
+            - generic [ref=f3e149]:
+              - button [ref=f3e150]
+              - button [ref=f3e155]:
+                - button [ref=f3e156]
+    - contentinfo [ref=f3e161]:
+      - generic [ref=f3e162]:
+        - button "Report a Bug" [ref=f3e166]
+        - link "Terms of Service" [ref=f3e168] [cursor=pointer]:
+          - /url: /terms-of-service.md
+        - link "Privacy Policy" [ref=f3e170] [cursor=pointer]:
+          - /url: /privacy-policy.md
+        - link "Donate ♥" [ref=f3e172] [cursor=pointer]:
+          - /url: https://ko-fi.com/manasync
+        - generic [ref=f3e173]: © 2025 ManaSync
+  - button "Support Us" [ref=f3e178] [cursor=pointer]

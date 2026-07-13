@@ -1,0 +1,119 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e805]:
+    - banner [ref=e807]:
+      - generic [ref=e808]:
+        - link [ref=e811] [cursor=pointer]:
+          - /url: /
+          - img "Logo" [ref=e812]
+        - generic [ref=e813]:
+          - link [ref=e814] [cursor=pointer]:
+            - /url: /
+            - button "Home" [ref=e815]
+          - link [ref=e816] [cursor=pointer]:
+            - /url: /events
+            - button "My Events" [ref=e817]
+          - link [ref=e818] [cursor=pointer]:
+            - /url: /create
+            - button "Create Event" [ref=e819]
+        - generic [ref=e820]:
+          - button "Open notifications" [ref=e821]:
+            - button [ref=e822]
+          - button "Open user menu" [ref=e827]:
+            - button [ref=e828]
+          - button "Toggle theme" [ref=e831]
+    - generic [ref=e838]:
+      - heading "Edit Event" [level=1] [ref=e839]
+      - generic [ref=e840]:
+        - generic [ref=e841]:
+          - generic [ref=e842]: Event Name
+          - textbox "Event Name" [ref=e844]:
+            - /placeholder: Event Name (3-50 characters)
+            - text: Test Event
+        - generic [ref=e846]:
+          - generic [ref=e847]:
+            - generic [ref=e848]: City
+            - generic [ref=e849]:
+              - textbox "Type to search cities..." [ref=e851]: Manaus, Brazil
+              - generic [ref=e853]:
+                - generic [ref=e854]:
+                  - checkbox "Online" [ref=e855]
+                  - checkbox
+                - generic [ref=e857] [cursor=pointer]: Online
+          - generic [ref=e859]:
+            - generic [ref=e860]: Address (Optional)
+            - textbox "Address (Optional)" [ref=e862]:
+              - /placeholder: Street address, building, etc.
+        - generic [ref=e864]:
+          - generic [ref=e865]: Description (Optional)
+          - textbox "Description (Optional)" [ref=e868]:
+            - /placeholder: Event description (max 100 characters)
+        - generic [ref=e870]:
+          - generic [ref=e871]: Event Thumbnail
+          - generic [ref=e873]:
+            - generic [ref=e874]: No image selected
+            - generic [ref=e879]:
+              - button [ref=e880]
+              - button [ref=e886]
+        - generic [ref=e892]:
+          - generic [ref=e893]:
+            - generic [ref=e894]: Date
+            - button "July 14th, 2026" [ref=e896]
+          - generic [ref=e900]:
+            - generic [ref=e901]: Time
+            - textbox "--:--" [ref=e903]: 21:00
+          - generic [ref=e905]:
+            - generic [ref=e906]: Game
+            - combobox [ref=e908]:
+              - generic: MTG - Commander 500
+            - combobox [ref=e909]
+          - generic [ref=e911]:
+            - generic [ref=e912]: MTG Companion Code (Optional)
+            - textbox "MTG Companion Code (Optional)" [ref=e914]:
+              - /placeholder: Enter event code (1A2B3C4)
+        - generic [ref=e916]:
+          - generic [ref=e917]:
+            - generic [ref=e918]: Pairing Method
+            - combobox [ref=e920]:
+              - generic: Swiss (Performance Pairing)
+            - combobox [ref=e921]
+          - generic [ref=e923]:
+            - generic [ref=e924]: Playoff Structure
+            - combobox [ref=e926]:
+              - generic: Top 4 Playoff
+            - combobox [ref=e927]
+        - heading "Optionals" [level=3] [ref=e930]
+        - generic [ref=e931]:
+          - generic [ref=e932]:
+            - generic [ref=e933]:
+              - checkbox "Allow Byes" [checked] [ref=e934]
+              - checkbox [checked]
+            - generic [ref=e936]: Allow Byes
+          - generic [ref=e940]:
+            - generic [ref=e941]:
+              - checkbox "Collaborative Deck Registering" [ref=e942]
+              - checkbox
+            - generic [ref=e944]: Collaborative Deck Registering
+          - generic [ref=e948]:
+            - generic [ref=e949]:
+              - checkbox "Asynchronous Draws" [ref=e950]
+              - checkbox
+            - generic [ref=e952]: Asynchronous Draws
+          - generic [ref=e956]:
+            - generic [ref=e957]:
+              - checkbox "Confirm New Players" [ref=e958]
+              - checkbox
+            - generic [ref=e960]: Confirm New Players
+        - generic [ref=e964]:
+          - button "Cancel" [ref=e965]
+          - button [ref=e967]
+    - contentinfo [ref=e975]:
+      - generic [ref=e976]:
+        - button "Report a Bug" [ref=e980]
+        - link "Terms of Service" [ref=e982] [cursor=pointer]:
+          - /url: /terms-of-service.md
+        - link "Privacy Policy" [ref=e984] [cursor=pointer]:
+          - /url: /privacy-policy.md
+        - link "Donate ♥" [ref=e986] [cursor=pointer]:
+          - /url: https://ko-fi.com/manasync
+        - generic [ref=e987]: © 2025 ManaSync
+  - button "Support Us" [ref=e992] [cursor=pointer]
