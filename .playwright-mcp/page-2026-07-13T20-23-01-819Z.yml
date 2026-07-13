@@ -1,0 +1,65 @@
+- generic [ref=f3e2]:
+  - navigation [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link [ref=f3e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f3e7]
+        - generic [ref=f3e8]:
+          - link "Home" [ref=f3e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f3e10] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f3e11] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f3e12]:
+        - button "Open notifications" [ref=f3e14] [cursor=pointer]
+        - button "Share Test Org" [ref=f3e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f3e23] [cursor=pointer]
+  - main [ref=f3e26]:
+    - generic [ref=f3e27]:
+      - generic [ref=f3e28]:
+        - generic [ref=f3e29]:
+          - img "Share Modal Test" [ref=f3e31]
+          - generic [ref=f3e32]:
+            - generic [ref=f3e33]:
+              - generic [ref=f3e34]:
+                - generic [ref=f3e35]: MTG
+                - generic [ref=f3e36]: Commander
+                - generic [ref=f3e37]: upcoming
+              - heading "Share Modal Test" [level=1] [ref=f3e38]
+              - paragraph [ref=f3e39]: 📅 Jul 31, 2026 · 8:00 PM • 📍 Manaus • 👥 0 Players
+            - generic [ref=f3e42]:
+              - button "▶ Start Round 1" [ref=f3e43] [cursor=pointer]
+              - button "✓ Finish" [ref=f3e44] [cursor=pointer]
+              - button "Add Player" [ref=f3e45] [cursor=pointer]
+              - button "Share" [ref=f3e49] [cursor=pointer]
+              - link "Edit Event" [ref=f3e56] [cursor=pointer]:
+                - /url: /event/33d0cc04-d8e5-4de3-aa4a-89d4543e3354/edit
+              - button "Delete Event" [ref=f3e60] [cursor=pointer]
+        - generic [ref=f3e65]:
+          - button "Standings (0)" [ref=f3e66] [cursor=pointer]
+          - button "Results (0 rounds)" [ref=f3e67] [cursor=pointer]
+        - paragraph [ref=f3e69]: No players yet. Be the first to join!
+      - generic [ref=f3e76]:
+        - button "✕" [ref=f3e77] [cursor=pointer]
+        - heading "Share Modal Test" [level=3] [ref=f3e78]
+        - paragraph [ref=f3e79]: MTG - Commander
+        - list [ref=f3e80]:
+          - listitem [ref=f3e81]: 🧑 Organized by Share Test Org
+          - listitem [ref=f3e82]: 📅 7/31/2026, 8:00:00 PM
+          - listitem [ref=f3e83]: 📍 Manaus
+          - listitem [ref=f3e84]: 👥 0 Players
+        - img "Event entry QR code" [ref=f3e86]
+        - generic [ref=f3e87]:
+          - button "💬 WhatsApp" [ref=f3e88] [cursor=pointer]
+          - button "✉️ Email" [ref=f3e89] [cursor=pointer]
+          - button "🔗 Copy URL" [ref=f3e95] [cursor=pointer]
+          - button "↗ Open Link" [active] [ref=f3e91] [cursor=pointer]
+  - contentinfo [ref=f3e70]:
+    - generic [ref=f3e71]:
+      - generic [ref=f3e72]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f3e73] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f3e74] [cursor=pointer]:
+        - /url: /privacy-policy

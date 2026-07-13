@@ -67,14 +67,13 @@
                   </svg>
                 </button>
                 @if (event()!.qr_code_enabled) {
-                  <button class="btn btn-ghost icon-only" (click)="openQrModal()" title="Entry QR Code">
+                  <button class="btn btn-ghost icon-only" (click)="openQrModal()" title="Share">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="3" y="3" width="7" height="7"/>
-                      <rect x="14" y="3" width="7" height="7"/>
-                      <rect x="3" y="14" width="7" height="7"/>
-                      <line x1="14" y1="14" x2="14" y2="21"/>
-                      <line x1="21" y1="14" x2="21" y2="21"/>
-                      <line x1="14" y1="17.5" x2="21" y2="17.5"/>
+                      <circle cx="18" cy="5" r="3"/>
+                      <circle cx="6" cy="12" r="3"/>
+                      <circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                     </svg>
                   </button>
                 }
@@ -688,26 +687,34 @@
     </div>
   }
 
-  <!-- Entry QR Code Modal -->
+  <!-- Share Modal -->
   @if (qrModal()) {
     <div class="modal-overlay" (click)="qrModal.set(false)">
-      <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>Entry QR Code</h3>
-        <p class="modal-sub">Players who scan this code go straight to this event's page to join.</p>
+      <div class="modal card share-modal" (click)="$event.stopPropagation()">
+        <button class="modal-close" (click)="qrModal.set(false)" title="Close">✕</button>
+        <h3>{{ event()!.name }}</h3>
+        <p class="modal-sub">{{ event()!.game }}{{ event()!.format ? ' - ' + event()!.format : '' }}</p>
+
+        <ul class="share-meta">
+          <li>🧑 Organized by {{ event()!.owner_name }}</li>
+          <li>📅 {{ event()!.date | date:'M/d/yyyy, h:mm:ss a' }}</li>
+          <li>📍 {{ event()!.online ? 'Online' : (event()!.city || 'TBD') }}</li>
+          <li>👥 {{ event()!.players?.length ?? 0 }} Players</li>
+        </ul>
+
         <div class="qr-code-box">
           @if (qrDataUrl()) {
-            <img [src]="qrDataUrl()" alt="Event entry QR code" width="280" height="280" />
+            <img [src]="qrDataUrl()" alt="Event entry QR code" width="220" height="220" />
           } @else {
             <div class="spinner"></div>
           }
         </div>
-        <div class="form-field" style="margin-top:12px">
-          <label>Link</label>
-          <input type="text" readonly [value]="joinUrl()" />
-        </div>
-        <div class="modal-btns">
-          <button class="btn btn-primary" (click)="copyJoinLink()">{{ qrCopied() ? 'Copied!' : 'Copy Link' }}</button>
-          <button class="btn btn-ghost" (click)="qrModal.set(false)">Close</button>
+
+        <div class="share-actions">
+          <button class="btn btn-ghost" (click)="shareViaWhatsApp()">💬 WhatsApp</button>
+          <button class="btn btn-ghost" (click)="shareViaEmail()">✉️ Email</button>
+          <button class="btn btn-ghost" (click)="copyJoinLink()">🔗 {{ qrCopied() ? 'Copied!' : 'Copy URL' }}</button>
+          <button class="btn btn-ghost" (click)="openJoinLink()">↗ Open Link</button>
         </div>
       </div>
     </div>

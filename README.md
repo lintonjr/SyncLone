@@ -16,7 +16,7 @@ Stack: **Angular 21** (frontend) + **Node/Express** (backend) + **MySQL 8**.
 - Pontuação configurável por evento — pontos para Win / Draw / Loss definidos pelo organizador e aplicados durante todo o torneio
 - Tamanho de pod configurável (2 a 4 jogadores por mesa)
 - Encerramento manual do evento (`finish`) — evento finalizado não aceita mais `join`, botão some da UI
-- **Generate Entry QR Code**: quando ativado, o organizador tem um botão "Entry QR Code" na página do evento que abre um QR (gerado no cliente, sem depender de serviço externo) apontando pra `/event/:id` — jogador escaneia, cai na página do evento e usa o botão Join normalmente
+- **Generate Entry QR Code**: quando ativado, o organizador tem um botão **Share** na página do evento — modal com nome/organizador/data/local/nº de jogadores, QR code (gerado no cliente, sem depender de serviço externo) apontando pra `/event/:id`, e botões WhatsApp / Email / Copy URL / Open Link, no mesmo formato do manasync.io real
 
 ### Jogadores
 - Adicionar jogador manualmente (organizador) ou entrada via auto-registro (`join`)

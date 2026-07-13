@@ -444,7 +444,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   openQrModal() {
     this.qrCopied.set(false);
     this.qrModal.set(true);
-    QRCode.toDataURL(this.joinUrl(), { width: 280, margin: 2 }).then((url) => this.qrDataUrl.set(url));
+    QRCode.toDataURL(this.joinUrl(), { width: 220, margin: 2 }).then((url) => this.qrDataUrl.set(url));
   }
 
   copyJoinLink() {
@@ -452,6 +452,21 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       this.qrCopied.set(true);
       setTimeout(() => this.qrCopied.set(false), 2000);
     });
+  }
+
+  shareViaWhatsApp() {
+    const text = `${this.event()?.name} — ${this.joinUrl()}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  }
+
+  shareViaEmail() {
+    const subject = this.event()?.name ?? 'ManaSync Event';
+    const body = this.joinUrl();
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  openJoinLink() {
+    window.open(this.joinUrl(), '_blank');
   }
 
   submitAddPlayer() {
