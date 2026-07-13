@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const auth = require('../middleware/auth');
+const requireOrganizer = require('../middleware/requireOrganizer');
 const { generateSwissPairings, seedPlayoffPods } = require('../services/pairing');
 
 const storage = multer.diskStorage({
@@ -16,7 +17,7 @@ const parseBool = (v) => v === 'true' || v === true || v === 1 || v === '1';
 
 async function pendingResultsCount(roundId) {
   const row = await db.get(
-    'SELECT COUNT(*) as cnt FROM pairings WHERE round_id = ? AND result IS NULL',
+    "SELECT COUNT(*) as cnt FROM pairings WHERE round_id = ? AND (result IS NULL OR result_status = 'pending')",
     [roundId]
   );
   return row.cnt;
@@ -135,13 +136,13 @@ router.get('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Auth: create event
-router.post('/', auth, upload.single('thumbnail'), async (req, res) => {
+// Auth: create event (organizer only)
+router.post('/', auth, requireOrganizer, upload.single('thumbnail'), async (req, res) => {
   try {
     const {
       name, description, city, address, online, date, game, format,
       pairing_method, playoff_structure, allow_byes, test_event,
-      collaborative_deck, async_draws, confirm_players, pod_size,
+      collaborative_deck, async_draws, confirm_players, qr_code_enabled, pod_size,
       points_win, points_draw, points_loss,
     } = req.body;
     if (!name || !date || !game)
@@ -157,15 +158,15 @@ router.post('/', auth, upload.single('thumbnail'), async (req, res) => {
     await db.run(`
       INSERT INTO events (id, name, description, city, address, online, thumbnail, date, game, format,
         pairing_method, playoff_structure, allow_byes, test_event, collaborative_deck, async_draws,
-        confirm_players, pod_size, points_win, points_draw, points_loss, owner_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        confirm_players, qr_code_enabled, pod_size, points_win, points_draw, points_loss, owner_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       id, name, description || null, city || null, address || null,
       parseBool(online) ? 1 : 0, thumbnail, date, game, format || null,
       pairing_method || 'swiss', playoff_structure || 'none',
       parseBool(allow_byes) ? 1 : 0, parseBool(test_event) ? 1 : 0,
       parseBool(collaborative_deck) ? 1 : 0, parseBool(async_draws) ? 1 : 0,
-      parseBool(confirm_players) ? 1 : 0, podSizeVal,
+      parseBool(confirm_players) ? 1 : 0, parseBool(qr_code_enabled) ? 1 : 0, podSizeVal,
       pointsWinVal, pointsDrawVal, pointsLossVal, req.user.id,
     ]);
 
@@ -183,7 +184,7 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
     const {
       name, description, city, address, online, date, game, format,
       pairing_method, pod_size, playoff_structure, allow_byes, test_event,
-      collaborative_deck, async_draws, confirm_players, status,
+      collaborative_deck, async_draws, confirm_players, qr_code_enabled, status,
       points_win, points_draw, points_loss,
     } = req.body;
 
@@ -192,7 +193,7 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
     await db.run(`
       UPDATE events SET name=?, description=?, city=?, address=?, online=?, thumbnail=?, date=?,
       game=?, format=?, pairing_method=?, pod_size=?, playoff_structure=?, allow_byes=?, test_event=?,
-      collaborative_deck=?, async_draws=?, confirm_players=?, points_win=?, points_draw=?, points_loss=?,
+      collaborative_deck=?, async_draws=?, confirm_players=?, qr_code_enabled=?, points_win=?, points_draw=?, points_loss=?,
       status=? WHERE id=?
     `, [
       name || event.name, description ?? event.description, city ?? event.city,
@@ -205,6 +206,7 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
       collaborative_deck !== undefined ? (parseBool(collaborative_deck) ? 1 : 0) : event.collaborative_deck,
       async_draws !== undefined ? (parseBool(async_draws) ? 1 : 0) : event.async_draws,
       confirm_players !== undefined ? (parseBool(confirm_players) ? 1 : 0) : event.confirm_players,
+      qr_code_enabled !== undefined ? (parseBool(qr_code_enabled) ? 1 : 0) : event.qr_code_enabled,
       points_win !== undefined && points_win !== '' ? parseInt(points_win) : event.points_win,
       points_draw !== undefined && points_draw !== '' ? parseInt(points_draw) : event.points_draw,
       points_loss !== undefined && points_loss !== '' ? parseInt(points_loss) : event.points_loss,
@@ -234,6 +236,7 @@ router.post('/:id/join', auth, async (req, res) => {
   try {
     const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
     if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (event.status === 'completed') return res.status(400).json({ error: 'This event has already finished' });
     const existing = await db.get(
       'SELECT id FROM event_players WHERE event_id = ? AND user_id = ?',
       [req.params.id, req.user.id]
@@ -525,7 +528,7 @@ router.post('/:id/rounds/undo', auth, async (req, res) => {
 
     const pairings = await db.query('SELECT * FROM pairings WHERE round_id = ?', [round.id]);
     for (const p of pairings) {
-      if (!p.result) continue;
+      if (!p.result || p.result_status !== 'confirmed') continue;
       const allPlayers = [p.player1_id, p.player2_id, p.player3_id, p.player4_id].filter(Boolean);
       if (p.result === 'draw') {
         for (const id of allPlayers) await undoDraw(id);
@@ -619,14 +622,28 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
 
     const isOwner = event.owner_id === req.user.id;
     if (!isOwner) {
-      // Async Draws: a seated player may self-report a draw on their own still-pending match
+      // Player-Reported Results: a seated player may self-report the outcome of their own
+      // still-pending match. In a 1v1 they can report a win, a loss, or a draw. In a
+      // multiplayer pod only "I Won" (unambiguous: everyone else lost) or "Draw" are allowed —
+      // reporting a loss wouldn't say who among the other seats actually won.
       const seatedPlayer = await db.get(
         'SELECT id FROM event_players WHERE event_id = ? AND user_id = ? AND id IN (?, ?, ?, ?)',
         [req.params.id, req.user.id, pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id]
       );
-      const canSelfReportDraw = event.async_draws && result === 'draw' && !pairing.result && !!seatedPlayer;
-      if (!canSelfReportDraw) return res.status(403).json({ error: 'Forbidden' });
+      const slotOf = { player1: pairing.player1_id, player2: pairing.player2_id, player3: pairing.player3_id, player4: pairing.player4_id };
+      const mySlot = seatedPlayer && Object.keys(slotOf).find((slot) => slotOf[slot] === seatedPlayer.id);
+      const isPod = !!(pairing.player3_id || pairing.player4_id);
+      const allowedResults = mySlot
+        ? (isPod ? ['draw', mySlot] : ['draw', mySlot, mySlot === 'player1' ? 'player2' : 'player1'])
+        : [];
+
+      const canSelfReport = event.async_draws && !pairing.result && allowedResults.includes(result);
+      if (!canSelfReport) return res.status(403).json({ error: 'Forbidden' });
     }
+
+    // Organizer-set results are confirmed immediately (they're the authority). A player's own
+    // self-report needs the organizer's approval before it counts towards standings.
+    const newStatus = isOwner ? 'confirmed' : 'pending';
 
     const win  = async (id) => id && await db.run('UPDATE event_players SET wins=wins+1,   points=points+? WHERE id=?', [event.points_win, id]);
     const loss = async (id) => id && await db.run('UPDATE event_players SET losses=losses+1, points=points+? WHERE id=?', [event.points_loss, id]);
@@ -640,8 +657,9 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
     const winnerKey = { player1: pairing.player1_id, player2: pairing.player2_id, player3: pairing.player3_id, player4: pairing.player4_id };
 
     // Revert the previous result's effect, if any, before applying the new one
-    // (prevents double-counting points when an owner corrects a result)
-    if (pairing.result) {
+    // (prevents double-counting points when an owner corrects a result). A pending result never
+    // had points applied, so there's nothing to revert in that case.
+    if (pairing.result && pairing.result_status === 'confirmed') {
       if (pairing.result === 'draw') {
         for (const id of allPlayers) await undoDraw(id);
       } else if (pairing.result === 'bye') {
@@ -655,19 +673,62 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
       }
     }
 
-    await db.run('UPDATE pairings SET result = ? WHERE id = ?', [result, req.params.pairingId]);
+    await db.run('UPDATE pairings SET result = ?, result_status = ? WHERE id = ?', [result, newStatus, req.params.pairingId]);
 
-    if (result === 'draw') {
+    if (newStatus === 'confirmed') {
+      if (result === 'draw') {
+        for (const id of allPlayers) await draw(id);
+      } else if (result === 'bye') {
+        for (const id of allPlayers) await win(id);
+      } else {
+        const winnerId = winnerKey[result];
+        for (const id of allPlayers) {
+          if (id === winnerId) await win(id);
+          else await loss(id);
+        }
+      }
+    }
+
+    const pending = await pendingResultsCount(pairing.round_id);
+    await db.run('UPDATE rounds SET status = ? WHERE id = ?',
+      [pending === 0 ? 'completed' : 'active', pairing.round_id]);
+
+    res.json(await db.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Auth: approve a player-submitted result (owner only) — applies its already-stored points
+router.post('/:id/pairings/:pairingId/approve', auth, async (req, res) => {
+  try {
+    const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+
+    const pairing = await db.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]);
+    if (!pairing) return res.status(404).json({ error: 'Pairing not found' });
+    if (!pairing.result) return res.status(400).json({ error: 'No result to approve' });
+    if (pairing.result_status === 'confirmed') return res.status(400).json({ error: 'Result already confirmed' });
+
+    const win  = async (id) => id && await db.run('UPDATE event_players SET wins=wins+1,   points=points+? WHERE id=?', [event.points_win, id]);
+    const loss = async (id) => id && await db.run('UPDATE event_players SET losses=losses+1, points=points+? WHERE id=?', [event.points_loss, id]);
+    const draw = async (id) => id && await db.run('UPDATE event_players SET draws=draws+1,  points=points+? WHERE id=?', [event.points_draw, id]);
+
+    const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
+    const winnerKey = { player1: pairing.player1_id, player2: pairing.player2_id, player3: pairing.player3_id, player4: pairing.player4_id };
+
+    if (pairing.result === 'draw') {
       for (const id of allPlayers) await draw(id);
-    } else if (result === 'bye') {
+    } else if (pairing.result === 'bye') {
       for (const id of allPlayers) await win(id);
     } else {
-      const winnerId = winnerKey[result];
+      const winnerId = winnerKey[pairing.result];
       for (const id of allPlayers) {
         if (id === winnerId) await win(id);
         else await loss(id);
       }
     }
+
+    await db.run("UPDATE pairings SET result_status = 'confirmed' WHERE id = ?", [req.params.pairingId]);
 
     const pending = await pendingResultsCount(pairing.round_id);
     await db.run('UPDATE rounds SET status = ? WHERE id = ?',

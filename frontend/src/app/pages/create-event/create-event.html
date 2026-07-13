@@ -127,8 +127,9 @@
       <label class="checkbox-label"><input type="checkbox" [checked]="allowByes()" (change)="allowByes.set($any($event.target).checked)" /> Allow Byes</label>
       <label class="checkbox-label"><input type="checkbox" [checked]="testEvent()" (change)="testEvent.set($any($event.target).checked)" /> Test Event</label>
       <label class="checkbox-label"><input type="checkbox" [checked]="collaborativeDeck()" (change)="collaborativeDeck.set($any($event.target).checked)" /> Collaborative Deck Registering</label>
-      <label class="checkbox-label"><input type="checkbox" [checked]="asyncDraws()" (change)="asyncDraws.set($any($event.target).checked)" /> Asynchronous Draws</label>
+      <label class="checkbox-label"><input type="checkbox" [checked]="asyncDraws()" (change)="asyncDraws.set($any($event.target).checked)" /> Player-Reported Results</label>
       <label class="checkbox-label"><input type="checkbox" [checked]="confirmPlayers()" (change)="confirmPlayers.set($any($event.target).checked)" /> Confirm New Players</label>
+      <label class="checkbox-label"><input type="checkbox" [checked]="qrCodeEnabled()" (change)="qrCodeEnabled.set($any($event.target).checked)" /> Generate Entry QR Code</label>
     </div>
 
     <button class="btn btn-primary" (click)="submit()" [disabled]="loading()">

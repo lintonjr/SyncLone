@@ -20,6 +20,7 @@ export interface TournamentEvent {
   collaborative_deck: number;
   async_draws: number;
   confirm_players: number;
+  qr_code_enabled: number;
   pod_size: number;
   points_win: number;
   points_draw: number;
@@ -66,6 +67,7 @@ export interface Pairing {
   player3_id?: string;
   player4_id?: string;
   result?: string;
+  result_status?: 'pending' | 'confirmed';
   table_number: number;
   p1_name?: string;
   p2_name?: string;
@@ -150,6 +152,14 @@ export class EventService {
     return this.http.put(
       `${this.API}/${eventId}/pairings/${pairingId}`,
       { result },
+      { headers: this.authHeaders() }
+    );
+  }
+
+  approveResult(eventId: string, pairingId: string) {
+    return this.http.post(
+      `${this.API}/${eventId}/pairings/${pairingId}/approve`,
+      {},
       { headers: this.authHeaders() }
     );
   }

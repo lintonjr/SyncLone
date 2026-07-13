@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `display_name` varchar(100) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password_hash` text NOT NULL,
+  `role` enum('player','organizer') NOT NULL DEFAULT 'player',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS `events` (
   `collaborative_deck` tinyint(1) NOT NULL DEFAULT '0',
   `async_draws` tinyint(1) NOT NULL DEFAULT '0',
   `confirm_players` tinyint(1) NOT NULL DEFAULT '0',
+  `qr_code_enabled` tinyint(1) NOT NULL DEFAULT '0',
   `status` varchar(20) NOT NULL DEFAULT 'upcoming',
   `current_round` int NOT NULL DEFAULT '0',
   `owner_id` varchar(36) NOT NULL,
@@ -86,6 +88,7 @@ CREATE TABLE IF NOT EXISTS `pairings` (
   `player1_id` varchar(36) NOT NULL,
   `player2_id` varchar(36) DEFAULT NULL,
   `result` varchar(20) DEFAULT NULL,
+  `result_status` varchar(20) NOT NULL DEFAULT 'confirmed',
   `table_number` int DEFAULT NULL,
   `player3_id` varchar(36) DEFAULT NULL,
   `player4_id` varchar(36) DEFAULT NULL,

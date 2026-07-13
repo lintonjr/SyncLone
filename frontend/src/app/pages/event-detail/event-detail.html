@@ -66,6 +66,18 @@
                     <line x1="22" y1="11" x2="16" y2="11"/>
                   </svg>
                 </button>
+                @if (event()!.qr_code_enabled) {
+                  <button class="btn btn-ghost icon-only" (click)="openQrModal()" title="Entry QR Code">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="7" height="7"/>
+                      <rect x="14" y="3" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/>
+                      <line x1="14" y1="14" x2="14" y2="21"/>
+                      <line x1="21" y1="14" x2="21" y2="21"/>
+                      <line x1="14" y1="17.5" x2="21" y2="17.5"/>
+                    </svg>
+                  </button>
+                }
                 @if (event()!.test_event) {
                   <button class="btn btn-ghost phantom-btn" (click)="openPhantomModal()" title="Add Phantom Players">
                     👻 Add Phantom
@@ -89,7 +101,7 @@
             </div>
           } @else if (isJoined()) {
             <button class="btn btn-ghost" (click)="leave()" [disabled]="actionLoading()">Leave Event</button>
-          } @else {
+          } @else if (event()!.status !== 'completed') {
             <button class="btn btn-primary" (click)="join()" [disabled]="actionLoading()">Join Event</button>
           }
         </div>
@@ -122,7 +134,7 @@
       <!-- STANDINGS TAB -->
       @if (tab() === 'standings') {
         @if (sortedStandings().length === 0) {
-          <p class="empty">No players yet. Be the first to join!</p>
+          <p class="empty">{{ event()!.status === 'completed' ? 'No players joined this event.' : 'No players yet. Be the first to join!' }}</p>
         } @else {
           <div class="standings-table card">
             <table>
@@ -261,9 +273,12 @@
                       }
                       @if (p.result) {
                         <span class="pod-header-actions">
-                          <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : 'pill-done'">
-                            {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : 'Done' }}
+                          <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : p.result_status === 'pending' ? 'pill-pending' : 'pill-done'">
+                            {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : p.result_status === 'pending' ? 'Pending' : 'Done' }}
                           </span>
+                          @if (isOwner() && p.result_status === 'pending') {
+                            <button class="btn btn-primary" style="font-size:11px;padding:3px 8px" (click)="approveResult(p.id)">Approve</button>
+                          }
                           @if (canEditResult(p, currentRoundPairings()!.round)) {
                             <button class="edit-result-btn" (click)="resultModal.set({pairing: p})" title="Edit Result">
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -280,12 +295,14 @@
                         <div class="pod-player" [class]="'pr-' + (podPlayerResult(p, player.slot) ?? 'pending')">
                           <span class="pod-seat">{{ $index + 1 }}</span>
                           <span class="pod-name">{{ player.name }}</span>
-                          @if (p.result) {
+                          @if (p.result && (p.result_status === 'confirmed' || isOwner())) {
                             <span class="pod-result-badge" [class]="'prb-' + podPlayerResult(p, player.slot)">
                               {{ podPlayerResult(p, player.slot) === 'win' ? 'WIN' :
                                  podPlayerResult(p, player.slot) === 'draw' ? 'DRAW' :
                                  podPlayerResult(p, player.slot) === 'bye' ? 'BYE' : 'LOSS' }}
                             </span>
+                          } @else if (p.result) {
+                            <span class="pod-result-badge prb-pending">PENDING</span>
                           } @else if (isOwner() && swapMode()) {
                             <button class="swap-select-btn" [class.selected]="swapSelected() === player.id" (click)="selectForSwap(player.id)" title="Select for swap">
                               ↺
@@ -328,15 +345,19 @@
                           }
                         </td>
                         <td>
-                          <span class="result-pill" [class]="p.result ? 'pill-done' : 'pill-pending'">
-                            {{ resultLabel(p.result) }}
+                          <span class="result-pill" [class]="!p.result ? 'pill-pending' : p.result_status === 'pending' ? 'pill-pending' : 'pill-done'">
+                            {{ resultLabel(p) }}
                           </span>
                         </td>
                         @if (isOwner()) {
                           <td>
                             @if (!p.result && !swapMode()) {
                               <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
-                            } @else if (canEditResult(p, currentRoundPairings()!.round)) {
+                            }
+                            @if (p.result_status === 'pending') {
+                              <button class="btn btn-primary" style="font-size:11px;padding:2px 6px" (click)="approveResult(p.id)">Approve</button>
+                            }
+                            @if (canEditResult(p, currentRoundPairings()!.round)) {
                               <button class="edit-result-btn" (click)="resultModal.set({pairing: p})" title="Edit Result">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -393,9 +414,12 @@
                         }
                         @if (p.result) {
                           <span class="pod-header-actions">
-                            <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : 'pill-done'">
-                              {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : 'Done' }}
+                            <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : p.result_status === 'pending' ? 'pill-pending' : 'pill-done'">
+                              {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : p.result_status === 'pending' ? 'Pending' : 'Done' }}
                             </span>
+                            @if (isOwner() && p.result_status === 'pending') {
+                              <button class="btn btn-primary" style="font-size:11px;padding:3px 8px" (click)="approveResult(p.id)">Approve</button>
+                            }
                             @if (canEditResult(p, round)) {
                               <button class="edit-result-btn" (click)="resultModal.set({pairing: p})" title="Edit Result">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -412,12 +436,14 @@
                           <div class="pod-player" [class]="'pr-' + (podPlayerResult(p, player.slot) ?? 'pending')">
                             <span class="pod-seat">{{ $index + 1 }}</span>
                             <span class="pod-name">{{ player.name }}</span>
-                            @if (p.result) {
+                            @if (p.result && (p.result_status === 'confirmed' || isOwner())) {
                               <span class="pod-result-badge" [class]="'prb-' + podPlayerResult(p, player.slot)">
                                 {{ podPlayerResult(p, player.slot) === 'win' ? 'WIN' :
                                    podPlayerResult(p, player.slot) === 'draw' ? 'DRAW' :
                                    podPlayerResult(p, player.slot) === 'bye' ? 'BYE' : 'LOSS' }}
                               </span>
+                            } @else if (p.result) {
+                              <span class="pod-result-badge prb-pending">PENDING</span>
                             } @else if (isOwner() && swapMode() && round.round_number === event()!.current_round) {
                               <button class="swap-select-btn" [class.selected]="swapSelected() === player.id" (click)="selectForSwap(player.id)" title="Select for swap">
                                 ↺
@@ -461,15 +487,19 @@
                             }
                           </td>
                           <td>
-                            <span class="result-pill" [class]="p.result ? 'pill-done' : 'pill-pending'">
-                              {{ resultLabel(p.result) }}
+                            <span class="result-pill" [class]="!p.result ? 'pill-pending' : p.result_status === 'pending' ? 'pill-pending' : 'pill-done'">
+                              {{ resultLabel(p) }}
                             </span>
                           </td>
                           @if (isOwner()) {
                             <td>
                               @if (!p.result && !(swapMode() && round.round_number === event()!.current_round)) {
                                 <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="resultModal.set({pairing: p})">Set Result</button>
-                              } @else if (canEditResult(p, round)) {
+                              }
+                              @if (p.result_status === 'pending') {
+                                <button class="btn btn-primary" style="font-size:11px;padding:2px 6px" (click)="approveResult(p.id)">Approve</button>
+                              }
+                              @if (canEditResult(p, round)) {
                                 <button class="edit-result-btn" (click)="resultModal.set({pairing: p})" title="Edit Result">
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -544,7 +574,7 @@
             }
 
             <div class="myround-result">
-              @if (myRound()!.pairing.result) {
+              @if (myRound()!.pairing.result && myRound()!.pairing.result_status !== 'pending') {
                 @if (podPlayers(myRound()!.pairing).find(p => p.id === myRound()!.myPlayer.id); as me) {
                   @if (podPlayerResult(myRound()!.pairing, me.slot); as pr) {
                     <span class="my-result-badge" [class]="'result-' + pr">
@@ -552,12 +582,24 @@
                     </span>
                   }
                 }
+              } @else if (myRound()!.pairing.result) {
+                <span class="result-pill pill-pending">Pending Approval — waiting on organizer</span>
               } @else {
                 <span class="result-pill pill-pending">Awaiting Result</span>
                 @if (event()!.async_draws) {
-                  <button class="btn btn-ghost report-draw-btn" (click)="submitResult(myRound()!.pairing.id, 'draw')">
-                    Report Draw
-                  </button>
+                  <div class="self-report-actions">
+                    <button class="btn btn-ghost report-draw-btn" (click)="submitResult(myRound()!.pairing.id, mySlot()!)">
+                      I Won
+                    </button>
+                    @if (!isPodMode()) {
+                      <button class="btn btn-ghost report-draw-btn" (click)="submitResult(myRound()!.pairing.id, opponentSlot()!)">
+                        I Lost
+                      </button>
+                    }
+                    <button class="btn btn-ghost report-draw-btn" (click)="submitResult(myRound()!.pairing.id, 'draw')">
+                      Report Draw
+                    </button>
+                  </div>
                 }
               }
             </div>
@@ -641,6 +683,31 @@
             @if (addPlayerLoading()) { <span class="spinner-sm"></span> } Add Player
           </button>
           <button class="btn btn-ghost" (click)="addPlayerModal.set(false)">Cancel</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Entry QR Code Modal -->
+  @if (qrModal()) {
+    <div class="modal-overlay" (click)="qrModal.set(false)">
+      <div class="modal card" (click)="$event.stopPropagation()">
+        <h3>Entry QR Code</h3>
+        <p class="modal-sub">Players who scan this code go straight to this event's page to join.</p>
+        <div class="qr-code-box">
+          @if (qrDataUrl()) {
+            <img [src]="qrDataUrl()" alt="Event entry QR code" width="280" height="280" />
+          } @else {
+            <div class="spinner"></div>
+          }
+        </div>
+        <div class="form-field" style="margin-top:12px">
+          <label>Link</label>
+          <input type="text" readonly [value]="joinUrl()" />
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-primary" (click)="copyJoinLink()">{{ qrCopied() ? 'Copied!' : 'Copy Link' }}</button>
+          <button class="btn btn-ghost" (click)="qrModal.set(false)">Close</button>
         </div>
       </div>
     </div>

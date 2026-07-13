@@ -1,0 +1,120 @@
+- generic [ref=f4e2]:
+  - navigation [ref=f4e3]:
+    - generic [ref=f4e4]:
+      - generic [ref=f4e5]:
+        - link [ref=f4e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f4e7]
+        - generic [ref=f4e8]:
+          - link "Home" [ref=f4e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f4e10] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f4e11] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f4e12]:
+        - button "Open notifications" [ref=f4e14] [cursor=pointer]
+        - button "QR Test Org" [ref=f4e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f4e23] [cursor=pointer]
+  - main [ref=f4e26]:
+    - generic [ref=f4e28]:
+      - heading "Create New Event" [level=1] [ref=f4e29]
+      - generic [ref=f4e30]:
+        - generic [ref=f4e31]:
+          - generic [ref=f4e32]: Event Name
+          - textbox "Event Name (3-50 characters)" [ref=f4e33]
+        - generic [ref=f4e34]:
+          - generic [ref=f4e35]:
+            - generic [ref=f4e36]: City
+            - textbox "City" [ref=f4e37]
+            - generic [ref=f4e38] [cursor=pointer]:
+              - checkbox "Online" [ref=f4e39]
+              - text: Online
+          - generic [ref=f4e40]:
+            - generic [ref=f4e41]: Address (Optional)
+            - textbox "Street address, building, etc." [ref=f4e42]
+        - generic [ref=f4e43]:
+          - generic [ref=f4e44]: Description (Optional)
+          - textbox "Event description (max 100 characters)" [ref=f4e45]
+        - generic [ref=f4e46]:
+          - generic [ref=f4e47]: Event Thumbnail
+          - generic [ref=f4e48]:
+            - generic [ref=f4e49]: No image selected
+            - generic [ref=f4e50] [cursor=pointer]: Upload Image
+        - generic [ref=f4e51]:
+          - generic [ref=f4e52]:
+            - generic [ref=f4e53]: Date
+            - textbox [ref=f4e54]
+          - generic [ref=f4e55]:
+            - generic [ref=f4e56]: Time
+            - textbox [ref=f4e57]
+          - generic [ref=f4e58]:
+            - generic [ref=f4e59]: Game
+            - combobox [ref=f4e60]:
+              - option "Select a game" [selected]
+              - option "MTG"
+              - option "Pokémon"
+              - option "Yu-Gi-Oh!"
+              - option "Lorcana"
+              - option "Flesh and Blood"
+              - option "Other"
+        - generic [ref=f4e61]:
+          - generic [ref=f4e62]:
+            - generic [ref=f4e63]: Pairing Method
+            - combobox [ref=f4e64]:
+              - option "Swiss (Performance Pairing)" [selected]
+              - option "Swiss (Less Repetition)"
+              - option "Avoid Repetition"
+              - option "Random"
+          - generic [ref=f4e65]:
+            - generic [ref=f4e66]: Players per Pod
+            - combobox [ref=f4e67]:
+              - option "2 — 1v1 (Standard)"
+              - option "3 — 3-player Pod"
+              - option "4 — 4-player Pod (Commander)"
+        - generic [ref=f4e68]:
+          - generic [ref=f4e69]: Playoff Structure
+          - combobox [ref=f4e70]:
+            - option "No Playoffs" [selected]
+            - option "Top 4 Playoff"
+            - option "Top 8 Playoff"
+            - option "Top 16 Playoff"
+        - heading "Scoring" [level=3] [ref=f4e71]
+        - generic [ref=f4e72]:
+          - generic [ref=f4e73]:
+            - generic [ref=f4e74]: Points per Win
+            - spinbutton [ref=f4e75]: "3"
+          - generic [ref=f4e76]:
+            - generic [ref=f4e77]: Points per Draw
+            - spinbutton [ref=f4e78]: "1"
+          - generic [ref=f4e79]:
+            - generic [ref=f4e80]: Points per Loss
+            - spinbutton [ref=f4e81]: "0"
+        - heading "Optionals" [level=3] [ref=f4e82]
+        - generic [ref=f4e83]:
+          - generic [ref=f4e84] [cursor=pointer]:
+            - checkbox "Allow Byes" [ref=f4e85]
+            - text: Allow Byes
+          - generic [ref=f4e86] [cursor=pointer]:
+            - checkbox "Test Event" [ref=f4e87]
+            - text: Test Event
+          - generic [ref=f4e88] [cursor=pointer]:
+            - checkbox "Collaborative Deck Registering" [ref=f4e89]
+            - text: Collaborative Deck Registering
+          - generic [ref=f4e90] [cursor=pointer]:
+            - checkbox "Player-Reported Results" [ref=f4e91]
+            - text: Player-Reported Results
+          - generic [ref=f4e92] [cursor=pointer]:
+            - checkbox "Confirm New Players" [ref=f4e93]
+            - text: Confirm New Players
+          - generic [ref=f4e94] [cursor=pointer]:
+            - checkbox "Generate Entry QR Code" [ref=f4e95]
+            - text: Generate Entry QR Code
+        - button "Create Event" [ref=f4e96] [cursor=pointer]
+  - contentinfo [ref=f4e97]:
+    - generic [ref=f4e98]:
+      - generic [ref=f4e99]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f4e100] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f4e101] [cursor=pointer]:
+        - /url: /privacy-policy

@@ -1,0 +1,71 @@
+- generic [ref=f8e2]:
+  - navigation [ref=f8e3]:
+    - generic [ref=f8e4]:
+      - generic [ref=f8e5]:
+        - link [ref=f8e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f8e7]
+        - generic [ref=f8e8]:
+          - link "Home" [ref=f8e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f8e10] [cursor=pointer]:
+            - /url: /events
+      - generic [ref=f8e11]:
+        - button "Open notifications" [ref=f8e13] [cursor=pointer]
+        - button "UI Test P1" [ref=f8e18] [cursor=pointer]
+        - button "Toggle theme" [ref=f8e22] [cursor=pointer]
+  - main [ref=f8e25]:
+    - generic [ref=f8e125]:
+      - generic [ref=f8e126]:
+        - img "UI Self Report Check" [ref=f8e128]
+        - generic [ref=f8e129]:
+          - generic [ref=f8e130]:
+            - generic [ref=f8e131]:
+              - generic [ref=f8e132]: MTG
+              - generic [ref=f8e133]: ongoing
+            - heading "UI Self Report Check" [level=1] [ref=f8e134]
+            - paragraph [ref=f8e135]: 📅 Jul 31, 2026 · 8:00 PM • 📍 TBD • 👥 2 Players
+          - button "Leave Event" [ref=f8e137] [cursor=pointer]
+      - generic [ref=f8e138]:
+        - button "Standings (2)" [ref=f8e139] [cursor=pointer]
+        - button "Pairings" [ref=f8e140] [cursor=pointer]
+        - button "Results (1 rounds)" [ref=f8e141] [cursor=pointer]
+        - button "My Round" [ref=f8e142] [cursor=pointer]
+      - generic [ref=f8e143]:
+        - generic [ref=f8e144]:
+          - generic [ref=f8e145]:
+            - generic [ref=f8e146]: Round 1
+            - generic [ref=f8e147]: Table 1
+          - generic [ref=f8e148]:
+            - generic [ref=f8e149]:
+              - generic [ref=f8e150]: U
+              - generic [ref=f8e151]: UI Test P2
+            - generic [ref=f8e153]: VS
+            - generic [ref=f8e154]:
+              - generic [ref=f8e155]: U
+              - generic [ref=f8e156]:
+                - generic [ref=f8e157]: UI Test P1
+                - generic [ref=f8e158]: You
+          - generic [ref=f8e159]: Win
+        - generic [ref=f8e161]:
+          - heading "Your Record" [level=4] [ref=f8e162]
+          - generic [ref=f8e163]:
+            - generic [ref=f8e164]:
+              - generic [ref=f8e165]: "1"
+              - generic [ref=f8e166]: Wins
+            - generic [ref=f8e167]:
+              - generic [ref=f8e168]: "0"
+              - generic [ref=f8e169]: Losses
+            - generic [ref=f8e170]:
+              - generic [ref=f8e171]: "0"
+              - generic [ref=f8e172]: Draws
+            - generic [ref=f8e173]:
+              - generic [ref=f8e174]: "3"
+              - generic [ref=f8e175]: Points
+  - contentinfo [ref=f8e26]:
+    - generic [ref=f8e27]:
+      - generic [ref=f8e28]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f8e29] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f8e30] [cursor=pointer]:
+        - /url: /privacy-policy

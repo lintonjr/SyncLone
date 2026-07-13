@@ -20,10 +20,11 @@ router.post('/register', async (req, res) => {
     await db.run('INSERT INTO users (id, display_name, email, password_hash) VALUES (?, ?, ?, ?)',
       [id, display_name, email, password_hash]);
 
-    const token = jwt.sign({ id, email, display_name }, process.env.JWT_SECRET, {
+    const role = 'player';
+    const token = jwt.sign({ id, email, display_name, role }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
-    res.status(201).json({ token, user: { id, display_name, email } });
+    res.status(201).json({ token, user: { id, display_name, email, role } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -39,11 +40,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, display_name: user.display_name },
+      { id: user.id, email: user.email, display_name: user.display_name, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
-    res.json({ token, user: { id: user.id, display_name: user.display_name, email: user.email } });
+    res.json({ token, user: { id: user.id, display_name: user.display_name, email: user.email, role: user.role } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

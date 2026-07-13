@@ -1,0 +1,24 @@
+- generic [ref=f1e2]:
+  - navigation [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - link [ref=f1e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f1e7]
+        - generic [ref=f1e8]:
+          - link "Home" [ref=f1e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f1e10] [cursor=pointer]:
+            - /url: /events
+      - generic [ref=f1e11]:
+        - button "Open notifications" [ref=f1e13] [cursor=pointer]
+        - button "Finish Test P" [ref=f1e18] [cursor=pointer]
+        - button "Toggle theme" [ref=f1e22] [cursor=pointer]
+  - main [ref=f1e25]
+  - contentinfo [ref=f1e26]:
+    - generic [ref=f1e27]:
+      - generic [ref=f1e28]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f1e29] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f1e30] [cursor=pointer]:
+        - /url: /privacy-policy

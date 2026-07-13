@@ -36,6 +36,7 @@ export class CreateEventComponent implements OnInit {
   collaborativeDeck = signal(false);
   asyncDraws = signal(false);
   confirmPlayers = signal(false);
+  qrCodeEnabled = signal(false);
   thumbnailFile: File | null = null;
   thumbnailPreview = signal('');
   loading = signal(false);
@@ -80,6 +81,7 @@ export class CreateEventComponent implements OnInit {
           this.collaborativeDeck.set(!!ev.collaborative_deck);
           this.asyncDraws.set(!!ev.async_draws);
           this.confirmPlayers.set(!!ev.confirm_players);
+          this.qrCodeEnabled.set(!!ev.qr_code_enabled);
           if (ev.thumbnail) {
             this.existingThumbnail = `${this.apiUrl}${ev.thumbnail}`;
             this.thumbnailPreview.set(this.existingThumbnail);
@@ -139,6 +141,7 @@ export class CreateEventComponent implements OnInit {
     fd.append('collaborative_deck', String(this.collaborativeDeck()));
     fd.append('async_draws', String(this.asyncDraws()));
     fd.append('confirm_players', String(this.confirmPlayers()));
+    fd.append('qr_code_enabled', String(this.qrCodeEnabled()));
     if (this.thumbnailFile) fd.append('thumbnail', this.thumbnailFile);
 
     const request = this.isEditMode

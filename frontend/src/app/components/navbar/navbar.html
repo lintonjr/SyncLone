@@ -7,7 +7,9 @@
       <div class="nav-links">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a>
         <a routerLink="/events" routerLinkActive="active">My Events</a>
-        <a routerLink="/create" routerLinkActive="active">Create Event</a>
+        @if (auth.currentUser()?.role === 'organizer') {
+          <a routerLink="/create" routerLinkActive="active">Create Event</a>
+        }
       </div>
     </div>
 
@@ -36,6 +38,7 @@
           @if (showUserMenu()) {
             <div class="user-dropdown">
               <a routerLink="/events" class="dropdown-item" (click)="closeUserMenu()">My Events</a>
+              <a routerLink="/profile" class="dropdown-item" (click)="closeUserMenu()">Profile</a>
               <button class="dropdown-item danger" (click)="closeUserMenu(); auth.logout()">Logout</button>
             </div>
           }

@@ -1,0 +1,47 @@
+- generic [ref=f3e2]:
+  - navigation [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link [ref=f3e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f3e7]
+        - generic [ref=f3e8]:
+          - link "Home" [ref=f3e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f3e10] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f3e11] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f3e12]:
+        - button "Open notifications" [ref=f3e14] [cursor=pointer]
+        - button "QR Test Org" [ref=f3e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f3e23] [cursor=pointer]
+  - main [ref=f3e26]:
+    - generic [ref=f3e28]:
+      - generic [ref=f3e29]:
+        - img "No QR Event" [ref=f3e31]
+        - generic [ref=f3e32]:
+          - generic [ref=f3e33]:
+            - generic [ref=f3e34]:
+              - generic [ref=f3e35]: MTG
+              - generic [ref=f3e36]: upcoming
+            - heading "No QR Event" [level=1] [ref=f3e37]
+            - paragraph [ref=f3e38]: 📅 Jul 31, 2026 · 8:00 PM • 📍 TBD • 👥 0 Players
+          - generic [ref=f3e41]:
+            - button "▶ Start Round 1" [ref=f3e42] [cursor=pointer]
+            - button "✓ Finish" [ref=f3e43] [cursor=pointer]
+            - button "Add Player" [ref=f3e44] [cursor=pointer]
+            - link "Edit Event" [ref=f3e48] [cursor=pointer]:
+              - /url: /event/fd97c3ac-f0af-468e-a814-92ff188db783/edit
+            - button "Delete Event" [ref=f3e52] [cursor=pointer]
+      - generic [ref=f3e57]:
+        - button "Standings (0)" [ref=f3e58] [cursor=pointer]
+        - button "Results (0 rounds)" [ref=f3e59] [cursor=pointer]
+      - paragraph [ref=f3e61]: No players yet. Be the first to join!
+  - contentinfo [ref=f3e62]:
+    - generic [ref=f3e63]:
+      - generic [ref=f3e64]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f3e65] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f3e66] [cursor=pointer]:
+        - /url: /privacy-policy

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EventService, TournamentEvent } from '../../services/event';
 import { EventCardComponent } from '../../components/event-card/event-card';
+import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-my-events',
@@ -12,6 +13,7 @@ import { EventCardComponent } from '../../components/event-card/event-card';
 })
 export class MyEventsComponent implements OnInit {
   private eventSvc = inject(EventService);
+  auth = inject(AuthService);
   owned = signal<TournamentEvent[]>([]);
   joined = signal<TournamentEvent[]>([]);
   loading = signal(true);

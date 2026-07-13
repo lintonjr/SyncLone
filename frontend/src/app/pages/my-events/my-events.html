@@ -1,7 +1,9 @@
 <div class="my-events-page">
   <div class="page-header">
     <h1>My Events</h1>
-    <a routerLink="/create" class="btn btn-primary">+ Create Event</a>
+    @if (auth.currentUser()?.role === 'organizer') {
+      <a routerLink="/create" class="btn btn-primary">+ Create Event</a>
+    }
   </div>
 
   <div class="tabs">
@@ -19,8 +21,13 @@
     @if (activeTab() === 'owned') {
       @if (owned().length === 0) {
         <div class="empty-state">
-          <p>You haven't created any events yet.</p>
-          <a routerLink="/create" class="btn btn-primary">Create your first event</a>
+          @if (auth.currentUser()?.role === 'organizer') {
+            <p>You haven't created any events yet.</p>
+            <a routerLink="/create" class="btn btn-primary">Create your first event</a>
+          } @else {
+            <p>You haven't created any events yet.</p>
+            <a routerLink="/profile" class="btn btn-primary">Become an organizer to create one</a>
+          }
         </div>
       } @else {
         <div class="events-list">

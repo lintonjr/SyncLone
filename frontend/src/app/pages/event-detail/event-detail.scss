@@ -617,6 +617,13 @@
   gap: 10px;
 }
 
+.self-report-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .report-draw-btn {
   font-size: 12px;
   padding: 5px 14px;
@@ -707,6 +714,18 @@
   font-size: 13px;
   color: var(--text-muted);
   margin-bottom: 16px;
+}
+
+.qr-code-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+
+  img { display: block; }
 }
 
 .modal-btns {
@@ -802,6 +821,7 @@
   &.prb-loss { background: rgba(239, 68, 68, 0.2); color: #f87171; }
   &.prb-draw { background: rgba(234, 179, 8, 0.2); color: #fbbf24; }
   &.prb-bye  { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+  &.prb-pending { background: rgba(234, 179, 8, 0.15); color: #fbbf24; }
 }
 
 .pill-bye { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }

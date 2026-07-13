@@ -1,6 +1,7 @@
 import { Component, inject, signal, input, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
+import * as QRCode from 'qrcode';
 import { EventService, TournamentEvent, Player, Round, Pairing } from '../../services/event';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
@@ -35,6 +36,11 @@ export class EventDetailComponent implements OnInit {
   phantomModal = signal(false);
   phantomCount = signal(8);
   phantomLoading = signal(false);
+
+  qrModal = signal(false);
+  qrDataUrl = signal('');
+  qrCopied = signal(false);
+  joinUrl = computed(() => `${window.location.origin}/event/${this.id()}`);
 
   private readonly FIRST = [
     'Alice','Bob','Carlos','Diana','Eduardo','Fernanda','Gabriel','Helena',
@@ -126,7 +132,7 @@ export class EventDetailComponent implements OnInit {
 
   pendingInCurrentRound = computed(() => {
     const current = this.currentRoundPairings();
-    return current ? current.pairings.some((p) => !p.result) : false;
+    return current ? current.pairings.some((p) => !p.result || p.result_status === 'pending') : false;
   });
 
   hasPlayoffRound = computed(() => (this.event()?.rounds ?? []).some((r) => r.is_playoff));
@@ -258,6 +264,19 @@ export class EventDetailComponent implements OnInit {
     });
   }
 
+  mySlot(): string | null {
+    const mr = this.myRound();
+    if (!mr) return null;
+    return this.podPlayers(mr.pairing).find((p) => p.id === mr.myPlayer.id)?.slot ?? null;
+  }
+
+  opponentSlot(): string | null {
+    const slot = this.mySlot();
+    if (slot === 'player1') return 'player2';
+    if (slot === 'player2') return 'player1';
+    return null;
+  }
+
   canEditResult(pairing: Pairing, round: Round): boolean {
     if (!pairing.result || pairing.result === 'bye') return false;
     if (!this.isOwner() || this.swapMode()) return false;
@@ -270,6 +289,13 @@ export class EventDetailComponent implements OnInit {
     this.eventSvc.submitResult(this.id(), pairingId, result).subscribe({
       next: () => { this.load(); this.resultModal.set(null); },
       error: (err) => this.error.set(err.error?.error || 'Failed to submit result'),
+    });
+  }
+
+  approveResult(pairingId: string) {
+    this.eventSvc.approveResult(this.id(), pairingId).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(err.error?.error || 'Failed to approve result'),
     });
   }
 
@@ -398,6 +424,19 @@ export class EventDetailComponent implements OnInit {
     this.addPlayerModal.set(true);
   }
 
+  openQrModal() {
+    this.qrCopied.set(false);
+    this.qrModal.set(true);
+    QRCode.toDataURL(this.joinUrl(), { width: 280, margin: 2 }).then((url) => this.qrDataUrl.set(url));
+  }
+
+  copyJoinLink() {
+    navigator.clipboard.writeText(this.joinUrl()).then(() => {
+      this.qrCopied.set(true);
+      setTimeout(() => this.qrCopied.set(false), 2000);
+    });
+  }
+
   submitAddPlayer() {
     const email = this.addPlayerEmail().trim();
     const name = this.addPlayerName().trim();
@@ -418,10 +457,11 @@ export class EventDetailComponent implements OnInit {
     return t ? `${this.apiUrl}${t}` : '';
   }
 
-  resultLabel(result: string | undefined): string {
-    if (!result) return 'Pending';
+  resultLabel(p: Pairing): string {
+    if (!p.result) return 'Pending';
+    if (p.result_status === 'pending' && !this.isOwner()) return 'Pending Approval';
     const map: Record<string, string> = { player1: 'P1 Win', player2: 'P2 Win', draw: 'Draw', bye: 'Bye' };
-    return map[result] ?? result;
+    return map[p.result] ?? p.result;
   }
 
   roundLabel(round: Round): string {
