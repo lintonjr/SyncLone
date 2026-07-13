@@ -1,0 +1,130 @@
+- generic [ref=f2e2]:
+  - navigation [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - link [ref=f2e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f2e7]
+        - generic [ref=f2e8]:
+          - link "Home" [ref=f2e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f2e10] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f2e11] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f2e12]:
+        - button "Open notifications" [ref=f2e14] [cursor=pointer]
+        - button "Linton Junior" [ref=f2e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f2e23] [cursor=pointer]
+  - main [ref=f2e26]:
+    - generic [ref=f2e149]:
+      - generic [ref=f2e150]:
+        - img "P0 Test Event" [ref=f2e152]
+        - generic [ref=f2e153]:
+          - generic [ref=f2e154]:
+            - generic [ref=f2e155]:
+              - generic [ref=f2e156]: MTG
+              - generic [ref=f2e157]: Commander
+              - generic [ref=f2e158]: ongoing
+            - heading "P0 Test Event" [level=1] [ref=f2e159]
+            - paragraph [ref=f2e160]: 📅 Jul 11, 2026 · 2:59 PM • 📍 Manaus • 👥 5 Players
+          - generic [ref=f2e163]:
+            - button "▶ Start Round 3" [ref=f2e164] [cursor=pointer]
+            - button "✓ Finish" [ref=f2e165] [cursor=pointer]
+            - button "Add Player" [ref=f2e166] [cursor=pointer]
+            - link "Edit Event" [ref=f2e170] [cursor=pointer]:
+              - /url: /event/3e03b58f-9cc7-4f0d-bb72-84741825b73c/edit
+            - button "Delete Event" [ref=f2e174] [cursor=pointer]
+      - generic [ref=f2e179]:
+        - button "Standings (5)" [ref=f2e180] [cursor=pointer]
+        - button "Pairings" [ref=f2e181] [cursor=pointer]
+        - button "Results (2 rounds)" [ref=f2e182] [cursor=pointer]
+        - button "My Round" [ref=f2e183] [cursor=pointer]
+      - table [ref=f2e186]:
+        - rowgroup [ref=f2e187]:
+          - row [ref=f2e188]:
+            - columnheader "Rank" [ref=f2e189]
+            - columnheader "Player" [ref=f2e190]
+            - columnheader "Deck" [ref=f2e191]
+            - columnheader "W" [ref=f2e192]
+            - columnheader "L" [ref=f2e193]
+            - columnheader "D" [ref=f2e194]
+            - columnheader "Pts" [ref=f2e195]
+            - columnheader "Tie Breaker ⓘ" [ref=f2e196]:
+              - generic [ref=f2e197]:
+                - text: Tie Breaker
+                - generic [ref=f2e198]: ⓘ
+            - columnheader [ref=f2e199]
+        - rowgroup [ref=f2e200]:
+          - row [ref=f2e201]:
+            - cell "1st" [ref=f2e202]
+            - cell "Linton Junior" [ref=f2e204]
+            - cell [ref=f2e205]:
+              - button "+ Set Deck" [ref=f2e206] [cursor=pointer]
+            - cell "1" [ref=f2e207]
+            - cell "0" [ref=f2e208]
+            - cell "0" [ref=f2e209]
+            - cell [ref=f2e210]:
+              - strong [ref=f2e211]: "3"
+            - cell "100.0% | 2.00 | 66.7%" [ref=f2e212]
+            - cell [ref=f2e213]:
+              - button "Drop" [ref=f2e214] [cursor=pointer]
+          - row [ref=f2e215]:
+            - cell "2nd" [ref=f2e216]
+            - cell "Player Three" [ref=f2e218]
+            - cell [ref=f2e219]:
+              - button "+ Set Deck" [ref=f2e220] [cursor=pointer]
+            - cell "1" [ref=f2e221]
+            - cell "0" [ref=f2e222]
+            - cell "0" [ref=f2e223]
+            - cell [ref=f2e224]:
+              - strong [ref=f2e225]: "3"
+            - cell "100.0% | 3.00 | 100.0%" [ref=f2e226]
+            - cell [ref=f2e227]:
+              - button "Drop" [ref=f2e228] [cursor=pointer]
+          - row [ref=f2e229]:
+            - cell "3rd" [ref=f2e230]
+            - cell "Test User" [ref=f2e232]
+            - cell [ref=f2e233]:
+              - button "+ Set Deck" [ref=f2e234] [cursor=pointer]
+            - cell "0" [ref=f2e235]
+            - cell "0" [ref=f2e236]
+            - cell "1" [ref=f2e237]
+            - cell [ref=f2e238]:
+              - strong [ref=f2e239]: "1"
+            - cell "33.3% | 1.00 | 33.3%" [ref=f2e240]
+            - cell [ref=f2e241]:
+              - button "Drop" [ref=f2e242] [cursor=pointer]
+          - row [ref=f2e243]:
+            - cell "4th" [ref=f2e244]
+            - cell "Player Two" [ref=f2e246]
+            - cell [ref=f2e247]:
+              - button "Atraxa Superfriends" [ref=f2e248] [cursor=pointer]
+            - cell "0" [ref=f2e249]
+            - cell "1" [ref=f2e250]
+            - cell "1" [ref=f2e251]
+            - cell [ref=f2e252]:
+              - strong [ref=f2e253]: "1"
+            - cell "33.3% | 2.00 | 66.7%" [ref=f2e254]
+            - cell [ref=f2e255]:
+              - button "Drop" [ref=f2e256] [cursor=pointer]
+          - row [ref=f2e257]:
+            - cell "5th" [ref=f2e258]
+            - cell "Player Four" [ref=f2e260]
+            - cell [ref=f2e261]:
+              - button "+ Set Deck" [ref=f2e262] [cursor=pointer]
+            - cell "0" [ref=f2e263]
+            - cell "0" [ref=f2e264]
+            - cell "0" [ref=f2e265]
+            - cell [ref=f2e266]:
+              - strong [ref=f2e267]: "0"
+            - cell "33.3% | 0.00 | 0.0%" [ref=f2e268]
+            - cell [ref=f2e269]:
+              - button "Drop" [ref=f2e270] [cursor=pointer]
+  - contentinfo [ref=f2e27]:
+    - generic [ref=f2e28]:
+      - generic [ref=f2e29]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f2e30] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f2e31] [cursor=pointer]:
+        - /url: /privacy-policy

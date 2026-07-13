@@ -7,7 +7,9 @@
       @if (event()!.thumbnail) {
         <img [src]="thumbnailUrl()" class="banner-img" [alt]="event()!.name" />
       } @else {
-        <div class="banner-placeholder">{{ event()!.game.charAt(0) }}</div>
+        <div class="banner-placeholder">
+          <img src="/mercadia-logo.png" [alt]="event()!.name" class="banner-placeholder-img" />
+        </div>
       }
       <div class="banner-overlay">
         <div class="banner-content">
@@ -20,7 +22,7 @@
           <p class="event-meta">
             📅 {{ event()!.date | date:'MMM d, y · h:mm a' }} &nbsp;•&nbsp;
             📍 {{ event()!.online ? 'Online' : (event()!.city || 'TBD') }}
-            &nbsp;•&nbsp; 👥 {{ event()!.players?.length ?? 0 }} Players
+            &nbsp;•&nbsp; 👥 {{ sortedStandings().length }} Players
           </p>
           @if (event()!.description) {
             <p class="event-desc">{{ event()!.description }}</p>
@@ -99,7 +101,7 @@
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn" [class.active]="tab() === 'standings'" (click)="tab.set('standings')">
-        Standings ({{ event()!.players?.length ?? 0 }})
+        Standings ({{ sortedStandings().length }})
       </button>
       @if (event()!.rounds?.length) {
         <button class="tab-btn" [class.active]="tab() === 'pairings'" (click)="tab.set('pairings')">
@@ -165,12 +167,12 @@
                     </td>
                     <td class="deck-cell">
                       @if (player.deck_name) {
-                        @if (isOwner() || player.user_id === auth.currentUser()?.id) {
+                        @if (canEditDeck(player)) {
                           <button class="deck-badge" (click)="openDeckEdit(player)">{{ player.deck_name }}</button>
                         } @else {
                           <span class="deck-badge-static">{{ player.deck_name }}</span>
                         }
-                      } @else if (isOwner() || player.user_id === auth.currentUser()?.id) {
+                      } @else if (canEditDeck(player)) {
                         <button class="deck-edit-btn" (click)="openDeckEdit(player)">+ Set Deck</button>
                       } @else {
                         <span class="text-muted-sm">—</span>
@@ -194,14 +196,29 @@
             </table>
           </div>
 
-          @if (event()!.players && event()!.players!.length > sortedStandings().length) {
+          @if (isOwner() && pendingPlayers().length) {
+            <div class="pending-section">
+              <h4 class="pending-title">Pending Approval</h4>
+              <div class="pending-list">
+                @for (player of pendingPlayers(); track player.id) {
+                  <div class="pending-row">
+                    <span class="pending-name">{{ player.display_name }}</span>
+                    <div class="pending-actions">
+                      <button class="btn btn-primary" style="font-size:12px;padding:4px 10px" (click)="approvePlayer(player.id)">Approve</button>
+                      <button class="btn btn-danger" style="font-size:12px;padding:4px 10px" (click)="rejectPlayer(player.id)">Reject</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (droppedPlayers().length) {
             <div class="dropped-section">
               <h4 class="dropped-title">Dropped Players</h4>
               <div class="dropped-list">
-                @for (player of event()!.players!; track player.id) {
-                  @if (player.status !== 'active') {
-                    <span class="dropped-name">{{ player.display_name }}</span>
-                  }
+                @for (player of droppedPlayers(); track player.id) {
+                  <span class="dropped-name">{{ player.display_name }}</span>
                 }
               </div>
             </div>
@@ -537,6 +554,11 @@
                 }
               } @else {
                 <span class="result-pill pill-pending">Awaiting Result</span>
+                @if (event()!.async_draws) {
+                  <button class="btn btn-ghost report-draw-btn" (click)="submitResult(myRound()!.pairing.id, 'draw')">
+                    Report Draw
+                  </button>
+                }
               }
             </div>
           </div>

@@ -4,7 +4,7 @@
       <img [src]="thumbnailUrl()" [alt]="event().name" class="card-img" />
     } @else {
       <div class="card-placeholder">
-        <span>{{ event().game.charAt(0) }}</span>
+        <img src="/mercadia-logo.png" [alt]="event().name" class="card-placeholder-img" />
       </div>
     }
     <div class="card-overlay">

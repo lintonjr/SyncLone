@@ -240,11 +240,12 @@ router.post('/:id/join', auth, async (req, res) => {
     );
     if (existing) return res.status(409).json({ error: 'Already joined' });
 
+    const status = event.confirm_players ? 'pending' : 'active';
     await db.run(
-      'INSERT INTO event_players (id, event_id, user_id, display_name) VALUES (?, ?, ?, ?)',
-      [uuidv4(), req.params.id, req.user.id, req.user.display_name]
+      'INSERT INTO event_players (id, event_id, user_id, display_name, status) VALUES (?, ?, ?, ?, ?)',
+      [uuidv4(), req.params.id, req.user.id, req.user.display_name, status]
     );
-    res.status(201).json({ message: 'Joined event' });
+    res.status(201).json({ message: status === 'pending' ? 'Join request sent' : 'Joined event', pending: status === 'pending' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -303,9 +304,22 @@ router.put('/:id/players/:playerId', auth, async (req, res) => {
 
     const isOwner = event.owner_id === req.user.id;
     const isSelf = player.user_id === req.user.id;
-    if (!isOwner && !isSelf) return res.status(403).json({ error: 'Forbidden' });
-
     const { deck_name, status } = req.body;
+
+    // Collaborative Deck Registering: any active participant may edit anyone's deck when enabled
+    const isCollaborator = !isOwner && !isSelf && event.collaborative_deck
+      ? await db.get(
+          "SELECT id FROM event_players WHERE event_id = ? AND user_id = ? AND status = 'active'",
+          [req.params.id, req.user.id]
+        )
+      : null;
+    const canEditDeck = isOwner || isSelf || !!isCollaborator;
+    const canEditStatus = isOwner; // only the owner can approve/reject/change a player's status
+
+    if (deck_name !== undefined && !canEditDeck) return res.status(403).json({ error: 'Forbidden' });
+    if (status !== undefined && !canEditStatus) return res.status(403).json({ error: 'Forbidden' });
+    if (deck_name === undefined && status === undefined && !canEditDeck) return res.status(403).json({ error: 'Forbidden' });
+
     await db.run('UPDATE event_players SET deck_name=?, status=? WHERE id=?', [
       deck_name ?? player.deck_name,
       status ?? player.status,
@@ -413,12 +427,16 @@ router.post('/:id/rounds', auth, async (req, res) => {
     );
     if (players.length < 2) return res.status(400).json({ error: 'Need at least 2 active players' });
 
+    const pastPairings = await db.query('SELECT * FROM pairings WHERE event_id = ?', [req.params.id]);
+    const pods = generateSwissPairings(players, podSize, event.pairing_method, pastPairings);
+
+    if (!event.allow_byes && pods.some((p) => !p.player2)) {
+      return res.status(400).json({ error: 'Número de jogadores não forma pods completos e Byes estão desativados para este evento.' });
+    }
+
     const roundId = uuidv4();
     await db.run('INSERT INTO rounds (id, event_id, round_number) VALUES (?, ?, ?)',
       [roundId, req.params.id, roundNumber]);
-
-    const pastPairings = await db.query('SELECT * FROM pairings WHERE event_id = ?', [req.params.id]);
-    const pods = generateSwissPairings(players, podSize, event.pairing_method, pastPairings);
     await insertPods(req.params.id, roundId, pods, event.points_win);
 
     await db.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
@@ -590,7 +608,7 @@ router.post('/:id/rounds/swap', auth, async (req, res) => {
 router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
   try {
     const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
-    if (!event || event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (!event) return res.status(404).json({ error: 'Event not found' });
 
     const pairing = await db.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]);
     if (!pairing) return res.status(404).json({ error: 'Pairing not found' });
@@ -598,6 +616,17 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
     const { result } = req.body;
     const valid = ['player1', 'player2', 'player3', 'player4', 'draw', 'bye'];
     if (!valid.includes(result)) return res.status(400).json({ error: 'Invalid result' });
+
+    const isOwner = event.owner_id === req.user.id;
+    if (!isOwner) {
+      // Async Draws: a seated player may self-report a draw on their own still-pending match
+      const seatedPlayer = await db.get(
+        'SELECT id FROM event_players WHERE event_id = ? AND user_id = ? AND id IN (?, ?, ?, ?)',
+        [req.params.id, req.user.id, pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id]
+      );
+      const canSelfReportDraw = event.async_draws && result === 'draw' && !pairing.result && !!seatedPlayer;
+      if (!canSelfReportDraw) return res.status(403).json({ error: 'Forbidden' });
+    }
 
     const win  = async (id) => id && await db.run('UPDATE event_players SET wins=wins+1,   points=points+? WHERE id=?', [event.points_win, id]);
     const loss = async (id) => id && await db.run('UPDATE event_players SET losses=losses+1, points=points+? WHERE id=?', [event.points_loss, id]);

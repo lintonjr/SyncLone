@@ -100,6 +100,12 @@ export class EventDetailComponent implements OnInit {
       .sort((a, b) => b.points - a.points || b.wins - a.wins);
   });
 
+  pendingPlayers = computed(() => (this.event()?.players ?? []).filter((p) => p.status === 'pending'));
+
+  droppedPlayers = computed(() =>
+    (this.event()?.players ?? []).filter((p) => p.status !== 'active' && p.status !== 'pending')
+  );
+
   roundsGrouped = computed(() => {
     const ev = this.event();
     if (!ev?.rounds) return [];
@@ -227,7 +233,11 @@ export class EventDetailComponent implements OnInit {
   join() {
     this.actionLoading.set(true);
     this.eventSvc.joinEvent(this.id()).subscribe({
-      next: () => { this.load(); this.actionLoading.set(false); },
+      next: (res: any) => {
+        this.load();
+        this.actionLoading.set(false);
+        if (res?.pending) alert('Solicitação enviada — aguardando aprovação do organizador.');
+      },
       error: (err) => { this.error.set(err.error?.error || 'Failed to join'); this.actionLoading.set(false); },
     });
   }
@@ -323,12 +333,32 @@ export class EventDetailComponent implements OnInit {
     });
   }
 
+  approvePlayer(playerId: string) {
+    this.eventSvc.updatePlayer(this.id(), playerId, { status: 'active' }).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(err.error?.error || 'Failed to approve player'),
+    });
+  }
+
+  rejectPlayer(playerId: string) {
+    if (!confirm('Reject this join request?')) return;
+    this.eventSvc.removePlayer(this.id(), playerId).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(err.error?.error || 'Failed to reject player'),
+    });
+  }
+
   dropPlayer(playerId: string) {
     if (!confirm('Drop this player from the event?')) return;
     this.eventSvc.removePlayer(this.id(), playerId).subscribe({
       next: () => this.load(),
       error: (err) => this.error.set(err.error?.error || 'Failed to drop player'),
     });
+  }
+
+  canEditDeck(player: Player): boolean {
+    if (this.isOwner() || player.user_id === this.auth.currentUser()?.id) return true;
+    return !!(this.event()?.collaborative_deck && this.isJoined());
   }
 
   openDeckEdit(player: Player) {

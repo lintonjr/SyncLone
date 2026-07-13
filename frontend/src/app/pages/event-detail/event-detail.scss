@@ -34,9 +34,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 100px;
-  font-weight: 800;
-  color: rgba(139, 92, 246, 0.2);
+}
+
+.banner-placeholder-img {
+  width: 30%;
+  max-width: 260px;
+  height: auto;
+  opacity: 0.9;
 }
 
 .banner-overlay {
@@ -330,6 +334,39 @@
   text-decoration: line-through;
 }
 
+.pending-section {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px dashed rgba(250, 204, 21, 0.4);
+  border-radius: 10px;
+  background: rgba(250, 204, 21, 0.05);
+}
+
+.pending-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #facc15;
+  margin-bottom: 10px;
+}
+
+.pending-list { display: flex; flex-direction: column; gap: 8px; }
+
+.pending-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border-radius: 8px;
+}
+
+.pending-name { font-size: 13px; font-weight: 500; }
+
+.pending-actions { display: flex; gap: 8px; }
+
 /* ── Results Tab ── */
 .round-section { margin-bottom: 28px; }
 
@@ -574,6 +611,15 @@
 
 .myround-result {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.report-draw-btn {
+  font-size: 12px;
+  padding: 5px 14px;
 }
 
 .my-result-badge {

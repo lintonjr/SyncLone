@@ -33,14 +33,7 @@
   text-decoration: none;
   color: var(--text);
 
-  .logo-icon { font-size: 22px; }
-  .logo-text {
-    font-size: 18px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+  .logo-img { height: 36px; width: auto; display: block; }
 }
 
 .nav-links {
