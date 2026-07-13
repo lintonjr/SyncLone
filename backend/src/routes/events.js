@@ -6,6 +6,7 @@ const db = require('../db');
 const auth = require('../middleware/auth');
 const requireOrganizer = require('../middleware/requireOrganizer');
 const { generateSwissPairings, seedPlayoffPods } = require('../services/pairing');
+const eventStream = require('../services/eventStream');
 
 const storage = multer.diskStorage({
   destination: path.join(__dirname, '../../uploads'),
@@ -136,6 +137,24 @@ router.get('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Public: SSE stream — pings connected clients whenever this event changes so they know to refetch
+router.get('/:id/stream', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.write('\n');
+
+  eventStream.subscribe(req.params.id, res);
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    eventStream.unsubscribe(req.params.id, res);
+  });
+});
+
 // Auth: create event (organizer only)
 router.post('/', auth, requireOrganizer, upload.single('thumbnail'), async (req, res) => {
   try {
@@ -248,6 +267,7 @@ router.post('/:id/join', auth, async (req, res) => {
       'INSERT INTO event_players (id, event_id, user_id, display_name, status) VALUES (?, ?, ?, ?, ?)',
       [uuidv4(), req.params.id, req.user.id, req.user.display_name, status]
     );
+    eventStream.broadcast(req.params.id);
     res.status(201).json({ message: status === 'pending' ? 'Join request sent' : 'Joined event', pending: status === 'pending' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -257,6 +277,7 @@ router.delete('/:id/join', auth, async (req, res) => {
   try {
     await db.run('DELETE FROM event_players WHERE event_id = ? AND user_id = ?',
       [req.params.id, req.user.id]);
+    eventStream.broadcast(req.params.id);
     res.json({ message: 'Left event' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -292,6 +313,7 @@ router.post('/:id/players', auth, async (req, res) => {
       'INSERT INTO event_players (id, event_id, user_id, display_name) VALUES (?, ?, ?, ?)',
       [id, req.params.id, userId, name]
     );
+    eventStream.broadcast(req.params.id);
     res.status(201).json(await db.get('SELECT * FROM event_players WHERE id = ?', [id]));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -328,6 +350,7 @@ router.put('/:id/players/:playerId', auth, async (req, res) => {
       status ?? player.status,
       req.params.playerId,
     ]);
+    eventStream.broadcast(req.params.id);
     res.json(await db.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -338,6 +361,7 @@ router.delete('/:id/players/:playerId', auth, async (req, res) => {
     const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
     if (!event || event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
     await db.run('DELETE FROM event_players WHERE id = ?', [req.params.playerId]);
+    eventStream.broadcast(req.params.id);
     res.json({ message: 'Player removed' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -349,6 +373,7 @@ router.post('/:id/finish', auth, async (req, res) => {
     if (!event) return res.status(404).json({ error: 'Event not found' });
     if (event.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
     await db.run("UPDATE events SET status = 'completed' WHERE id = ?", [req.params.id]);
+    eventStream.broadcast(req.params.id);
     res.json(await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -397,6 +422,7 @@ router.post('/:id/rounds', auth, async (req, res) => {
       if (advancers.length <= 1) {
         const championId = advancers[0] ?? null;
         await db.run("UPDATE events SET status = 'completed', champion_id = ? WHERE id = ?", [championId, req.params.id]);
+        eventStream.broadcast(req.params.id);
         return res.json({ champion: true, event: await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]) });
       }
 
@@ -417,6 +443,7 @@ router.post('/:id/rounds', auth, async (req, res) => {
       await db.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
         [roundNumber, 'ongoing', req.params.id]);
 
+      eventStream.broadcast(req.params.id);
       return res.status(201).json({
         round: await db.get('SELECT * FROM rounds WHERE id = ?', [roundId]),
         pairings: await db.query('SELECT * FROM pairings WHERE round_id = ?', [roundId]),
@@ -447,6 +474,7 @@ router.post('/:id/rounds', auth, async (req, res) => {
 
     const round = await db.get('SELECT * FROM rounds WHERE id = ?', [roundId]);
     const pairings = await db.query('SELECT * FROM pairings WHERE round_id = ?', [roundId]);
+    eventStream.broadcast(req.params.id);
     res.status(201).json({ round, pairings });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -503,6 +531,7 @@ router.post('/:id/playoffs/start', auth, async (req, res) => {
 
     const round = await db.get('SELECT * FROM rounds WHERE id = ?', [roundId]);
     const pairings = await db.query('SELECT * FROM pairings WHERE round_id = ?', [roundId]);
+    eventStream.broadcast(req.params.id);
     res.status(201).json({ round, pairings });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -553,6 +582,7 @@ router.post('/:id/rounds/undo', auth, async (req, res) => {
       req.params.id,
     ]);
 
+    eventStream.broadcast(req.params.id);
     res.json(await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -602,6 +632,7 @@ router.post('/:id/rounds/swap', auth, async (req, res) => {
       await db.run(`UPDATE pairings SET ${loc2.col} = ? WHERE id = ?`, [player1Id, loc2.pairing.id]);
     }
 
+    eventStream.broadcast(req.params.id);
     res.json({ message: 'Players swapped' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -693,6 +724,7 @@ router.put('/:id/pairings/:pairingId', auth, async (req, res) => {
     await db.run('UPDATE rounds SET status = ? WHERE id = ?',
       [pending === 0 ? 'completed' : 'active', pairing.round_id]);
 
+    eventStream.broadcast(req.params.id);
     res.json(await db.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -734,6 +766,7 @@ router.post('/:id/pairings/:pairingId/approve', auth, async (req, res) => {
     await db.run('UPDATE rounds SET status = ? WHERE id = ?',
       [pending === 0 ? 'completed' : 'active', pairing.round_id]);
 
+    eventStream.broadcast(req.params.id);
     res.json(await db.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

@@ -46,6 +46,7 @@ Stack: **Angular 21** (frontend) + **Node/Express** (backend) + **MySQL 8**.
 - Autenticação JWT (registro / login / esqueci a senha)
 - Notificações por usuário (lidas/não lidas)
 - Upload de imagem de evento (multer)
+- **Atualização em tempo real** da página do evento via Server-Sent Events (`GET /api/events/:id/stream`) — quando o organizador adiciona jogador, lança/aprova resultado, inicia/desfaz rodada, faz swap ou finaliza o evento, qualquer outra aba/pessoa olhando aquele evento atualiza sozinha, sem reload
 
 ## Estrutura do projeto
 
@@ -158,6 +159,7 @@ POST   /api/auth/forgot-password
 GET    /api/events/user/mine
 GET    /api/events
 GET    /api/events/:id
+GET    /api/events/:id/stream            # SSE — avisa clientes conectados quando o evento muda
 POST   /api/events
 PUT    /api/events/:id
 DELETE /api/events/:id

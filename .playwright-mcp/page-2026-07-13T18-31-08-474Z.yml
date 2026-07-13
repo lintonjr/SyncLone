@@ -1,0 +1,88 @@
+- generic [ref=f1e2]:
+  - navigation [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - link [ref=f1e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f1e7]
+        - generic [ref=f1e8]:
+          - link "Home" [ref=f1e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f1e10] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f1e11] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f1e12]:
+        - button "Open notifications" [ref=f1e14] [cursor=pointer]
+        - button "SSE Test Org" [ref=f1e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f1e23] [cursor=pointer]
+  - main [ref=f1e26]:
+    - generic [ref=f1e27]:
+      - generic [ref=f1e28]:
+        - generic [ref=f1e29]:
+          - img "SSE Test Event" [ref=f1e31]
+          - generic [ref=f1e32]:
+            - generic [ref=f1e33]:
+              - generic [ref=f1e34]:
+                - generic [ref=f1e35]: MTG
+                - generic [ref=f1e36]: upcoming
+              - heading "SSE Test Event" [level=1] [ref=f1e37]
+              - paragraph [ref=f1e38]: 📅 Jul 31, 2026 · 8:00 PM • 📍 TBD • 👥 1 Players
+            - generic [ref=f1e41]:
+              - button "▶ Start Round 1" [ref=f1e42] [cursor=pointer]
+              - button "✓ Finish" [ref=f1e43] [cursor=pointer]
+              - button "Add Player" [active] [ref=f1e44] [cursor=pointer]
+              - link "Edit Event" [ref=f1e48] [cursor=pointer]:
+                - /url: /event/01833354-dd8d-4400-a987-3040f67e79c1/edit
+              - button "Delete Event" [ref=f1e52] [cursor=pointer]
+        - generic [ref=f1e57]:
+          - button "Standings (1)" [ref=f1e58] [cursor=pointer]
+          - button "Results (0 rounds)" [ref=f1e59] [cursor=pointer]
+        - table [ref=f1e62]:
+          - rowgroup [ref=f1e63]:
+            - row [ref=f1e64]:
+              - columnheader "Rank" [ref=f1e65]
+              - columnheader "Player" [ref=f1e66]
+              - columnheader "Deck" [ref=f1e67]
+              - columnheader "W" [ref=f1e68]
+              - columnheader "L" [ref=f1e69]
+              - columnheader "D" [ref=f1e70]
+              - columnheader "Pts" [ref=f1e71]
+              - columnheader "Tie Breaker ⓘ" [ref=f1e72]:
+                - generic [ref=f1e73]:
+                  - text: Tie Breaker
+                  - generic [ref=f1e74]: ⓘ
+              - columnheader [ref=f1e75]
+          - rowgroup [ref=f1e76]:
+            - row [ref=f1e77]:
+              - cell "1st" [ref=f1e78]
+              - cell "SSE Test P" [ref=f1e80]
+              - cell [ref=f1e81]:
+                - button "+ Set Deck" [ref=f1e82] [cursor=pointer]
+              - cell "0" [ref=f1e83]
+              - cell "0" [ref=f1e84]
+              - cell "0" [ref=f1e85]
+              - cell [ref=f1e86]:
+                - strong [ref=f1e87]: "0"
+              - cell "33.3% | 0.00 | 0.0%" [ref=f1e88]
+              - cell [ref=f1e89]:
+                - button "Drop" [ref=f1e90] [cursor=pointer]
+      - generic [ref=f1e97]:
+        - heading "Add Player" [level=3] [ref=f1e98]
+        - paragraph [ref=f1e99]: Add a registered user by email, or add a guest by name.
+        - generic [ref=f1e100]:
+          - generic [ref=f1e101]: Email (registered user)
+          - textbox "player@example.com" [ref=f1e102]
+        - generic [ref=f1e103]:
+          - generic [ref=f1e104]: Or Guest Display Name
+          - textbox "Guest name" [ref=f1e105]
+        - generic [ref=f1e106]:
+          - button "Add Player" [ref=f1e107] [cursor=pointer]
+          - button "Cancel" [ref=f1e108] [cursor=pointer]
+  - contentinfo [ref=f1e91]:
+    - generic [ref=f1e92]:
+      - generic [ref=f1e93]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f1e94] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f1e95] [cursor=pointer]:
+        - /url: /privacy-policy

@@ -1,6 +1,7 @@
-import { Component, inject, signal, input, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, input, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import * as QRCode from 'qrcode';
 import { EventService, TournamentEvent, Player, Round, Pairing } from '../../services/event';
 import { AuthService } from '../../services/auth';
@@ -12,7 +13,7 @@ import { environment } from '../../../environments/environment';
   templateUrl: './event-detail.html',
   styleUrl: './event-detail.scss',
 })
-export class EventDetailComponent implements OnInit {
+export class EventDetailComponent implements OnInit, OnDestroy {
   id = input<string>('');
   private eventSvc = inject(EventService);
   private router = inject(Router);
@@ -224,8 +225,15 @@ export class EventDetailComponent implements OnInit {
     return p.result === slot ? 'win' : 'loss';
   }
 
+  private streamSub?: Subscription;
+
   ngOnInit() {
     this.load();
+    this.streamSub = this.eventSvc.streamEvent(this.id()).subscribe(() => this.refresh());
+  }
+
+  ngOnDestroy() {
+    this.streamSub?.unsubscribe();
   }
 
   load() {
@@ -234,6 +242,12 @@ export class EventDetailComponent implements OnInit {
       next: (ev) => { this.event.set(ev); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
+  }
+
+  // Silent refetch used when the SSE stream pings that something changed elsewhere —
+  // deliberately doesn't touch `loading`, so it never flashes the full-page spinner.
+  refresh() {
+    this.eventSvc.getEvent(this.id()).subscribe({ next: (ev) => this.event.set(ev) });
   }
 
   join() {
@@ -282,7 +296,10 @@ export class EventDetailComponent implements OnInit {
     if (!this.isOwner() || this.swapMode()) return false;
     const ev = this.event();
     if (!ev || ev.status === 'completed') return false;
-    return round.round_number === ev.current_round && round.status !== 'completed';
+    // Editable as long as it's still the event's current round — even after every table in it
+    // has reported and the round auto-flips to "completed". Once the organizer advances to the
+    // next round, editing an older round requires Undo instead (destructive, on purpose).
+    return round.round_number === ev.current_round;
   }
 
   submitResult(pairingId: string, result: string) {

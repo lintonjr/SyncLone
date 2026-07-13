@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface TournamentEvent {
@@ -95,6 +96,15 @@ export class EventService {
 
   getEvent(id: string) {
     return this.http.get<TournamentEvent>(`${this.API}/${id}`);
+  }
+
+  // Pings whenever this event changes server-side; caller re-fetches via getEvent() on each tick.
+  streamEvent(id: string): Observable<void> {
+    return new Observable<void>((subscriber) => {
+      const es = new EventSource(`${this.API}/${id}/stream`);
+      es.onmessage = () => subscriber.next();
+      return () => es.close();
+    });
   }
 
   createEvent(formData: FormData) {

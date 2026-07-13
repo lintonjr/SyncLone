@@ -1,0 +1,88 @@
+- generic [ref=f1e2]:
+  - navigation [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - link [ref=f1e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f1e7]
+        - generic [ref=f1e8]:
+          - link "Home" [ref=f1e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f1e10] [cursor=pointer]:
+            - /url: /events
+          - link "Create Event" [ref=f1e11] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f1e12]:
+        - button "Open notifications" [ref=f1e14] [cursor=pointer]
+        - button "SSE Test Org" [ref=f1e19] [cursor=pointer]
+        - button "Toggle theme" [ref=f1e23] [cursor=pointer]
+  - main [ref=f1e26]:
+    - generic [ref=f1e109]:
+      - generic [ref=f1e110]:
+        - img "SSE Test Event" [ref=f1e112]
+        - generic [ref=f1e113]:
+          - generic [ref=f1e114]:
+            - generic [ref=f1e115]:
+              - generic [ref=f1e116]: MTG
+              - generic [ref=f1e117]: upcoming
+            - heading "SSE Test Event" [level=1] [ref=f1e118]
+            - paragraph [ref=f1e119]: 📅 Jul 31, 2026 · 8:00 PM • 📍 TBD • 👥 2 Players
+          - generic [ref=f1e122]:
+            - button "▶ Start Round 1" [ref=f1e123] [cursor=pointer]
+            - button "✓ Finish" [ref=f1e124] [cursor=pointer]
+            - button "Add Player" [ref=f1e125] [cursor=pointer]
+            - link "Edit Event" [ref=f1e129] [cursor=pointer]:
+              - /url: /event/01833354-dd8d-4400-a987-3040f67e79c1/edit
+            - button "Delete Event" [ref=f1e133] [cursor=pointer]
+      - generic [ref=f1e138]:
+        - button "Standings (2)" [ref=f1e139] [cursor=pointer]
+        - button "Results (0 rounds)" [ref=f1e140] [cursor=pointer]
+      - table [ref=f1e143]:
+        - rowgroup [ref=f1e144]:
+          - row [ref=f1e145]:
+            - columnheader "Rank" [ref=f1e146]
+            - columnheader "Player" [ref=f1e147]
+            - columnheader "Deck" [ref=f1e148]
+            - columnheader "W" [ref=f1e149]
+            - columnheader "L" [ref=f1e150]
+            - columnheader "D" [ref=f1e151]
+            - columnheader "Pts" [ref=f1e152]
+            - columnheader "Tie Breaker ⓘ" [ref=f1e153]:
+              - generic [ref=f1e154]:
+                - text: Tie Breaker
+                - generic [ref=f1e155]: ⓘ
+            - columnheader [ref=f1e156]
+        - rowgroup [ref=f1e157]:
+          - row [ref=f1e158]:
+            - cell "1st" [ref=f1e159]
+            - cell "SSE Test P" [ref=f1e161]
+            - cell [ref=f1e162]:
+              - button "+ Set Deck" [ref=f1e163] [cursor=pointer]
+            - cell "0" [ref=f1e164]
+            - cell "0" [ref=f1e165]
+            - cell "0" [ref=f1e166]
+            - cell [ref=f1e167]:
+              - strong [ref=f1e168]: "0"
+            - cell "33.3% | 0.00 | 0.0%" [ref=f1e169]
+            - cell [ref=f1e170]:
+              - button "Drop" [ref=f1e171] [cursor=pointer]
+          - row [ref=f1e172]:
+            - cell "2nd" [ref=f1e173]
+            - cell "SSE Guest Player" [ref=f1e175]
+            - cell [ref=f1e176]:
+              - button "+ Set Deck" [ref=f1e177] [cursor=pointer]
+            - cell "0" [ref=f1e178]
+            - cell "0" [ref=f1e179]
+            - cell "0" [ref=f1e180]
+            - cell [ref=f1e181]:
+              - strong [ref=f1e182]: "0"
+            - cell "33.3% | 0.00 | 0.0%" [ref=f1e183]
+            - cell [ref=f1e184]:
+              - button "Drop" [ref=f1e185] [cursor=pointer]
+  - contentinfo [ref=f1e91]:
+    - generic [ref=f1e92]:
+      - generic [ref=f1e93]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f1e94] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f1e95] [cursor=pointer]:
+        - /url: /privacy-policy

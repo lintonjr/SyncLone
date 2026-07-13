@@ -1,0 +1,71 @@
+- generic [ref=f1e2]:
+  - navigation [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - link [ref=f1e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f1e7]
+        - generic [ref=f1e8]:
+          - link "Home" [ref=f1e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f1e10] [cursor=pointer]:
+            - /url: /events
+      - generic [ref=f1e11]:
+        - button "Open notifications" [ref=f1e13] [cursor=pointer]
+        - button "SSE Test P" [ref=f1e18] [cursor=pointer]
+        - button "Toggle theme" [ref=f1e22] [cursor=pointer]
+  - main [ref=f1e25]:
+    - generic [ref=f1e27]:
+      - generic [ref=f1e28]:
+        - img "SSE Test Event" [ref=f1e30]
+        - generic [ref=f1e31]:
+          - generic [ref=f1e32]:
+            - generic [ref=f1e33]:
+              - generic [ref=f1e34]: MTG
+              - generic [ref=f1e35]: ongoing
+            - heading "SSE Test Event" [level=1] [ref=f1e36]
+            - paragraph [ref=f1e37]: 📅 Jul 31, 2026 · 8:00 PM • 📍 TBD • 👥 2 Players
+          - button "Leave Event" [ref=f1e39] [cursor=pointer]
+      - generic [ref=f1e40]:
+        - button "Standings (2)" [ref=f1e77] [cursor=pointer]
+        - button "Pairings" [ref=f1e89] [cursor=pointer]
+        - button "Results (1 rounds)" [ref=f1e90] [cursor=pointer]
+        - button "My Round" [active] [ref=f1e43] [cursor=pointer]
+      - generic [ref=f1e44]:
+        - generic [ref=f1e95]:
+          - generic [ref=f1e96]:
+            - generic [ref=f1e97]: Round 1
+            - generic [ref=f1e98]: Table 1
+          - generic [ref=f1e99]:
+            - generic [ref=f1e100]:
+              - generic [ref=f1e101]: S
+              - generic [ref=f1e102]:
+                - generic [ref=f1e103]: SSE Test P
+                - generic [ref=f1e104]: You
+            - generic [ref=f1e105]: VS
+            - generic [ref=f1e106]:
+              - generic [ref=f1e107]: S
+              - generic [ref=f1e108]: SSE Guest Player
+          - generic [ref=f1e110]: Awaiting Result
+        - generic [ref=f1e112]:
+          - heading "Your Record" [level=4] [ref=f1e113]
+          - generic [ref=f1e114]:
+            - generic [ref=f1e115]:
+              - generic [ref=f1e116]: "0"
+              - generic [ref=f1e117]: Wins
+            - generic [ref=f1e118]:
+              - generic [ref=f1e119]: "0"
+              - generic [ref=f1e120]: Losses
+            - generic [ref=f1e121]:
+              - generic [ref=f1e122]: "0"
+              - generic [ref=f1e123]: Draws
+            - generic [ref=f1e124]:
+              - generic [ref=f1e125]: "0"
+              - generic [ref=f1e126]: Points
+  - contentinfo [ref=f1e72]:
+    - generic [ref=f1e73]:
+      - generic [ref=f1e74]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f1e75] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f1e76] [cursor=pointer]:
+        - /url: /privacy-policy
