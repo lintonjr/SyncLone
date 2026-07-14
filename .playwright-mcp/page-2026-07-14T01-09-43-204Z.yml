@@ -1,0 +1,28 @@
+- generic [ref=f11e2]:
+  - navigation [ref=f11e3]:
+    - generic [ref=f11e4]:
+      - generic [ref=f11e5]:
+        - link [ref=f11e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f11e7]
+        - generic [ref=f11e8]:
+          - link "Home" [ref=f11e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f11e10] [cursor=pointer]:
+            - /url: /events
+          - link "Leagues" [ref=f11e11] [cursor=pointer]:
+            - /url: /leagues
+          - link "Create Event" [ref=f11e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f11e13]:
+        - button "Open notifications" [ref=f11e15] [cursor=pointer]
+        - button "Linton Jr" [ref=f11e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f11e24] [cursor=pointer]
+  - main [ref=f11e27]
+  - contentinfo [ref=f11e31]:
+    - generic [ref=f11e32]:
+      - generic [ref=f11e33]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f11e34] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f11e35] [cursor=pointer]:
+        - /url: /privacy-policy

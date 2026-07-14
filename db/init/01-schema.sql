@@ -16,6 +16,17 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `leagues` (
+  `id` varchar(36) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `owner_id` varchar(36) NOT NULL,
+  `playoff_counts` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `owner_id` (`owner_id`),
+  CONSTRAINT `leagues_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `events` (
   `id` varchar(36) NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -35,6 +46,7 @@ CREATE TABLE IF NOT EXISTS `events` (
   `async_draws` tinyint(1) NOT NULL DEFAULT '0',
   `confirm_players` tinyint(1) NOT NULL DEFAULT '0',
   `qr_code_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `league_id` varchar(36) DEFAULT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'upcoming',
   `current_round` int NOT NULL DEFAULT '0',
   `owner_id` varchar(36) NOT NULL,
@@ -46,7 +58,9 @@ CREATE TABLE IF NOT EXISTS `events` (
   `champion_id` varchar(36) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `owner_id` (`owner_id`),
-  CONSTRAINT `events_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`)
+  KEY `league_id` (`league_id`),
+  CONSTRAINT `events_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `events_league_fk` FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `event_players` (

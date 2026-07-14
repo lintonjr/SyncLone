@@ -12,5 +12,9 @@ export const routes: Routes = [
   { path: 'events', loadComponent: () => import('./pages/my-events/my-events').then(m => m.MyEventsComponent), canActivate: [authGuard] },
   { path: 'event/:id', loadComponent: () => import('./pages/event-detail/event-detail').then(m => m.EventDetailComponent) },
   { path: 'event/:id/edit', loadComponent: () => import('./pages/create-event/create-event').then(m => m.CreateEventComponent), canActivate: [authGuard, organizerGuard] },
+  { path: 'leagues', loadComponent: () => import('./pages/leagues/leagues').then(m => m.LeaguesComponent) },
+  { path: 'leagues/create', loadComponent: () => import('./pages/create-league/create-league').then(m => m.CreateLeagueComponent), canActivate: [authGuard, organizerGuard] },
+  { path: 'leagues/:id', loadComponent: () => import('./pages/league-detail/league-detail').then(m => m.LeagueDetailComponent) },
+  { path: 'leagues/:id/edit', loadComponent: () => import('./pages/create-league/create-league').then(m => m.CreateLeagueComponent), canActivate: [authGuard, organizerGuard] },
   { path: '**', redirectTo: '' },
 ];

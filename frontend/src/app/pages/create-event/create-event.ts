@@ -2,6 +2,8 @@ import { Component, inject, signal, input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { EventService } from '../../services/event';
+import { LeagueService, League } from '../../services/league';
+import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -13,8 +15,12 @@ import { environment } from '../../../environments/environment';
 export class CreateEventComponent implements OnInit {
   id = input<string>('');
   private eventSvc = inject(EventService);
+  private leagueSvc = inject(LeagueService);
+  private auth = inject(AuthService);
   private router = inject(Router);
   apiUrl = environment.apiUrl.replace('/api', '');
+  myLeagues = signal<League[]>([]);
+  leagueId = signal('');
 
   name = signal('');
   city = signal('');
@@ -56,6 +62,12 @@ export class CreateEventComponent implements OnInit {
   } as Record<string, string[]>;
 
   ngOnInit() {
+    if (this.auth.currentUser()?.role === 'organizer') {
+      this.leagueSvc.getMyLeagues().subscribe({
+        next: (leagues) => this.myLeagues.set(leagues),
+        error: (err) => console.error('Failed to load leagues', err),
+      });
+    }
     if (this.id()) {
       this.isEditMode = true;
       this.eventSvc.getEvent(this.id()).subscribe({
@@ -82,6 +94,7 @@ export class CreateEventComponent implements OnInit {
           this.asyncDraws.set(!!ev.async_draws);
           this.confirmPlayers.set(!!ev.confirm_players);
           this.qrCodeEnabled.set(!!ev.qr_code_enabled);
+          this.leagueId.set(ev.league_id ?? '');
           if (ev.thumbnail) {
             this.existingThumbnail = `${this.apiUrl}${ev.thumbnail}`;
             this.thumbnailPreview.set(this.existingThumbnail);
@@ -142,6 +155,7 @@ export class CreateEventComponent implements OnInit {
     fd.append('async_draws', String(this.asyncDraws()));
     fd.append('confirm_players', String(this.confirmPlayers()));
     fd.append('qr_code_enabled', String(this.qrCodeEnabled()));
+    fd.append('league_id', this.leagueId());
     if (this.thumbnailFile) fd.append('thumbnail', this.thumbnailFile);
 
     const request = this.isEditMode

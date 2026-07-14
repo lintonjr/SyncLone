@@ -1,0 +1,25 @@
+<div class="create-page">
+  <h1 class="page-title">{{ isEditMode ? 'Edit League' : 'Create League' }}</h1>
+
+  @if (error()) { <div class="error-msg">{{ error() }}</div> }
+
+  <div class="create-form card">
+    <div class="form-field">
+      <label>League Name</label>
+      <input type="text" placeholder="e.g. Friday Night Commander League" [value]="name()" (input)="name.set($any($event.target).value)" maxlength="100" />
+    </div>
+
+    <h3 class="optionals-title">Options</h3>
+    <div class="checkboxes">
+      <label class="checkbox-label">
+        <input type="checkbox" [checked]="playoffCounts()" (change)="playoffCounts.set($any($event.target).checked)" />
+        Playoff results count towards league standings
+      </label>
+    </div>
+    <p class="modal-sub">When off, only Swiss-round results from each linked tournament add up to the league total — playoff points are excluded.</p>
+
+    <button class="btn btn-primary" (click)="submit()" [disabled]="loading()">
+      @if (loading()) { <span class="spinner-sm"></span> } {{ isEditMode ? 'Save Changes' : 'Create League' }}
+    </button>
+  </div>
+</div>

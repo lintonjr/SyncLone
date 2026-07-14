@@ -96,14 +96,27 @@
       </div>
     </div>
 
-    <div class="form-field">
-      <label>Playoff Structure</label>
-      <select [value]="playoffStructure()" (change)="playoffStructure.set($any($event.target).value)">
-        <option value="none">No Playoffs</option>
-        <option value="top4">Top 4 Playoff</option>
-        <option value="top8">Top 8 Playoff</option>
-        <option value="top16">Top 16 Playoff</option>
-      </select>
+    <div class="row-2">
+      <div class="form-field">
+        <label>Playoff Structure</label>
+        <select [value]="playoffStructure()" (change)="playoffStructure.set($any($event.target).value)">
+          <option value="none">No Playoffs</option>
+          <option value="top4">Top 4 Playoff</option>
+          <option value="top8">Top 8 Playoff</option>
+          <option value="top16">Top 16 Playoff</option>
+        </select>
+      </div>
+      @if (myLeagues().length) {
+        <div class="form-field">
+          <label>League (Optional)</label>
+          <select [value]="leagueId()" (change)="leagueId.set($any($event.target).value)">
+            <option value="">No league</option>
+            @for (l of myLeagues(); track l.id) {
+              <option [value]="l.id">{{ l.name }}</option>
+            }
+          </select>
+        </div>
+      }
     </div>
 
     <h3 class="optionals-title">Scoring</h3>

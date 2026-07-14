@@ -7,6 +7,7 @@
       <div class="nav-links">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a>
         <a routerLink="/events" routerLinkActive="active">My Events</a>
+        <a routerLink="/leagues" routerLinkActive="active">Leagues</a>
         @if (auth.currentUser()?.role === 'organizer') {
           <a routerLink="/create" routerLinkActive="active">Create Event</a>
         }

@@ -1,0 +1,33 @@
+<div class="leagues-page">
+  <div class="page-header">
+    <h1>Leagues</h1>
+    @if (auth.currentUser()?.role === 'organizer') {
+      <a routerLink="/leagues/create" class="btn btn-primary">+ Create League</a>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="loading"><div class="spinner"></div></div>
+  } @else if (leagues().length === 0) {
+    <div class="empty-state">
+      <p>No leagues yet.</p>
+      @if (auth.currentUser()?.role === 'organizer') {
+        <a routerLink="/leagues/create" class="btn btn-primary">Create the first league</a>
+      }
+    </div>
+  } @else {
+    <div class="leagues-list">
+      @for (l of leagues(); track l.id) {
+        <a [routerLink]="['/leagues', l.id]" class="league-card card">
+          <div class="league-card-main">
+            <h3>{{ l.name }}</h3>
+            <p class="league-meta">Organized by {{ l.owner_name }} &nbsp;•&nbsp; {{ l.event_count ?? 0 }} events</p>
+          </div>
+          <span class="badge" [class.badge-purple]="l.playoff_counts" [class.badge-yellow]="!l.playoff_counts">
+            {{ l.playoff_counts ? 'Playoffs count' : 'Playoffs excluded' }}
+          </span>
+        </a>
+      }
+    </div>
+  }
+</div>

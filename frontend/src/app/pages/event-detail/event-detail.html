@@ -19,6 +19,9 @@
             <span class="badge" [class]="'badge badge-' + (event()!.status === 'upcoming' ? 'purple' : event()!.status === 'ongoing' ? 'yellow' : 'green')">{{ event()!.status }}</span>
           </div>
           <h1 class="event-title">{{ event()!.name }}</h1>
+          @if (event()!.league_id) {
+            <a [routerLink]="['/leagues', event()!.league_id]" class="league-link">🏆 Part of {{ event()!.league_name }}</a>
+          }
           <p class="event-meta">
             📅 {{ event()!.date | date:'MMM d, y · h:mm a' }} &nbsp;•&nbsp;
             📍 {{ event()!.online ? 'Online' : (event()!.city || 'TBD') }}

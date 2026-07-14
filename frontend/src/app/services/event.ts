@@ -22,6 +22,8 @@ export interface TournamentEvent {
   async_draws: number;
   confirm_players: number;
   qr_code_enabled: number;
+  league_id?: string | null;
+  league_name?: string;
   pod_size: number;
   points_win: number;
   points_draw: number;

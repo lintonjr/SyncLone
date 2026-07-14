@@ -57,6 +57,16 @@
 .banner-content { flex: 1; }
 .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .event-title { font-size: 28px; font-weight: 800; color: white; margin-bottom: 8px; line-height: 1.2; }
+.league-link {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c4b5fd;
+  text-decoration: none;
+  margin-bottom: 8px;
+
+  &:hover { text-decoration: underline; }
+}
 .event-meta { font-size: 13px; color: rgba(255,255,255,0.7); }
 .event-desc { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 8px; max-width: 600px; }
 .banner-actions { flex-shrink: 0; align-self: flex-end; }

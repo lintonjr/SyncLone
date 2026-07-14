@@ -1,0 +1,45 @@
+- generic [ref=f2e2]:
+  - navigation [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - link [ref=f2e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f2e7]
+        - generic [ref=f2e8]:
+          - link "Home" [ref=f2e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f2e10] [cursor=pointer]:
+            - /url: /events
+          - link "Leagues" [ref=f2e11] [cursor=pointer]:
+            - /url: /leagues
+          - link "Create Event" [ref=f2e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f2e13]:
+        - button "Open notifications" [ref=f2e15] [cursor=pointer]
+        - button "League Test Org" [ref=f2e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f2e24] [cursor=pointer]
+  - main [ref=f2e27]:
+    - generic [ref=f2e144]:
+      - generic [ref=f2e145]:
+        - generic [ref=f2e146]:
+          - heading "UI Test League" [level=1] [ref=f2e147]
+          - paragraph [ref=f2e148]: Organized by League Test Org • 1 events • Playoffs count towards standings
+        - generic [ref=f2e149]:
+          - link "Edit" [ref=f2e150] [cursor=pointer]:
+            - /url: /leagues/c6db60bf-d651-43ce-9616-c97074df45e3/edit
+          - button "Delete" [ref=f2e151] [cursor=pointer]
+      - heading "Standings" [level=2] [ref=f2e152]
+      - paragraph [ref=f2e153]: No results yet from registered players in this league's tournaments.
+      - heading "Tournaments" [level=2] [ref=f2e154]
+      - link "UI League Event MTG • Jul 31, 2026 upcoming" [ref=f2e156] [cursor=pointer]:
+        - /url: /event/14d880d3-5d3a-431a-aed4-bee6bbf156d5
+        - generic [ref=f2e157]: UI League Event
+        - generic [ref=f2e158]: MTG • Jul 31, 2026
+        - generic [ref=f2e159]: upcoming
+  - contentinfo [ref=f2e99]:
+    - generic [ref=f2e100]:
+      - generic [ref=f2e101]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f2e102] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f2e103] [cursor=pointer]:
+        - /url: /privacy-policy

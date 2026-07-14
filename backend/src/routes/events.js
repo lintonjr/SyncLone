@@ -80,9 +80,9 @@ router.get('/', async (req, res) => {
   try {
     const { q, past } = req.query;
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    let sql = `SELECT e.*, u.display_name as owner_name,
+    let sql = `SELECT e.*, u.display_name as owner_name, l.name as league_name,
       (SELECT COUNT(*) FROM event_players ep WHERE ep.event_id = e.id AND ep.status = 'active') as player_count
-      FROM events e JOIN users u ON u.id = e.owner_id WHERE e.test_event = 0`;
+      FROM events e JOIN users u ON u.id = e.owner_id LEFT JOIN leagues l ON l.id = e.league_id WHERE e.test_event = 0`;
     const params = [];
     if (past === 'true') { sql += " AND (e.date < ? OR e.status = 'completed')"; params.push(now); }
     else { sql += " AND e.date >= ? AND e.status != 'completed'"; params.push(now); }
@@ -99,7 +99,9 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const event = await db.get(
-      'SELECT e.*, u.display_name as owner_name FROM events e JOIN users u ON u.id = e.owner_id WHERE e.id = ?',
+      `SELECT e.*, u.display_name as owner_name, l.name as league_name
+       FROM events e JOIN users u ON u.id = e.owner_id LEFT JOIN leagues l ON l.id = e.league_id
+       WHERE e.id = ?`,
       [req.params.id]
     );
     if (!event) return res.status(404).json({ error: 'Event not found' });
@@ -161,11 +163,19 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), async (req,
     const {
       name, description, city, address, online, date, game, format,
       pairing_method, playoff_structure, allow_byes, test_event,
-      collaborative_deck, async_draws, confirm_players, qr_code_enabled, pod_size,
+      collaborative_deck, async_draws, confirm_players, qr_code_enabled, league_id, pod_size,
       points_win, points_draw, points_loss,
     } = req.body;
     if (!name || !date || !game)
       return res.status(400).json({ error: 'Name, date and game are required' });
+
+    let leagueIdVal = null;
+    if (league_id) {
+      const league = await db.get('SELECT * FROM leagues WHERE id = ?', [league_id]);
+      if (!league) return res.status(404).json({ error: 'League not found' });
+      if (league.owner_id !== req.user.id) return res.status(403).json({ error: 'You can only attach events to your own leagues' });
+      leagueIdVal = league_id;
+    }
 
     const id = uuidv4();
     const thumbnail = req.file ? `/uploads/${req.file.filename}` : null;
@@ -177,15 +187,15 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), async (req,
     await db.run(`
       INSERT INTO events (id, name, description, city, address, online, thumbnail, date, game, format,
         pairing_method, playoff_structure, allow_byes, test_event, collaborative_deck, async_draws,
-        confirm_players, qr_code_enabled, pod_size, points_win, points_draw, points_loss, owner_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        confirm_players, qr_code_enabled, league_id, pod_size, points_win, points_draw, points_loss, owner_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       id, name, description || null, city || null, address || null,
       parseBool(online) ? 1 : 0, thumbnail, date, game, format || null,
       pairing_method || 'swiss', playoff_structure || 'none',
       parseBool(allow_byes) ? 1 : 0, parseBool(test_event) ? 1 : 0,
       parseBool(collaborative_deck) ? 1 : 0, parseBool(async_draws) ? 1 : 0,
-      parseBool(confirm_players) ? 1 : 0, parseBool(qr_code_enabled) ? 1 : 0, podSizeVal,
+      parseBool(confirm_players) ? 1 : 0, parseBool(qr_code_enabled) ? 1 : 0, leagueIdVal, podSizeVal,
       pointsWinVal, pointsDrawVal, pointsLossVal, req.user.id,
     ]);
 
@@ -203,16 +213,28 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
     const {
       name, description, city, address, online, date, game, format,
       pairing_method, pod_size, playoff_structure, allow_byes, test_event,
-      collaborative_deck, async_draws, confirm_players, qr_code_enabled, status,
+      collaborative_deck, async_draws, confirm_players, qr_code_enabled, league_id, status,
       points_win, points_draw, points_loss,
     } = req.body;
+
+    let leagueIdVal = event.league_id;
+    if (league_id !== undefined) {
+      if (!league_id) {
+        leagueIdVal = null;
+      } else {
+        const league = await db.get('SELECT * FROM leagues WHERE id = ?', [league_id]);
+        if (!league) return res.status(404).json({ error: 'League not found' });
+        if (league.owner_id !== req.user.id) return res.status(403).json({ error: 'You can only attach events to your own leagues' });
+        leagueIdVal = league_id;
+      }
+    }
 
     const thumbnail = req.file ? `/uploads/${req.file.filename}` : event.thumbnail;
 
     await db.run(`
       UPDATE events SET name=?, description=?, city=?, address=?, online=?, thumbnail=?, date=?,
       game=?, format=?, pairing_method=?, pod_size=?, playoff_structure=?, allow_byes=?, test_event=?,
-      collaborative_deck=?, async_draws=?, confirm_players=?, qr_code_enabled=?, points_win=?, points_draw=?, points_loss=?,
+      collaborative_deck=?, async_draws=?, confirm_players=?, qr_code_enabled=?, league_id=?, points_win=?, points_draw=?, points_loss=?,
       status=? WHERE id=?
     `, [
       name || event.name, description ?? event.description, city ?? event.city,
@@ -226,6 +248,7 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
       async_draws !== undefined ? (parseBool(async_draws) ? 1 : 0) : event.async_draws,
       confirm_players !== undefined ? (parseBool(confirm_players) ? 1 : 0) : event.confirm_players,
       qr_code_enabled !== undefined ? (parseBool(qr_code_enabled) ? 1 : 0) : event.qr_code_enabled,
+      leagueIdVal,
       points_win !== undefined && points_win !== '' ? parseInt(points_win) : event.points_win,
       points_draw !== undefined && points_draw !== '' ? parseInt(points_draw) : event.points_draw,
       points_loss !== undefined && points_loss !== '' ? parseInt(points_loss) : event.points_loss,

@@ -1,0 +1,85 @@
+@if (loading()) {
+  <div class="detail-loading"><div class="spinner"></div></div>
+} @else if (league()) {
+  <div class="league-detail-page">
+    <div class="league-header card">
+      <div>
+        <h1>{{ league()!.name }}</h1>
+        <p class="league-meta">
+          Organized by {{ league()!.owner_name }} &nbsp;•&nbsp; {{ league()!.events.length }} events &nbsp;•&nbsp;
+          {{ league()!.playoff_counts ? 'Playoffs count towards standings' : 'Playoffs excluded from standings' }}
+        </p>
+      </div>
+      @if (isOwner()) {
+        <div class="league-actions">
+          <a [routerLink]="['/leagues', id(), 'edit']" class="btn btn-ghost">Edit</a>
+          <button class="btn btn-danger" (click)="deleteLeague()" [disabled]="actionLoading()">Delete</button>
+        </div>
+      }
+    </div>
+
+    @if (error()) { <div class="error-msg">{{ error() }}</div> }
+
+    <h2 class="section-title">Standings</h2>
+    @if (league()!.standings.length === 0) {
+      <p class="empty">No results yet from registered players in this league's tournaments.</p>
+    } @else {
+      <div class="standings-table card">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Events</th>
+              <th>W</th>
+              <th>L</th>
+              <th>D</th>
+              <th>Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of league()!.standings; track s.user_id; let i = $index) {
+              <tr [class.top-row]="i === 0">
+                <td class="rank-cell">
+                  @if (i < 3) {
+                    <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
+                  } @else {
+                    {{ i + 1 }}
+                  }
+                </td>
+                <td>{{ s.display_name }}</td>
+                <td>{{ s.events_played }}</td>
+                <td>{{ s.wins }}</td>
+                <td>{{ s.losses }}</td>
+                <td>{{ s.draws }}</td>
+                <td><strong>{{ s.points }}</strong></td>
+              </tr>
+              @if (i === 11) {
+                <tr class="cut-divider">
+                  <td colspan="7"><span>Cut</span></td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <h2 class="section-title">Tournaments</h2>
+    @if (league()!.events.length === 0) {
+      <p class="empty">No tournaments linked to this league yet.</p>
+    } @else {
+      <div class="events-list">
+        @for (ev of league()!.events; track ev.id) {
+          <a [routerLink]="['/event', ev.id]" class="event-row card">
+            <span class="event-row-name">{{ ev.name }}</span>
+            <span class="event-row-meta">{{ ev.game }}{{ ev.format ? ' - ' + ev.format : '' }} &nbsp;•&nbsp; {{ ev.date | date:'MMM d, y' }}</span>
+            <span class="badge" [class]="'badge-' + (ev.status === 'upcoming' ? 'purple' : ev.status === 'ongoing' ? 'yellow' : 'green')">{{ ev.status }}</span>
+          </a>
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <p class="empty">League not found.</p>
+}

@@ -1,0 +1,248 @@
+- generic [ref=f9e2]:
+  - navigation [ref=f9e3]:
+    - generic [ref=f9e4]:
+      - generic [ref=f9e5]:
+        - link [ref=f9e6] [cursor=pointer]:
+          - /url: /
+          - img "Mercadia" [ref=f9e7]
+        - generic [ref=f9e8]:
+          - link "Home" [ref=f9e9] [cursor=pointer]:
+            - /url: /
+          - link "My Events" [ref=f9e10] [cursor=pointer]:
+            - /url: /events
+          - link "Leagues" [ref=f9e11] [cursor=pointer]:
+            - /url: /leagues
+          - link "Create Event" [ref=f9e12] [cursor=pointer]:
+            - /url: /create
+      - generic [ref=f9e13]:
+        - button "Open notifications" [ref=f9e15] [cursor=pointer]
+        - button "Linton Jr" [ref=f9e20] [cursor=pointer]
+        - button "Toggle theme" [ref=f9e24] [cursor=pointer]
+  - main [ref=f9e27]:
+    - generic [ref=f9e29]:
+      - generic [ref=f9e30]:
+        - generic [ref=f9e31]:
+          - heading "Commander 500 Test" [level=1] [ref=f9e32]
+          - paragraph [ref=f9e33]: Organized by Linton Jr • 7 events • Playoffs excluded from standings
+        - generic [ref=f9e34]:
+          - link "Edit" [ref=f9e35] [cursor=pointer]:
+            - /url: /leagues/e7863664-9192-465c-b186-3107b515b7d9/edit
+          - button "Delete" [ref=f9e36] [cursor=pointer]
+      - heading "Standings" [level=2] [ref=f9e37]
+      - table [ref=f9e39]:
+        - rowgroup [ref=f9e40]:
+          - row [ref=f9e41]:
+            - columnheader "Rank" [ref=f9e42]
+            - columnheader "Player" [ref=f9e43]
+            - columnheader "Events" [ref=f9e44]
+            - columnheader "W" [ref=f9e45]
+            - columnheader "L" [ref=f9e46]
+            - columnheader "D" [ref=f9e47]
+            - columnheader "Pts" [ref=f9e48]
+        - rowgroup [ref=f9e49]:
+          - row [ref=f9e50]:
+            - cell "1" [ref=f9e51]
+            - cell "Commander P11" [ref=f9e52]
+            - cell "6" [ref=f9e53]
+            - cell "9" [ref=f9e54]
+            - cell "8" [ref=f9e55]
+            - cell "1" [ref=f9e56]
+            - cell [ref=f9e57]:
+              - strong [ref=f9e58]: "28"
+          - row [ref=f9e59]:
+            - cell "2" [ref=f9e60]
+            - cell "Commander P07" [ref=f9e61]
+            - cell "6" [ref=f9e62]
+            - cell "8" [ref=f9e63]
+            - cell "9" [ref=f9e64]
+            - cell "1" [ref=f9e65]
+            - cell [ref=f9e66]:
+              - strong [ref=f9e67]: "25"
+          - row [ref=f9e68]:
+            - cell "3" [ref=f9e69]
+            - cell "Commander P09" [ref=f9e70]
+            - cell "6" [ref=f9e71]
+            - cell "8" [ref=f9e72]
+            - cell "9" [ref=f9e73]
+            - cell "1" [ref=f9e74]
+            - cell [ref=f9e75]:
+              - strong [ref=f9e76]: "25"
+          - row [ref=f9e77]:
+            - cell "4" [ref=f9e78]
+            - cell "Commander P01" [ref=f9e79]
+            - cell "6" [ref=f9e80]
+            - cell "7" [ref=f9e81]
+            - cell "8" [ref=f9e82]
+            - cell "3" [ref=f9e83]
+            - cell [ref=f9e84]:
+              - strong [ref=f9e85]: "24"
+          - row [ref=f9e86]:
+            - cell "5" [ref=f9e87]
+            - cell "Commander P06" [ref=f9e88]
+            - cell "6" [ref=f9e89]
+            - cell "7" [ref=f9e90]
+            - cell "10" [ref=f9e91]
+            - cell "1" [ref=f9e92]
+            - cell [ref=f9e93]:
+              - strong [ref=f9e94]: "22"
+          - row [ref=f9e95]:
+            - cell "6" [ref=f9e96]
+            - cell "Commander P04" [ref=f9e97]
+            - cell "6" [ref=f9e98]
+            - cell "7" [ref=f9e99]
+            - cell "10" [ref=f9e100]
+            - cell "1" [ref=f9e101]
+            - cell [ref=f9e102]:
+              - strong [ref=f9e103]: "22"
+          - row [ref=f9e104]:
+            - cell "7" [ref=f9e105]
+            - cell "Commander P15" [ref=f9e106]
+            - cell "6" [ref=f9e107]
+            - cell "7" [ref=f9e108]
+            - cell "10" [ref=f9e109]
+            - cell "1" [ref=f9e110]
+            - cell [ref=f9e111]:
+              - strong [ref=f9e112]: "22"
+          - row [ref=f9e113]:
+            - cell "8" [ref=f9e114]
+            - cell "Commander P12" [ref=f9e115]
+            - cell "6" [ref=f9e116]
+            - cell "7" [ref=f9e117]
+            - cell "11" [ref=f9e118]
+            - cell "0" [ref=f9e119]
+            - cell [ref=f9e120]:
+              - strong [ref=f9e121]: "21"
+          - row [ref=f9e122]:
+            - cell "9" [ref=f9e123]
+            - cell "Commander P08" [ref=f9e124]
+            - cell "6" [ref=f9e125]
+            - cell "6" [ref=f9e126]
+            - cell "11" [ref=f9e127]
+            - cell "1" [ref=f9e128]
+            - cell [ref=f9e129]:
+              - strong [ref=f9e130]: "19"
+          - row [ref=f9e131]:
+            - cell "10" [ref=f9e132]
+            - cell "Commander P18" [ref=f9e133]
+            - cell "6" [ref=f9e134]
+            - cell "5" [ref=f9e135]
+            - cell "11" [ref=f9e136]
+            - cell "2" [ref=f9e137]
+            - cell [ref=f9e138]:
+              - strong [ref=f9e139]: "17"
+          - row [ref=f9e140]:
+            - cell "11" [ref=f9e141]
+            - cell "Commander P10" [ref=f9e142]
+            - cell "6" [ref=f9e143]
+            - cell "5" [ref=f9e144]
+            - cell "12" [ref=f9e145]
+            - cell "1" [ref=f9e146]
+            - cell [ref=f9e147]:
+              - strong [ref=f9e148]: "16"
+          - row [ref=f9e149]:
+            - cell "12" [ref=f9e150]
+            - cell "Commander P02" [ref=f9e151]
+            - cell "6" [ref=f9e152]
+            - cell "5" [ref=f9e153]
+            - cell "13" [ref=f9e154]
+            - cell "0" [ref=f9e155]
+            - cell [ref=f9e156]:
+              - strong [ref=f9e157]: "15"
+          - row [ref=f9e158]:
+            - cell "13" [ref=f9e159]
+            - cell "Commander P03" [ref=f9e160]
+            - cell "6" [ref=f9e161]
+            - cell "4" [ref=f9e162]
+            - cell "12" [ref=f9e163]
+            - cell "2" [ref=f9e164]
+            - cell [ref=f9e165]:
+              - strong [ref=f9e166]: "14"
+          - row [ref=f9e167]:
+            - cell "14" [ref=f9e168]
+            - cell "Commander P17" [ref=f9e169]
+            - cell "6" [ref=f9e170]
+            - cell "4" [ref=f9e171]
+            - cell "12" [ref=f9e172]
+            - cell "2" [ref=f9e173]
+            - cell [ref=f9e174]:
+              - strong [ref=f9e175]: "14"
+          - row [ref=f9e176]:
+            - cell "15" [ref=f9e177]
+            - cell "Commander P16" [ref=f9e178]
+            - cell "6" [ref=f9e179]
+            - cell "4" [ref=f9e180]
+            - cell "13" [ref=f9e181]
+            - cell "1" [ref=f9e182]
+            - cell [ref=f9e183]:
+              - strong [ref=f9e184]: "13"
+          - row [ref=f9e185]:
+            - cell "16" [ref=f9e186]
+            - cell "Commander P14" [ref=f9e187]
+            - cell "6" [ref=f9e188]
+            - cell "4" [ref=f9e189]
+            - cell "14" [ref=f9e190]
+            - cell "0" [ref=f9e191]
+            - cell [ref=f9e192]:
+              - strong [ref=f9e193]: "12"
+          - row [ref=f9e194]:
+            - cell "17" [ref=f9e195]
+            - cell "Commander P05" [ref=f9e196]
+            - cell "6" [ref=f9e197]
+            - cell "3" [ref=f9e198]
+            - cell "13" [ref=f9e199]
+            - cell "2" [ref=f9e200]
+            - cell [ref=f9e201]:
+              - strong [ref=f9e202]: "11"
+          - row [ref=f9e203]:
+            - cell "18" [ref=f9e204]
+            - cell "Commander P13" [ref=f9e205]
+            - cell "6" [ref=f9e206]
+            - cell "3" [ref=f9e207]
+            - cell "15" [ref=f9e208]
+            - cell "0" [ref=f9e209]
+            - cell [ref=f9e210]:
+              - strong [ref=f9e211]: "9"
+      - heading "Tournaments" [level=2] [ref=f9e212]
+      - generic [ref=f9e213]:
+        - link "Test league MTG - Commander500 • Jul 13, 2026 upcoming" [ref=f9e214] [cursor=pointer]:
+          - /url: /event/53d40535-3951-43c1-9704-2d31bf2a9d4a
+          - generic [ref=f9e215]: Test league
+          - generic [ref=f9e216]: MTG - Commander500 • Jul 13, 2026
+          - generic [ref=f9e217]: upcoming
+        - 'link "Commander 500 League Night #1 MTG - Commander500 • Jul 20, 2026 completed" [ref=f9e218] [cursor=pointer]':
+          - /url: /event/94db1a69-9e10-4c5b-9301-8b9134ad4670
+          - generic [ref=f9e219]: "Commander 500 League Night #1"
+          - generic [ref=f9e220]: MTG - Commander500 • Jul 20, 2026
+          - generic [ref=f9e221]: completed
+        - 'link "Commander 500 League Night #2 MTG - Commander500 • Jul 27, 2026 completed" [ref=f9e222] [cursor=pointer]':
+          - /url: /event/e4033e82-a710-4537-85bb-059d08116277
+          - generic [ref=f9e223]: "Commander 500 League Night #2"
+          - generic [ref=f9e224]: MTG - Commander500 • Jul 27, 2026
+          - generic [ref=f9e225]: completed
+        - 'link "Commander 500 League Night #3 MTG - Commander500 • Aug 3, 2026 completed" [ref=f9e226] [cursor=pointer]':
+          - /url: /event/a5fc842f-effa-4c87-9aae-63f8bcdcc1d6
+          - generic [ref=f9e227]: "Commander 500 League Night #3"
+          - generic [ref=f9e228]: MTG - Commander500 • Aug 3, 2026
+          - generic [ref=f9e229]: completed
+        - 'link "Commander 500 League Night #4 MTG - Commander500 • Aug 10, 2026 completed" [ref=f9e230] [cursor=pointer]':
+          - /url: /event/ab906935-736f-426f-ae9a-6043e58dc7c9
+          - generic [ref=f9e231]: "Commander 500 League Night #4"
+          - generic [ref=f9e232]: MTG - Commander500 • Aug 10, 2026
+          - generic [ref=f9e233]: completed
+        - 'link "Commander 500 League Night #5 MTG - Commander500 • Aug 17, 2026 completed" [ref=f9e234] [cursor=pointer]':
+          - /url: /event/173f2710-0458-4e3f-85db-d15085a5f815
+          - generic [ref=f9e235]: "Commander 500 League Night #5"
+          - generic [ref=f9e236]: MTG - Commander500 • Aug 17, 2026
+          - generic [ref=f9e237]: completed
+        - 'link "Commander 500 League Night #6 MTG - Commander500 • Aug 24, 2026 completed" [ref=f9e238] [cursor=pointer]':
+          - /url: /event/ce6dda75-18b0-424a-abab-44c63c0a5abc
+          - generic [ref=f9e239]: "Commander 500 League Night #6"
+          - generic [ref=f9e240]: MTG - Commander500 • Aug 24, 2026
+          - generic [ref=f9e241]: completed
+  - contentinfo [ref=f9e242]:
+    - generic [ref=f9e243]:
+      - generic [ref=f9e244]: © 2025 Mercadia
+      - link "Terms of Service" [ref=f9e245] [cursor=pointer]:
+        - /url: /terms-of-service
+      - link "Privacy Policy" [ref=f9e246] [cursor=pointer]:
+        - /url: /privacy-policy

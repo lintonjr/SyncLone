@@ -42,6 +42,14 @@ Stack: **Angular 21** (frontend) + **Node/Express** (backend) + **MySQL 8**.
 - Rótulo automático de fase: Final / Semifinals / Quarterfinals / Round of N
 - Banner de campeão ao final do bracket
 
+### Ligas
+- `/leagues` — lista todas as ligas; `/leagues/create` — cria liga (nome + toggle "Playoff results count towards league standings", default ligado)
+- Vincular um torneio a uma liga é opcional e só o dono da liga pode fazer isso pros próprios eventos (`league_id` no Create/Edit Event, valida ownership no backend, 403 se tentar numa liga de outro organizador)
+- `/leagues/:id` mostra os torneios vinculados + **standings agregados**: soma pontos/vitórias/derrotas/empates de cada jogador **com conta registrada** em todos os torneios da liga (convidados sem conta não entram na soma, só contam dentro do próprio evento — não dá pra correlacioná-los entre eventos diferentes)
+- Quando o toggle de playoff está desligado, os pontos são recalculados do zero só com rodadas suíças confirmadas (a tabela `event_players` guarda só o total corrido, sem separar por tipo de rodada — a rota de standings da liga refaz esse cálculo)
+- Apagar uma liga não apaga nem trava os torneios vinculados — eles só voltam a ficar sem liga (`ON DELETE SET NULL`)
+- Página do evento mostra um link "🏆 Part of {liga}" quando vinculado
+
 ### Outros
 - Autenticação JWT (registro / login / esqueci a senha)
 - Notificações por usuário (lidas/não lidas)
@@ -184,6 +192,13 @@ PUT    /api/notifications/:id/read
 
 GET    /api/users/me
 POST   /api/users/me/upgrade-to-organizer
+
+GET    /api/leagues
+GET    /api/leagues/mine
+GET    /api/leagues/:id                  # + eventos vinculados e standings agregados
+POST   /api/leagues
+PUT    /api/leagues/:id
+DELETE /api/leagues/:id
 ```
 
 ## Roadmap conhecido (gaps ainda pendentes vs. o site original)
