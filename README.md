@@ -84,6 +84,21 @@ CloneManaSync/
 
 Pré-requisito: Docker e Docker Compose.
 
+### Windows
+
+Evita ter que instalar Node e MySQL nativamente e os problemas de compatibilidade que vêm junto.
+
+1. Instale o **Docker Desktop for Windows** ([docs.docker.com/desktop/setup/install/windows-install](https://docs.docker.com/desktop/setup/install/windows-install/)) — ele já configura o WSL2 automaticamente no Windows 10/11
+2. Instale o **Git for Windows** ([git-scm.com/download/win](https://git-scm.com/download/win)) — junto vem o **Git Bash**, recomendado como terminal (os comandos deste README são todos em bash e funcionam direto nele, sem precisar traduzir pra PowerShell/cmd)
+3. Clone o repositório e abra a pasta no Git Bash:
+   ```bash
+   git clone <url-do-repo>
+   cd CloneManaSync
+   ```
+4. Siga o comando abaixo normalmente
+
+### Linux / macOS / Windows (WSL ou Git Bash)
+
 ```bash
 docker compose up -d --build
 ```
