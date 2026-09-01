@@ -17,7 +17,10 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      # VPN (Cisco AnyConnect) não roteia a bridge do Docker: build usa a rede do host
+      network: host
     restart: unless-stopped
     depends_on:
       mysql:
@@ -37,7 +40,10 @@ services:
       - backend_uploads:/app/uploads
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # VPN (Cisco AnyConnect) não roteia a bridge do Docker: build usa a rede do host
+      network: host
     restart: unless-stopped
     depends_on:
       - backend
