@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
@@ -10,6 +11,7 @@ import { AuthService } from '../../services/auth';
   styleUrl: './login.scss',
 })
 export class LoginComponent {
+  i18n = inject(I18nService);
   auth = inject(AuthService);
   router = inject(Router);
   email = signal('');
@@ -27,7 +29,7 @@ export class LoginComponent {
     this.auth.login({ email: this.email(), password: this.password() }).subscribe({
       next: () => this.router.navigate(['/']),
       error: (err) => {
-        this.error.set(err.error?.error || 'Login failed');
+        this.error.set(mensagemDeErro(this.i18n, err));
         this.loading.set(false);
       },
     });

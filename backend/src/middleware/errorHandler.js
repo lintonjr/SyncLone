@@ -8,18 +8,25 @@ const { HttpError } = require('../lib/http');
 // eslint-disable-next-line no-unused-vars -- Express identifies error handlers by arity
 function errorHandler(err, req, res, next) {
   if (err instanceof HttpError) {
-    return res.status(err.status).json({ error: err.message });
+    // `error` é a frase pronta (compatibilidade e fallback); `code`/`params`
+    // são o que o cliente usa para traduzir. Enviar os dois é o que permite
+    // converter as mensagens aos poucos sem quebrar nenhuma tela.
+    const corpo = { error: err.message };
+    if (err.code) corpo.code = err.code;
+    if (err.params) corpo.params = err.params;
+    return res.status(err.status).json(corpo);
   }
 
   if (err instanceof multer.MulterError) {
-    const message = err.code === 'LIMIT_FILE_SIZE'
-      ? 'Image must be 5MB or smaller'
-      : 'Invalid file upload';
-    return res.status(400).json({ error: message });
+    const grande = err.code === 'LIMIT_FILE_SIZE';
+    return res.status(400).json({
+      error: grande ? 'Image must be 5MB or smaller' : 'Invalid file upload',
+      code: grande ? 'api.uploadTooLarge' : 'api.uploadInvalid',
+    });
   }
 
   console.error(`${req.method} ${req.originalUrl}`, err);
-  res.status(500).json({ error: 'Internal server error' });
+  res.status(500).json({ error: 'Internal server error', code: 'api.internal' });
 }
 
 module.exports = errorHandler;

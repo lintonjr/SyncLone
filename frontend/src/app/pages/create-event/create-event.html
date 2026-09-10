@@ -1,62 +1,100 @@
 <div class="create-page">
   <h1 class="page-title">{{ isEditMode ? 'Edit Event' : 'Create New Event' }}</h1>
 
-  @if (error()) { <div class="error-msg">{{ error() }}</div> }
+  @if (error()) {
+    <div class="error-msg">{{ error() }}</div>
+  }
 
   <div class="create-form card">
     <div class="form-field">
-      <label>Event Name</label>
-      <input type="text" placeholder="Event Name (3-50 characters)" [value]="name()" (input)="name.set($any($event.target).value)" maxlength="50" />
+      <label>{{ i18n.t('form.eventName') }}</label>
+      <input
+        type="text"
+        [placeholder]="i18n.t('form.eventNameHint')"
+        [value]="name()"
+        (input)="name.set($any($event.target).value)"
+        maxlength="50"
+      />
     </div>
 
     <div class="row-2">
       <div class="form-field">
-        <label>City</label>
-        <input type="text" placeholder="City" [value]="city()" (input)="city.set($any($event.target).value)" [disabled]="online()" />
+        <label>{{ i18n.t('form.city') }}</label>
+        <input
+          type="text"
+          [placeholder]="i18n.t('form.city')"
+          [value]="city()"
+          (input)="city.set($any($event.target).value)"
+          [disabled]="online()"
+        />
         <label class="checkbox-label">
-          <input type="checkbox" [checked]="online()" (change)="online.set($any($event.target).checked)" />
-          Online
+          <input
+            type="checkbox"
+            [checked]="online()"
+            (change)="online.set($any($event.target).checked)"
+          />
+          {{ i18n.t('form.online') }}
         </label>
       </div>
       <div class="form-field">
-        <label>Address (Optional)</label>
-        <input type="text" placeholder="Street address, building, etc." [value]="address()" (input)="address.set($any($event.target).value)" />
+        <label>{{ i18n.t('form.address') }}</label>
+        <input
+          type="text"
+          [placeholder]="i18n.t('form.addressHint')"
+          [value]="address()"
+          (input)="address.set($any($event.target).value)"
+        />
       </div>
     </div>
 
     <div class="form-field">
-      <label>Description (Optional)</label>
-      <textarea placeholder="Event description (max 100 characters)" [value]="description()" (input)="description.set($any($event.target).value)" maxlength="100"></textarea>
+      <label>{{ i18n.t('form.description') }}</label>
+      <textarea
+        [placeholder]="i18n.t('form.descriptionHint')"
+        [value]="description()"
+        (input)="description.set($any($event.target).value)"
+        maxlength="100"
+      ></textarea>
     </div>
 
     <div class="form-field">
-      <label>Event Thumbnail</label>
+      <label>{{ i18n.t('form.thumbnail') }}</label>
       <div class="thumb-upload">
         @if (thumbnailPreview()) {
-          <img [src]="thumbnailPreview()" alt="preview" class="thumb-preview" />
+          <img [src]="thumbnailPreview()" [alt]="i18n.t('form.preview')" class="thumb-preview" />
         } @else {
-          <div class="thumb-placeholder">No image selected</div>
+          <div class="thumb-placeholder">{{ i18n.t('form.noImage') }}</div>
         }
         <label class="btn btn-ghost upload-btn">
-          Upload Image
-          <input type="file" accept="image/*" (change)="onFile($event)" style="display:none" />
+          {{ i18n.t('form.uploadImage') }}
+          <input type="file" accept="image/*" (change)="onFile($event)" style="display: none" />
         </label>
       </div>
     </div>
 
     <div class="row-3">
       <div class="form-field">
-        <label>Date</label>
-        <input type="date" [value]="date()" (input)="date.set($any($event.target).value)" (change)="date.set($any($event.target).value)" />
+        <label>{{ i18n.t('form.date') }}</label>
+        <input
+          type="date"
+          [value]="date()"
+          (input)="date.set($any($event.target).value)"
+          (change)="date.set($any($event.target).value)"
+        />
       </div>
       <div class="form-field">
-        <label>Time</label>
-        <input type="time" [value]="time()" (input)="time.set($any($event.target).value)" (change)="time.set($any($event.target).value)" />
+        <label>{{ i18n.t('form.time') }}</label>
+        <input
+          type="time"
+          [value]="time()"
+          (input)="time.set($any($event.target).value)"
+          (change)="time.set($any($event.target).value)"
+        />
       </div>
       <div class="form-field">
-        <label>Game</label>
+        <label>{{ i18n.t('form.game') }}</label>
         <select [value]="game()" (change)="game.set($any($event.target).value); format.set('')">
-          <option value="">Select a game</option>
+          <option value="">{{ i18n.t('form.selectGame') }}</option>
           @for (g of GAMES; track g) {
             <option [value]="g">{{ g }}</option>
           }
@@ -66,9 +104,9 @@
 
     @if (game() && formats().length) {
       <div class="form-field">
-        <label>Format</label>
+        <label>{{ i18n.t('form.format') }}</label>
         <select [value]="format()" (change)="onFormatChange($any($event.target).value)">
-          <option value="">Select a format</option>
+          <option value="">{{ i18n.t('form.selectFormat') }}</option>
           @for (f of formats(); track f) {
             <option [value]="f">{{ f }}</option>
           }
@@ -77,67 +115,80 @@
     }
 
     <div class="form-field">
-      <label>Formato do torneio</label>
-      <select [value]="tournamentFormat()" (change)="onTournamentFormatChange($any($event.target).value)">
-        <option value="standard">Padrão — inscrição individual</option>
-        <option value="clafronto">Clã Fronto — times de 4 jogadores</option>
+      <label>{{ i18n.t('form.tournamentFormat') }}</label>
+      <select
+        [value]="tournamentFormat()"
+        (change)="onTournamentFormatChange($any($event.target).value)"
+      >
+        <option value="standard">{{ i18n.t('form.formatStandard') }}</option>
+        <option value="clafronto">{{ i18n.t('form.formatClan') }}</option>
       </select>
       @if (isClanFormat()) {
-        <span class="field-hint">
-          Jogadores entram em clãs de quatro. Cada mesa tem quatro clãs diferentes, ninguém enfrenta
-          o próprio time, e o elenco fecha na inscrição — não há saída no meio do torneio.
-        </span>
+        <span class="field-hint">{{ i18n.t('form.formatClanHelp') }}</span>
       }
     </div>
 
     <div class="row-3">
       <div class="form-field">
-        <label>Pairing Method</label>
+        <label>{{ i18n.t('form.pairingMethod') }}</label>
         <select [value]="pairingMethod()" (change)="pairingMethod.set($any($event.target).value)">
-          <option value="swiss">Swiss (Performance Pairing)</option>
-          <option value="swiss-less-repetition">Swiss (Less Repetition)</option>
-          <option value="avoid-repetition">Avoid Repetition</option>
-          <option value="random">Random</option>
+          <option value="swiss">{{ i18n.t('form.pairingSwiss') }}</option>
+          <option value="swiss-less-repetition">{{ i18n.t('form.pairingLessRep') }}</option>
+          <option value="avoid-repetition">{{ i18n.t('form.pairingAvoidRep') }}</option>
+          <option value="random">{{ i18n.t('form.pairingRandom') }}</option>
         </select>
       </div>
       <div class="form-field">
-        <label>Players per Pod</label>
-        <select [value]="podSize()" (change)="podSize.set(+$any($event.target).value)" [disabled]="isClanFormat()">
-          <option [value]="2">2 — 1v1 (Standard)</option>
-          <option [value]="3">3 — 3-player Pod</option>
-          <option [value]="4">4 — 4-player Pod (Commander)</option>
+        <label>{{ i18n.t('form.podSize') }}</label>
+        <select
+          [value]="podSize()"
+          (change)="podSize.set(+$any($event.target).value)"
+          [disabled]="isClanFormat()"
+        >
+          <option [value]="2">{{ i18n.t('form.pod2') }}</option>
+          <option [value]="3">{{ i18n.t('form.pod3') }}</option>
+          <option [value]="4">{{ i18n.t('form.pod4') }}</option>
         </select>
       </div>
       <div class="form-field">
-        <label>Round Length (minutes)</label>
-        <input type="number" step="5" min="5" max="240"
-               [value]="roundMinutes()" (input)="roundMinutes.set(+$any($event.target).value)" />
-        <span class="field-hint">Counts down on the event page from the moment each round starts.</span>
+        <label>{{ i18n.t('form.roundLength') }}</label>
+        <input
+          type="number"
+          step="5"
+          min="5"
+          max="240"
+          [value]="roundMinutes()"
+          (input)="roundMinutes.set(+$any($event.target).value)"
+        />
+        <span class="field-hint">{{ i18n.t('form.roundLengthHelp') }}</span>
       </div>
     </div>
 
     <div class="row-2">
       <div class="form-field">
-        <label>Playoff Structure</label>
-        <select [value]="playoffStructure()" (change)="playoffStructure.set($any($event.target).value)">
+        <label>{{ i18n.t('form.playoffStructure') }}</label>
+        <select
+          [value]="playoffStructure()"
+          (change)="playoffStructure.set($any($event.target).value)"
+        >
           @if (isClanFormat()) {
             <!-- cada mesa elimina um cla inteiro, entao so 2 e 4 fecham ate a final -->
-            <option value="none">Sem mata-mata</option>
-            <option value="clan2">Final entre os 2 melhores clãs</option>
-            <option value="clan4">Mata-mata com os 4 melhores clãs</option>
+            <option value="none">{{ i18n.t('form.playoffNonePt') }}</option>
+            <option value="clan2">{{ i18n.t('form.playoffClan2') }}</option>
+            <option value="clan4">{{ i18n.t('form.playoffClan4') }}</option>
           } @else {
-            <option value="none">No Playoffs</option>
-            <option value="top4">Top 4 Playoff</option>
-            <option value="top8">Top 8 Playoff</option>
-            <option value="top16">Top 16 Playoff</option>
+            <option value="none">{{ i18n.t('form.playoffNone') }}</option>
+            <option value="top4">{{ i18n.t('form.playoffTop4') }}</option>
+            <option value="top8">{{ i18n.t('form.playoffTop8') }}</option>
+            <option value="top16">{{ i18n.t('form.playoffTop16') }}</option>
           }
         </select>
       </div>
       @if (myLeagues().length) {
         <div class="form-field">
-          <label>League (Optional)</label>
+          <label>{{ i18n.t('form.league') }}</label>
           <select [value]="leagueId()" (change)="leagueId.set($any($event.target).value)">
-            <option value="">No league</option>
+            <option value="">{{ i18n.t('form.noLeague') }}</option>
             @for (l of myLeagues(); track l.id) {
               <option [value]="l.id">{{ l.name }}</option>
             }
@@ -146,36 +197,96 @@
       }
     </div>
 
-    <h3 class="optionals-title">Scoring</h3>
+    <h3 class="optionals-title">{{ i18n.t('form.scoring') }}</h3>
     <div class="row-3">
       <div class="form-field">
-        <label>Points per Win</label>
-        <input type="number" step="1" [value]="pointsWin()" (input)="pointsWin.set(+$any($event.target).value)" />
+        <label>{{ i18n.t('form.pointsWin') }}</label>
+        <input
+          type="number"
+          step="1"
+          [value]="pointsWin()"
+          (input)="pointsWin.set(+$any($event.target).value)"
+        />
       </div>
       <div class="form-field">
-        <label>Points per Draw</label>
-        <input type="number" step="1" [value]="pointsDraw()" (input)="pointsDraw.set(+$any($event.target).value)" />
+        <label>{{ i18n.t('form.pointsDraw') }}</label>
+        <input
+          type="number"
+          step="1"
+          [value]="pointsDraw()"
+          (input)="pointsDraw.set(+$any($event.target).value)"
+        />
       </div>
       <div class="form-field">
-        <label>Points per Loss</label>
-        <input type="number" step="1" [value]="pointsLoss()" (input)="pointsLoss.set(+$any($event.target).value)" />
+        <label>{{ i18n.t('form.pointsLoss') }}</label>
+        <input
+          type="number"
+          step="1"
+          [value]="pointsLoss()"
+          (input)="pointsLoss.set(+$any($event.target).value)"
+        />
       </div>
     </div>
 
-    <h3 class="optionals-title">Optionals</h3>
+    <h3 class="optionals-title">{{ i18n.t('form.optionals') }}</h3>
     <div class="checkboxes">
       @if (!isClanFormat()) {
-        <label class="checkbox-label"><input type="checkbox" [checked]="allowByes()" (change)="allowByes.set($any($event.target).checked)" /> Allow Byes</label>
+        <label class="checkbox-label"
+          ><input
+            type="checkbox"
+            [checked]="allowByes()"
+            (change)="allowByes.set($any($event.target).checked)"
+          />
+          {{ i18n.t('form.allowByes') }}</label
+        >
       }
-      <label class="checkbox-label"><input type="checkbox" [checked]="testEvent()" (change)="testEvent.set($any($event.target).checked)" /> Test Event</label>
-      <label class="checkbox-label"><input type="checkbox" [checked]="collaborativeDeck()" (change)="collaborativeDeck.set($any($event.target).checked)" /> Collaborative Deck Registering</label>
-      <label class="checkbox-label"><input type="checkbox" [checked]="asyncDraws()" (change)="asyncDraws.set($any($event.target).checked)" /> Player-Reported Results</label>
-      <label class="checkbox-label"><input type="checkbox" [checked]="confirmPlayers()" (change)="confirmPlayers.set($any($event.target).checked)" /> Confirm New Players</label>
-      <label class="checkbox-label"><input type="checkbox" [checked]="qrCodeEnabled()" (change)="qrCodeEnabled.set($any($event.target).checked)" /> Generate Entry QR Code</label>
+      <label class="checkbox-label"
+        ><input
+          type="checkbox"
+          [checked]="testEvent()"
+          (change)="testEvent.set($any($event.target).checked)"
+        />
+        {{ i18n.t('form.testEvent') }}</label
+      >
+      <label class="checkbox-label"
+        ><input
+          type="checkbox"
+          [checked]="collaborativeDeck()"
+          (change)="collaborativeDeck.set($any($event.target).checked)"
+        />
+        {{ i18n.t('form.collaborativeDeck') }}</label
+      >
+      <label class="checkbox-label"
+        ><input
+          type="checkbox"
+          [checked]="asyncDraws()"
+          (change)="asyncDraws.set($any($event.target).checked)"
+        />
+        {{ i18n.t('form.playerReported') }}</label
+      >
+      <label class="checkbox-label"
+        ><input
+          type="checkbox"
+          [checked]="confirmPlayers()"
+          (change)="confirmPlayers.set($any($event.target).checked)"
+        />
+        {{ i18n.t('form.confirmPlayers') }}</label
+      >
+      <label class="checkbox-label"
+        ><input
+          type="checkbox"
+          [checked]="qrCodeEnabled()"
+          (change)="qrCodeEnabled.set($any($event.target).checked)"
+        />
+        {{ i18n.t('form.qrCode') }}</label
+      >
     </div>
 
     <button class="btn btn-primary" (click)="submit()" [disabled]="loading()">
-      @if (loading()) { <span class="spinner-sm"></span> } {{ isEditMode ? 'Save Changes' : 'Create Event' }}
+      @if (loading()) {
+        <span class="spinner-sm"></span>
+      }
+      {{ isEditMode ? 'Save Changes' : 'Create Event' }}
     </button>
   </div>
 </div>

@@ -6,35 +6,46 @@
       <div>
         <h1>{{ league()!.name }}</h1>
         <p class="league-meta">
-          Organized by {{ league()!.owner_name }} &nbsp;•&nbsp; {{ league()!.events.length }} events &nbsp;•&nbsp;
-          {{ league()!.playoff_counts ? 'Playoffs count towards standings' : 'Playoffs excluded from standings' }}
+          Organized by {{ league()!.owner_name }} &nbsp;•&nbsp; {{ league()!.events.length }} events
+          &nbsp;•&nbsp;
+          {{
+            league()!.playoff_counts
+              ? 'Playoffs count towards standings'
+              : 'Playoffs excluded from standings'
+          }}
         </p>
       </div>
       @if (isOwner()) {
         <div class="league-actions">
-          <a [routerLink]="['/leagues', id(), 'edit']" class="btn btn-ghost">Edit</a>
-          <button class="btn btn-danger" (click)="deleteLeague()" [disabled]="actionLoading()">Delete</button>
+          <a [routerLink]="['/leagues', id(), 'edit']" class="btn btn-ghost">{{
+            i18n.t('common.edit')
+          }}</a>
+          <button class="btn btn-danger" (click)="deleteLeague()" [disabled]="actionLoading()">
+            {{ i18n.t('common.delete') }}
+          </button>
         </div>
       }
     </div>
 
-    @if (error()) { <div class="error-msg">{{ error() }}</div> }
+    @if (error()) {
+      <div class="error-msg">{{ error() }}</div>
+    }
 
-    <h2 class="section-title">Standings</h2>
+    <h2 class="section-title">{{ i18n.t('league.standings') }}</h2>
     @if (league()!.standings.length === 0) {
-      <p class="empty">No results yet from registered players in this league's tournaments.</p>
+      <p class="empty">{{ i18n.t('league.noResults') }}</p>
     } @else {
       <div class="standings-table card">
         <table>
           <thead>
             <tr>
-              <th>Rank</th>
-              <th>Player</th>
-              <th>Events</th>
+              <th>{{ i18n.t('common.rank') }}</th>
+              <th>{{ i18n.t('common.player') }}</th>
+              <th>{{ i18n.t('league.events') }}</th>
               <th>W</th>
               <th>L</th>
               <th>D</th>
-              <th>Pts</th>
+              <th>{{ i18n.t('common.points') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -52,11 +63,15 @@
                 <td>{{ s.wins }}</td>
                 <td>{{ s.losses }}</td>
                 <td>{{ s.draws }}</td>
-                <td><strong>{{ s.points }}</strong></td>
+                <td>
+                  <strong>{{ s.points }}</strong>
+                </td>
               </tr>
               @if (i === 11) {
                 <tr class="cut-divider">
-                  <td colspan="7"><span>Cut</span></td>
+                  <td colspan="7">
+                    <span>{{ i18n.t('league.cut') }}</span>
+                  </td>
                 </tr>
               }
             }
@@ -65,21 +80,31 @@
       </div>
     }
 
-    <h2 class="section-title">Tournaments</h2>
+    <h2 class="section-title">{{ i18n.t('league.tournaments') }}</h2>
     @if (league()!.events.length === 0) {
-      <p class="empty">No tournaments linked to this league yet.</p>
+      <p class="empty">{{ i18n.t('league.noTournaments') }}</p>
     } @else {
       <div class="events-list">
         @for (ev of league()!.events; track ev.id) {
           <a [routerLink]="['/event', ev.id]" class="event-row card">
             <span class="event-row-name">{{ ev.name }}</span>
-            <span class="event-row-meta">{{ ev.game }}{{ ev.format ? ' - ' + ev.format : '' }} &nbsp;•&nbsp; {{ ev.date | date:'MMM d, y' }}</span>
-            <span class="badge" [class]="'badge-' + (ev.status === 'upcoming' ? 'purple' : ev.status === 'ongoing' ? 'yellow' : 'green')">{{ ev.status }}</span>
+            <span class="event-row-meta"
+              >{{ ev.game }}{{ ev.format ? ' - ' + ev.format : '' }} &nbsp;•&nbsp;
+              {{ ev.date | date: 'MMM d, y' }}</span
+            >
+            <span
+              class="badge"
+              [class]="
+                'badge-' +
+                (ev.status === 'upcoming' ? 'purple' : ev.status === 'ongoing' ? 'yellow' : 'green')
+              "
+              >{{ i18n.t('status.' + ev.status) }}</span
+            >
           </a>
         }
       </div>
     }
   </div>
 } @else {
-  <p class="empty">League not found.</p>
+  <p class="empty">{{ i18n.t('league.notFound') }}</p>
 }

@@ -1,16 +1,24 @@
 <div class="my-events-page">
   <div class="page-header">
-    <h1>My Events</h1>
+    <h1>{{ i18n.t('myEvents.title') }}</h1>
     @if (auth.currentUser()?.role === 'organizer') {
-      <a routerLink="/create" class="btn btn-primary">+ Create Event</a>
+      <a routerLink="/create" class="btn btn-primary">{{ i18n.t('myEvents.create') }}</a>
     }
   </div>
 
   <div class="tabs">
-    <button class="tab-btn" [class.active]="activeTab() === 'owned'" (click)="activeTab.set('owned')">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'owned'"
+      (click)="activeTab.set('owned')"
+    >
       Organized ({{ owned().length }})
     </button>
-    <button class="tab-btn" [class.active]="activeTab() === 'joined'" (click)="activeTab.set('joined')">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'joined'"
+      (click)="activeTab.set('joined')"
+    >
       Joined ({{ joined().length }})
     </button>
   </div>
@@ -22,11 +30,13 @@
       @if (owned().length === 0) {
         <div class="empty-state">
           @if (auth.currentUser()?.role === 'organizer') {
-            <p>You haven't created any events yet.</p>
-            <a routerLink="/create" class="btn btn-primary">Create your first event</a>
+            <p>{{ i18n.t('myEvents.noneCreated') }}</p>
+            <a routerLink="/create" class="btn btn-primary">{{ i18n.t('myEvents.createFirst') }}</a>
           } @else {
-            <p>You haven't created any events yet.</p>
-            <a routerLink="/profile" class="btn btn-primary">Become an organizer to create one</a>
+            <p>{{ i18n.t('myEvents.noneCreated') }}</p>
+            <a routerLink="/profile" class="btn btn-primary">{{
+              i18n.t('myEvents.becomeOrganizer')
+            }}</a>
           }
         </div>
       } @else {
@@ -39,8 +49,8 @@
     } @else {
       @if (joined().length === 0) {
         <div class="empty-state">
-          <p>You haven't joined any events yet.</p>
-          <a routerLink="/" class="btn btn-ghost">Browse Events</a>
+          <p>{{ i18n.t('myEvents.noneJoined') }}</p>
+          <a routerLink="/" class="btn btn-ghost">{{ i18n.t('myEvents.browse') }}</a>
         </div>
       } @else {
         <div class="events-list">

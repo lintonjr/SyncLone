@@ -33,9 +33,9 @@ describe('App', () => {
   it('should show a signed-out visitor Login, and hide the organizer-only Create Event', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    const links = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('a')
-    ).map((a) => a.getAttribute('href'));
+    const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).map(
+      (a) => a.getAttribute('href'),
+    );
 
     expect(links).toContain('/login');
     expect(links).not.toContain('/create');

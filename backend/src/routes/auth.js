@@ -26,7 +26,7 @@ router.post('/register', credentialLimiter, validate(schemas.register), asyncHan
   const { display_name, email, password } = req.body;
 
   const existing = await db.get('SELECT id FROM users WHERE email = ?', [email]);
-  if (existing) throw new HttpError(409, 'Email already in use');
+  if (existing) throw new HttpError(409, 'Email already in use', 'api.emailInUse');
 
   const password_hash = await bcrypt.hash(password, 10);
   const id = uuidv4();
@@ -45,7 +45,7 @@ router.post('/login', credentialLimiter, validate(schemas.login), asyncHandler(a
 
   const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
   if (!user || !(await bcrypt.compare(password, user.password_hash)))
-    throw new HttpError(401, 'Invalid credentials');
+    throw new HttpError(401, 'Invalid credentials', 'api.invalidCredentials');
 
   const token = jwt.sign(
     { id: user.id, email: user.email, display_name: user.display_name, role: user.role },

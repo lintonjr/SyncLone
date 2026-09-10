@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { I18nService } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EventService, TournamentEvent } from '../../services/event';
@@ -12,6 +13,7 @@ import { AuthService } from '../../services/auth';
   styleUrl: './my-events.scss',
 })
 export class MyEventsComponent implements OnInit {
+  i18n = inject(I18nService);
   private eventSvc = inject(EventService);
   auth = inject(AuthService);
   owned = signal<TournamentEvent[]>([]);

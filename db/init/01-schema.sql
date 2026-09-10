@@ -90,7 +90,6 @@ CREATE TABLE IF NOT EXISTS `event_players` (
   `wins` int NOT NULL DEFAULT '0',
   `losses` int NOT NULL DEFAULT '0',
   `draws` int NOT NULL DEFAULT '0',
-  `points` int NOT NULL DEFAULT '0',
   `joined_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `event_id` (`event_id`),

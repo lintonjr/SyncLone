@@ -36,7 +36,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     `SELECT l.*, u.display_name as owner_name FROM leagues l JOIN users u ON u.id = l.owner_id WHERE l.id = ?`,
     [req.params.id]
   );
-  if (!league) throw new HttpError(404, 'League not found');
+  if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
 
   const events = await db.query(
     'SELECT id, name, date, status, thumbnail, game, format, points_win, points_draw, points_loss FROM events WHERE league_id = ? ORDER BY date',
@@ -70,16 +70,19 @@ router.get('/:id', asyncHandler(async (req, res) => {
       )
     : [];
 
-  // playoff_counts = false: os pontos de event_players são um total corrido que não
-  // separa suíço de playoff, então esses eventos são recalculados a partir das
-  // mesas confirmadas de rodadas não-playoff.
-  const recomputedEventIds = events.filter((e) => !league.playoff_counts).map((e) => e.id);
-  const swissPairings = recomputedEventIds.length
+  // A pontuação de liga sai sempre das mesas confirmadas, nunca de um total
+  // gravado: um total corrido carrega a escala de pontos vigente na hora de cada
+  // resultado, e basta o organizador mexer em points_win no meio do torneio para
+  // ele passar a somar duas escalas diferentes. `playoff_counts` decide apenas
+  // se as rodadas de mata-mata entram na conta.
+  const contaPlayoff = Boolean(league.playoff_counts);
+  const scoredPairings = eventIds.length
     ? await db.query(
         `SELECT pr.* FROM pairings pr JOIN rounds r ON r.id = pr.round_id
-         WHERE pr.event_id IN (${recomputedEventIds.map(() => '?').join(',')})
-           AND r.is_playoff = 0 AND pr.result IS NOT NULL AND pr.result_status = 'confirmed'`,
-        recomputedEventIds
+         WHERE pr.event_id IN (${placeholders})
+           ${contaPlayoff ? '' : 'AND r.is_playoff = 0'}
+           AND pr.result IS NOT NULL AND pr.result_status = 'confirmed'`,
+        eventIds
       )
     : [];
 
@@ -89,7 +92,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     playersByEvent.get(p.event_id).push(p);
   }
   const pairingsByEvent = new Map();
-  for (const pr of swissPairings) {
+  for (const pr of scoredPairings) {
     if (!pairingsByEvent.has(pr.event_id)) pairingsByEvent.set(pr.event_id, []);
     pairingsByEvent.get(pr.event_id).push(pr);
   }
@@ -99,12 +102,6 @@ router.get('/:id', asyncHandler(async (req, res) => {
   for (const ev of events) {
     const players = playersByEvent.get(ev.id) ?? [];
     if (players.length === 0) continue;
-
-    if (league.playoff_counts) {
-      // Os pontos já refletem todo resultado confirmado do evento (suíço + playoff).
-      for (const p of players) bump(p.user_id, p.display_name, p.points, p.wins, p.losses, p.draws);
-      continue;
-    }
 
     const perPlayer = new Map(); // event_players.id -> { wins, losses, draws }
     const record = (id, w, l, d) => {
@@ -149,8 +146,8 @@ router.post('/', auth, requireOrganizer, validate(schemas.createLeague), asyncHa
 // Auth: update league (owner only)
 router.put('/:id', auth, validate(schemas.updateLeague), asyncHandler(async (req, res) => {
   const league = await db.get('SELECT * FROM leagues WHERE id = ?', [req.params.id]);
-  if (!league) throw new HttpError(404, 'League not found');
-  if (league.owner_id !== req.user.id) throw new HttpError(403, 'Forbidden');
+  if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
+  if (league.owner_id !== req.user.id) throw new HttpError(403, 'Forbidden', 'api.forbidden');
 
   const { name, playoff_counts } = req.body;
   await db.run('UPDATE leagues SET name = ?, playoff_counts = ? WHERE id = ?', [
@@ -164,8 +161,8 @@ router.put('/:id', auth, validate(schemas.updateLeague), asyncHandler(async (req
 // Auth: delete league (owner only) — member events just lose their league_id (ON DELETE SET NULL)
 router.delete('/:id', auth, asyncHandler(async (req, res) => {
   const league = await db.get('SELECT * FROM leagues WHERE id = ?', [req.params.id]);
-  if (!league) throw new HttpError(404, 'League not found');
-  if (league.owner_id !== req.user.id) throw new HttpError(403, 'Forbidden');
+  if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
+  if (league.owner_id !== req.user.id) throw new HttpError(403, 'Forbidden', 'api.forbidden');
 
   await db.run('DELETE FROM leagues WHERE id = ?', [req.params.id]);
   res.json({ message: 'League deleted' });

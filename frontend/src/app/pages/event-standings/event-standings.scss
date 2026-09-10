@@ -1,0 +1,440 @@
+/* Estilos da aba de classificação.
+   Componentes Angular têm estilo encapsulado: o que fica no pai não alcança o
+   filho, então o que a tabela usa mora aqui. `.btn`, `.card` e afins continuam
+   globais em styles.scss. Alguns poucos utilitários compartilhados (`.empty`,
+   `.player-name`, `.clan-tag`) aparecem nos dois arquivos de propósito — é o
+   preço do encapsulamento, e é preferível a torná-los globais. */
+
+/* ── Standings Table ── */
+.standings-table {
+  overflow-x: visible;
+
+  @media (max-width: 640px) {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 600px;
+
+    th {
+      padding: 11px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background: var(--surface2);
+    }
+    tr.top-row td {
+      background: rgba(139, 92, 246, 0.04);
+    }
+  }
+}
+
+.col-rank {
+  width: 70px;
+}
+.col-num {
+  width: 40px;
+  text-align: center !important;
+}
+.col-pts {
+  width: 50px;
+}
+.col-tb {
+  width: 150px;
+}
+
+.tb-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tb-info-icon {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.tb-info-popover {
+  display: none;
+  position: absolute;
+  top: 20px;
+  left: 0;
+  z-index: 20;
+  width: 280px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  text-align: left;
+  white-space: normal;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  font-weight: 400;
+
+  h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  p {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+  }
+  ul {
+    margin: 0 0 8px;
+    padding-left: 16px;
+  }
+  li {
+    margin-bottom: 4px;
+  }
+}
+
+.tb-info-footer {
+  margin: 0 !important;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.tb-info-icon:hover .tb-info-popover,
+.tb-info-icon:focus .tb-info-popover {
+  display: block;
+}
+.col-actions {
+  width: 80px;
+}
+
+.rank-cell {
+  text-align: center;
+}
+.rank-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--surface2);
+  color: var(--text-muted);
+
+  &.rank-1 {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+  }
+  &.rank-2 {
+    background: rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+  }
+  &.rank-3 {
+    background: rgba(180, 83, 9, 0.2);
+    color: #c2784b;
+  }
+}
+
+.player-cell {
+  font-weight: 500;
+}
+.player-name {
+  color: var(--text);
+}
+
+.deck-cell {
+}
+
+.deck-badge-static {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+}
+
+.text-muted-sm {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.deck-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.35);
+  }
+}
+
+.deck-edit-btn {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+}
+
+.stat-win {
+  color: #4ade80;
+  font-weight: 600;
+}
+.stat-loss {
+  color: #f87171;
+  font-weight: 600;
+}
+.stat-draw {
+  color: #fbbf24;
+  font-weight: 600;
+}
+.pts-val {
+  font-size: 15px;
+  color: #a78bfa;
+}
+
+.tiebreaker-cell {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+  letter-spacing: 0.02em;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.drop-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #f87171;
+  }
+}
+
+.dropped-section {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+
+.dropped-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.dropped-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dropped-name {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 2px 10px;
+  background: var(--surface2);
+  border-radius: 999px;
+  text-decoration: line-through;
+}
+
+.pending-section {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px dashed rgba(250, 204, 21, 0.4);
+  border-radius: 10px;
+  background: rgba(250, 204, 21, 0.05);
+}
+
+.pending-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #facc15;
+  margin-bottom: 10px;
+}
+
+.pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pending-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border-radius: 8px;
+}
+
+.pending-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pending-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 48px 0;
+  text-align: center;
+}
+
+/* ---------- Clã Fronto ---------- */
+/* Uma cor por clã: é o que deixa a mesa legível de relance, como nas tabelas
+   de referência do formato. O índice vem da ordem de inscrição. */
+.clan-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 7px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.clan-c0 {
+  background: #ef4444;
+}
+.clan-c1 {
+  background: #3b82f6;
+}
+.clan-c2 {
+  background: #06b6d4;
+}
+.clan-c3 {
+  background: #a855f7;
+}
+.clan-c4 {
+  background: #22c55e;
+}
+.clan-c5 {
+  background: #f59e0b;
+}
+.clan-c6 {
+  background: #ec4899;
+}
+.clan-c7 {
+  background: #14b8a6;
+}
+
+.clan-tag {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.clan-roster {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.standings-switch,
+.clan-switch {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.switch-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+}
+
+/* Aprovação em lote: com dezenas de pedidos, um a um é inviável no balcão. */
+.pending-actions-bulk {
+  margin-bottom: 10px;
+}
+
+/* Quem entrou com o torneio em andamento: a pontuação dele não é comparável
+   com a de quem jogou todas as rodadas, e a tabela precisa dizer isso. */
+.late-tag {
+  margin-left: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(234, 179, 8, 0.15);
+  color: #b45309;
+  white-space: nowrap;
+}

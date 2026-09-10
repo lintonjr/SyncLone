@@ -10,7 +10,7 @@ const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
 const {
   generateSwissPairings, seedPlayoffPods,
-  generateClanPairings, seedClanPlayoffPods,
+  generateClanPairings, seedClanPlayoffPods, clanPairSeats,
 } = require('../services/pairing');
 const { computeStandings, computeClanStandings } = require('../services/standings');
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
@@ -53,7 +53,7 @@ async function pendingResultsCount(conn, roundId) {
 }
 
 // Insert pairings for a set of pods and auto-award any bye wins
-async function insertPods(conn, eventId, roundId, pods, pointsWin) {
+async function insertPods(conn, eventId, roundId, pods) {
   for (let idx = 0; idx < pods.length; idx++) {
     const pod = pods[idx];
     const isBye = !pod.player2;
@@ -71,7 +71,7 @@ async function insertPods(conn, eventId, roundId, pods, pointsWin) {
       ]
     );
     if (isBye && pod.player1) {
-      await conn.run('UPDATE event_players SET wins=wins+1, points=points+? WHERE id=?', [pointsWin, pod.player1.id]);
+      await conn.run('UPDATE event_players SET wins=wins+1 WHERE id=?', [pod.player1.id]);
     }
   }
 }
@@ -88,8 +88,8 @@ function playoffStageLabel(playerCount, podSize) {
 // Loads an event and asserts the caller owns it.
 async function ownedEvent(conn, eventId, userId) {
   const event = await conn.get('SELECT * FROM events WHERE id = ?', [eventId]);
-  if (!event) throw new HttpError(404, 'Event not found');
-  if (event.owner_id !== userId) throw new HttpError(403, 'Forbidden');
+  if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
+  if (event.owner_id !== userId) throw new HttpError(403, 'Forbidden', 'api.forbidden');
   return event;
 }
 
@@ -98,7 +98,26 @@ async function ownedEvent(conn, eventId, userId) {
 // path when a bracket was resolved by mistake.
 function assertNotFinished(event) {
   if (event.status === 'completed') {
-    throw new HttpError(400, 'This event has already finished');
+    throw new HttpError(400, 'This event has already finished', 'api.eventFinished');
+  }
+}
+
+/**
+ * A edição é a segunda exceção legítima ao evento encerrado — mas só para uma
+ * coisa: reabrir. É pelo `PUT` que o `status` volta a `ongoing`, então bloquear
+ * o verbo inteiro tiraria o caminho de volta; deixá-lo aberto, como estava,
+ * permitia renomear, trocar de liga e mexer na pontuação de um torneio já
+ * fechado — e a pontuação alimenta a classificação final.
+ *
+ * `campos` são as chaves realmente enviadas no corpo (o schema deixa tudo
+ * opcional, então o que não veio não conta).
+ */
+function assertReopenOnly(event, campos) {
+  if (event.status !== 'completed') return;
+  const reabre = campos.includes('status') ;
+  const outros = campos.filter((c) => c !== 'status');
+  if (!reabre || outros.length) {
+    throw new HttpError(400, 'Torneio encerrado: só é possível reabri-lo, sem alterar mais nada', 'api.reopenOnly');
   }
 }
 
@@ -110,8 +129,15 @@ async function liveOwnedEvent(conn, eventId, userId) {
 }
 
 // Every pairing of an event, for the standings/tiebreaker calculation.
+// `is_playoff` viaja junto com a mesa porque quem conta rodadas precisa saber
+// distinguir uma rodada que todo mundo joga de uma que só alguns jogam.
 const eventPairings = (conn, eventId) =>
-  conn.query('SELECT * FROM pairings WHERE event_id = ?', [eventId]);
+  conn.query(
+    `SELECT p.*, r.is_playoff FROM pairings p
+     JOIN rounds r ON r.id = p.round_id
+     WHERE p.event_id = ?`,
+    [eventId]
+  );
 
 /* ---------------------------------------------------------------------------
    Clã Fronto
@@ -216,11 +242,9 @@ function winningSeatIds(pairing, result, playersById, partnerTable) {
 
   const clan = playersById.get(winnerId)?.clan_id;
   if (!clan) return new Set([winnerId]);
-  return new Set(
-    [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id]
-      .filter(Boolean)
-      .filter((id) => playersById.get(id)?.clan_id === clan)
-  );
+  // Quem senta com quem é pergunta do pareador, não da rota: `clanPairSeats`
+  // agrupa os assentos por clã e é a mesma regra que monta a mesa de duplas.
+  return new Set(clanPairSeats(pairing, playersById).get(clan) ?? [winnerId]);
 }
 
 // Uma mesa é de duplas quando o evento é Clã Fronto e a rodada é de mata-mata.
@@ -255,7 +279,7 @@ async function buildClanPlayoffRound(tx, event, clanIds, roundNumber, ranked) {
     'INSERT INTO rounds (id, event_id, round_number, is_playoff, playoff_stage) VALUES (?, ?, ?, 1, ?)',
     [roundId, event.id, roundNumber, stage]
   );
-  await insertPods(tx, event.id, roundId, seedClanPlayoffPods(seeded), event.points_win);
+  await insertPods(tx, event.id, roundId, seedClanPlayoffPods(seeded));
   return { roundId, stage, seeded };
 }
 
@@ -317,13 +341,13 @@ router.get('/:id', asyncHandler(async (req, res) => {
      WHERE e.id = ?`,
     [req.params.id]
   );
-  if (!event) throw new HttpError(404, 'Event not found');
+  if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
 
   // LEFT JOIN so guest players (user_id = NULL) also appear
   const players = await db.query(
     `SELECT ep.*, COALESCE(u.display_name, ep.display_name) AS display_name
      FROM event_players ep LEFT JOIN users u ON u.id = ep.user_id
-     WHERE ep.event_id = ? ORDER BY ep.points DESC, ep.wins DESC`,
+     WHERE ep.event_id = ? ORDER BY ep.joined_at`,
     [req.params.id]
   );
 
@@ -334,11 +358,13 @@ router.get('/:id', asyncHandler(async (req, res) => {
   const pairings = rounds.length
     ? await db.query(
         `SELECT p.*,
+           r.is_playoff,
            ep1.display_name as p1_name,
            ep2.display_name as p2_name,
            ep3.display_name as p3_name,
            ep4.display_name as p4_name
          FROM pairings p
+         JOIN rounds r ON r.id = p.round_id
          LEFT JOIN event_players ep1 ON ep1.id = p.player1_id
          LEFT JOIN event_players ep2 ON ep2.id = p.player2_id
          LEFT JOIN event_players ep3 ON ep3.id = p.player3_id
@@ -369,7 +395,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
     pairings,
     clans,
     clan_standings: clanStandings,
-    rounds_total: rounds.length,
+    // Só as rodadas suíças: o mata-mata é seletivo por definição, e não jogar
+    // uma fase eliminatória não diz nada sobre quando o jogador entrou.
+    swiss_rounds_total: rounds.filter((r) => !r.is_playoff).length,
   });
 }));
 
@@ -408,9 +436,9 @@ router.get('/:id/export', asyncHandler(async (req, res) => {
   const type = EXPORT_TYPES.includes(req.query.type) ? req.query.type : 'standings';
 
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
-  if (!event) throw new HttpError(404, 'Event not found');
+  if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
   if (type === 'clans' && !isClanFormat(event)) {
-    throw new HttpError(400, 'A exportação de clãs só existe em torneios Clã Fronto');
+    throw new HttpError(400, 'A exportação de clãs só existe em torneios Clã Fronto', 'api.clanExportOnly');
   }
 
   const players = await db.query(
@@ -507,8 +535,8 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(sc
   let leagueIdVal = null;
   if (league_id) {
     const league = await db.get('SELECT * FROM leagues WHERE id = ?', [league_id]);
-    if (!league) throw new HttpError(404, 'League not found');
-    if (league.owner_id !== req.user.id) throw new HttpError(403, 'You can only attach events to your own leagues');
+    if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
+    if (league.owner_id !== req.user.id) throw new HttpError(403, 'You can only attach events to your own leagues', 'api.leagueNotYours');
     leagueIdVal = league_id;
   }
 
@@ -544,6 +572,12 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(sc
 router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEvent), asyncHandler(async (req, res) => {
   const event = await ownedEvent(db, req.params.id, req.user.id);
 
+  // O schema deixa todo campo opcional, então o que chegou é o que o organizador
+  // realmente quis mudar. A capa entra pelo multipart, fora do corpo.
+  const camposEnviados = Object.keys(req.body).filter((k) => req.body[k] !== undefined);
+  if (req.file) camposEnviados.push('thumbnail');
+  assertReopenOnly(event, camposEnviados);
+
   const {
     name, description, city, address, online, date, game, format, tournament_format,
     pairing_method, pod_size, playoff_structure, allow_byes, test_event,
@@ -557,8 +591,8 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
       leagueIdVal = null;
     } else {
       const league = await db.get('SELECT * FROM leagues WHERE id = ?', [league_id]);
-      if (!league) throw new HttpError(404, 'League not found');
-      if (league.owner_id !== req.user.id) throw new HttpError(403, 'You can only attach events to your own leagues');
+      if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
+      if (league.owner_id !== req.user.id) throw new HttpError(403, 'You can only attach events to your own leagues', 'api.leagueNotYours');
       leagueIdVal = league_id;
     }
   }
@@ -609,6 +643,13 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
     status || event.status, req.params.id,
   ]);
 
+  // Reabrir devolve o torneio ao estado de disputa: o campeão registrado deixa de
+  // valer, como já acontece no undo da rodada final.
+  if (event.status === 'completed' && status && status !== 'completed') {
+    await db.run('UPDATE events SET champion_id = NULL, champion_clan_id = NULL WHERE id = ?', [req.params.id]);
+  }
+
+  eventStream.broadcast(req.params.id);
   res.json(await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]));
 }));
 
@@ -619,24 +660,32 @@ router.delete('/:id', auth, asyncHandler(async (req, res) => {
     await tx.run('DELETE FROM pairings WHERE event_id = ?', [req.params.id]);
     await tx.run('DELETE FROM rounds WHERE event_id = ?', [req.params.id]);
     await tx.run('DELETE FROM event_players WHERE event_id = ?', [req.params.id]);
+    // Os clãs vêm depois dos jogadores (que os referenciam) e antes do evento
+    // (que eles referenciam). Sem esta linha, apagar um Clã Fronto estourava na
+    // chave estrangeira e o evento ficava sem poder ser removido.
+    await tx.run('DELETE FROM event_clans WHERE event_id = ?', [req.params.id]);
     await tx.run('DELETE FROM events WHERE id = ?', [req.params.id]);
   });
+
+  // 'deleted' e não 'update': quem está com a tela aberta precisa sair, não
+  // recarregar um evento que não existe mais.
+  eventStream.broadcast(req.params.id, 'deleted');
   res.json({ message: 'Event deleted' });
 }));
 
 // Auth: join event
 router.post('/:id/join', auth, asyncHandler(async (req, res) => {
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
-  if (!event) throw new HttpError(404, 'Event not found');
-  if (event.status === 'completed') throw new HttpError(400, 'This event has already finished');
+  if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
+  if (event.status === 'completed') throw new HttpError(400, 'This event has already finished', 'api.eventFinished');
   if (isClanFormat(event)) {
-    throw new HttpError(400, 'Neste torneio a inscrição é por clã: use a inscrição de clã, com quatro jogadores');
+    throw new HttpError(400, 'Neste torneio a inscrição é por clã: use a inscrição de clã, com quatro jogadores', 'api.joinByClan');
   }
   const existing = await db.get(
     'SELECT id FROM event_players WHERE event_id = ? AND user_id = ?',
     [req.params.id, req.user.id]
   );
-  if (existing) throw new HttpError(409, 'Already joined');
+  if (existing) throw new HttpError(409, 'Already joined', 'api.alreadyJoined');
 
   const status = event.confirm_players ? 'pending' : 'active';
   await db.run(
@@ -675,7 +724,7 @@ async function retirePlayer(eventId, player) {
 // Auth: leave event
 router.delete('/:id/join', auth, asyncHandler(async (req, res) => {
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
-  if (!event) throw new HttpError(404, 'Event not found');
+  if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
   assertNotFinished(event);
   assertClanRosterOpen(event, 'sair do torneio');
 
@@ -694,7 +743,7 @@ router.delete('/:id/join', auth, asyncHandler(async (req, res) => {
 router.post('/:id/players', auth, validate(schemas.addPlayer), asyncHandler(async (req, res) => {
   const event = await liveOwnedEvent(db, req.params.id, req.user.id);
   if (isClanFormat(event)) {
-    throw new HttpError(400, 'Neste torneio jogadores entram em clãs de quatro, não um a um');
+    throw new HttpError(400, 'Neste torneio jogadores entram em clãs de quatro, não um a um', 'api.addByClan');
   }
 
   const { email, display_name } = req.body;
@@ -741,16 +790,16 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
 
   const criado = await db.transaction(async (tx) => {
     const event = await tx.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
-    if (!event) throw new HttpError(404, 'Event not found');
-    if (!isClanFormat(event)) throw new HttpError(400, 'Este torneio não é um Clã Fronto');
+    if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
+    if (!isClanFormat(event)) throw new HttpError(400, 'Este torneio não é um Clã Fronto', 'api.notClanEvent');
     assertNotFinished(event);
     if (event.current_round > 0) {
-      throw new HttpError(400, 'O torneio já começou: não é mais possível inscrever clãs');
+      throw new HttpError(400, 'O torneio já começou: não é mais possível inscrever clãs', 'api.clanRosterClosed');
     }
 
     const isOwner = event.owner_id === req.user.id;
     if (display_names && !isOwner) {
-      throw new HttpError(403, 'Só o organizador pode inscrever um clã de convidados');
+      throw new HttpError(403, 'Só o organizador pode inscrever um clã de convidados', 'api.guestClanOwnerOnly');
     }
 
     const jaExiste = await tx.get(
@@ -764,10 +813,10 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
     if (emails) {
       const normalizados = emails.map((e) => e.trim().toLowerCase());
       if (new Set(normalizados).size !== CLAN_SIZE) {
-        throw new HttpError(400, 'Os quatro e-mails precisam ser de pessoas diferentes');
+        throw new HttpError(400, 'Os quatro e-mails precisam ser de pessoas diferentes', 'api.clanEmailsDistinct');
       }
       if (!normalizados.includes(String(req.user.email).toLowerCase())) {
-        throw new HttpError(403, 'Você precisa fazer parte do clã que está inscrevendo');
+        throw new HttpError(403, 'Você precisa fazer parte do clã que está inscrevendo', 'api.mustBeInClan');
       }
 
       const usuarios = await tx.query(
@@ -824,7 +873,7 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
 router.delete('/:id/clans/:clanId', auth, asyncHandler(async (req, res) => {
   await db.transaction(async (tx) => {
     const event = await ownedEvent(tx, req.params.id, req.user.id);
-    if (!isClanFormat(event)) throw new HttpError(400, 'Este torneio não é um Clã Fronto');
+    if (!isClanFormat(event)) throw new HttpError(400, 'Este torneio não é um Clã Fronto', 'api.notClanEvent');
     if (event.current_round > 0) {
       throw new HttpError(400, 'O torneio já começou: o elenco está fechado');
     }
@@ -845,11 +894,11 @@ router.delete('/:id/clans/:clanId', auth, asyncHandler(async (req, res) => {
 // Auth: update player deck/status
 router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), asyncHandler(async (req, res) => {
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
-  if (!event) throw new HttpError(404, 'Event not found');
+  if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
   assertNotFinished(event);
 
   const player = await db.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]);
-  if (!player) throw new HttpError(404, 'Player not found');
+  if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
 
   const isOwner = event.owner_id === req.user.id;
   const isSelf = player.user_id === req.user.id;
@@ -865,9 +914,9 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
   const canEditDeck = isOwner || isSelf || !!isCollaborator;
   const canEditStatus = isOwner; // only the owner can approve/reject/change a player's status
 
-  if (deck_name !== undefined && !canEditDeck) throw new HttpError(403, 'Forbidden');
-  if (status !== undefined && !canEditStatus) throw new HttpError(403, 'Forbidden');
-  if (deck_name === undefined && status === undefined && !canEditDeck) throw new HttpError(403, 'Forbidden');
+  if (deck_name !== undefined && !canEditDeck) throw new HttpError(403, 'Forbidden', 'api.forbidden');
+  if (status !== undefined && !canEditStatus) throw new HttpError(403, 'Forbidden', 'api.forbidden');
+  if (deck_name === undefined && status === undefined && !canEditDeck) throw new HttpError(403, 'Forbidden', 'api.forbidden');
 
   await db.run('UPDATE event_players SET deck_name=?, status=? WHERE id=?', [
     deck_name ?? player.deck_name,
@@ -890,7 +939,7 @@ router.delete('/:id/players/:playerId', auth, asyncHandler(async (req, res) => {
     'SELECT * FROM event_players WHERE id = ? AND event_id = ?',
     [req.params.playerId, req.params.id]
   );
-  if (!player) throw new HttpError(404, 'Player not found');
+  if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
 
   const outcome = await retirePlayer(req.params.id, player);
   eventStream.broadcast(req.params.id);
@@ -1013,7 +1062,7 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
         'INSERT INTO rounds (id, event_id, round_number, is_playoff, playoff_stage) VALUES (?, ?, ?, 1, ?)',
         [roundId, req.params.id, roundNumber, stage]
       );
-      await insertPods(tx, req.params.id, roundId, seedPlayoffPods(orderedAdvancers, podSize), event.points_win);
+      await insertPods(tx, req.params.id, roundId, seedPlayoffPods(orderedAdvancers, podSize));
 
       await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
         [roundNumber, 'ongoing', req.params.id]);
@@ -1042,7 +1091,7 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
     // Dropados entram no cálculo como adversários enfrentados, mas não são pareados.
     const allPlayers = await tx.query('SELECT * FROM event_players WHERE event_id = ?', [req.params.id]);
     const players = computeStandings(allPlayers, pastPairings, event).filter((p) => p.status === 'active');
-    if (players.length < 2) throw new HttpError(400, 'Need at least 2 active players');
+    if (players.length < 2) throw new HttpError(400, 'Need at least 2 active players', 'api.needTwoPlayers');
 
     let pods;
     if (isClanFormat(event)) {
@@ -1062,7 +1111,7 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
     const roundId = uuidv4();
     await tx.run('INSERT INTO rounds (id, event_id, round_number) VALUES (?, ?, ?)',
       [roundId, req.params.id, roundNumber]);
-    await insertPods(tx, req.params.id, roundId, pods, event.points_win);
+    await insertPods(tx, req.params.id, roundId, pods);
 
     await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
       [roundNumber, 'ongoing', req.params.id]);
@@ -1168,7 +1217,7 @@ router.post('/:id/playoffs/start', auth, asyncHandler(async (req, res) => {
       'INSERT INTO rounds (id, event_id, round_number, is_playoff, playoff_stage) VALUES (?, ?, ?, 1, ?)',
       [roundId, req.params.id, roundNumber, stage]
     );
-    await insertPods(tx, req.params.id, roundId, seedPlayoffPods(seeds, podSize), event.points_win);
+    await insertPods(tx, req.params.id, roundId, seedPlayoffPods(seeds, podSize));
 
     await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
       [roundNumber, 'ongoing', req.params.id]);
@@ -1204,8 +1253,8 @@ router.post('/:id/rounds/:roundId/timer', auth, asyncHandler(async (req, res) =>
       'SELECT * FROM rounds WHERE id = ? AND event_id = ?',
       [req.params.roundId, req.params.id]
     );
-    if (!round) throw new HttpError(404, 'Rodada não encontrada');
-    if (round.timer_started_at) throw new HttpError(400, 'O cronômetro desta rodada já está correndo');
+    if (!round) throw new HttpError(404, 'Rodada não encontrada', 'api.roundNotFound');
+    if (round.timer_started_at) throw new HttpError(400, 'O cronômetro desta rodada já está correndo', 'api.timerAlreadyRunning');
 
     await tx.run('UPDATE rounds SET timer_started_at = NOW() WHERE id = ?', [req.params.roundId]);
 
@@ -1226,17 +1275,17 @@ router.post('/:id/rounds/:roundId/timer', auth, asyncHandler(async (req, res) =>
 router.post('/:id/rounds/undo', auth, asyncHandler(async (req, res) => {
   const updated = await db.transaction(async (tx) => {
     const event = await ownedEvent(tx, req.params.id, req.user.id);
-    if (event.current_round <= 0) throw new HttpError(400, 'No round to undo');
+    if (event.current_round <= 0) throw new HttpError(400, 'No round to undo', 'api.noRoundToUndo');
 
     const round = await tx.get(
       'SELECT * FROM rounds WHERE event_id = ? AND round_number = ?',
       [req.params.id, event.current_round]
     );
-    if (!round) throw new HttpError(404, 'Round not found');
+    if (!round) throw new HttpError(404, 'Round not found', 'api.roundNotFound');
 
-    const undoWin  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins-1,   points=points-? WHERE id=?', [event.points_win, id]);
-    const undoLoss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses-1, points=points-? WHERE id=?', [event.points_loss, id]);
-    const undoDraw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws-1,  points=points-? WHERE id=?', [event.points_draw, id]);
+    const undoWin  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins-1 WHERE id=?', [id]);
+    const undoLoss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses-1 WHERE id=?', [id]);
+    const undoDraw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws-1 WHERE id=?', [id]);
     const winnerKey = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
 
     const pairings = await tx.query('SELECT * FROM pairings WHERE round_id = ?', [round.id]);
@@ -1297,7 +1346,7 @@ router.post('/:id/rounds/swap', auth, validate(schemas.swapPlayers), asyncHandle
       'SELECT * FROM rounds WHERE event_id = ? AND round_number = ?',
       [req.params.id, event.current_round]
     );
-    if (!round) throw new HttpError(404, 'Round not found');
+    if (!round) throw new HttpError(404, 'Round not found', 'api.roundNotFound');
 
     const pairings = await tx.query('SELECT * FROM pairings WHERE round_id = ? FOR UPDATE', [round.id]);
     const seatCols = ['player1_id', 'player2_id', 'player3_id', 'player4_id'];
@@ -1336,14 +1385,14 @@ router.post('/:id/rounds/swap', auth, validate(schemas.swapPlayers), asyncHandle
 router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asyncHandler(async (req, res) => {
   const updated = await db.transaction(async (tx) => {
     const event = await tx.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
-    if (!event) throw new HttpError(404, 'Event not found');
+    if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
     assertNotFinished(event);
 
     // Locked for the duration: recording a result reads the previous one, reverses
     // its points and applies the new ones. Two organizers submitting the same table
     // concurrently would otherwise both revert from the same starting state.
     const pairing = await tx.get('SELECT * FROM pairings WHERE id = ? FOR UPDATE', [req.params.pairingId]);
-    if (!pairing) throw new HttpError(404, 'Pairing not found');
+    if (!pairing) throw new HttpError(404, 'Pairing not found', 'api.pairingNotFound');
 
     const { result, p1_games, p2_games } = req.body;
 
@@ -1376,19 +1425,19 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
         : [];
 
       const canSelfReport = event.async_draws && !pairing.result && allowedResults.includes(result);
-      if (!canSelfReport) throw new HttpError(403, 'Forbidden');
+      if (!canSelfReport) throw new HttpError(403, 'Forbidden', 'api.forbidden');
     }
 
     // Organizer-set results are confirmed immediately (they're the authority). A player's own
     // self-report needs the organizer's approval before it counts towards standings.
     const newStatus = isOwner ? 'confirmed' : 'pending';
 
-    const win  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins+1,   points=points+? WHERE id=?', [event.points_win, id]);
-    const loss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses+1, points=points+? WHERE id=?', [event.points_loss, id]);
-    const draw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws+1,  points=points+? WHERE id=?', [event.points_draw, id]);
-    const undoWin  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins-1,   points=points-? WHERE id=?', [event.points_win, id]);
-    const undoLoss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses-1, points=points-? WHERE id=?', [event.points_loss, id]);
-    const undoDraw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws-1,  points=points-? WHERE id=?', [event.points_draw, id]);
+    const win  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins+1 WHERE id=?', [id]);
+    const loss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses+1 WHERE id=?', [id]);
+    const draw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws+1 WHERE id=?', [id]);
+    const undoWin  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins-1 WHERE id=?', [id]);
+    const undoLoss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses-1 WHERE id=?', [id]);
+    const undoDraw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws-1 WHERE id=?', [id]);
 
     // Collect all players in this pod (non-null)
     const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
@@ -1465,13 +1514,13 @@ router.post('/:id/pairings/:pairingId/approve', auth, asyncHandler(async (req, r
     const event = await liveOwnedEvent(tx, req.params.id, req.user.id);
 
     const pairing = await tx.get('SELECT * FROM pairings WHERE id = ? FOR UPDATE', [req.params.pairingId]);
-    if (!pairing) throw new HttpError(404, 'Pairing not found');
+    if (!pairing) throw new HttpError(404, 'Pairing not found', 'api.pairingNotFound');
     if (!pairing.result) throw new HttpError(400, 'No result to approve');
     if (pairing.result_status === 'confirmed') throw new HttpError(400, 'Result already confirmed');
 
-    const win  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins+1,   points=points+? WHERE id=?', [event.points_win, id]);
-    const loss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses+1, points=points+? WHERE id=?', [event.points_loss, id]);
-    const draw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws+1,  points=points+? WHERE id=?', [event.points_draw, id]);
+    const win  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins+1 WHERE id=?', [id]);
+    const loss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses+1 WHERE id=?', [id]);
+    const draw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws+1 WHERE id=?', [id]);
 
     const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
 

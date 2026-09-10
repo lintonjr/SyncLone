@@ -33,7 +33,11 @@
   text-decoration: none;
   color: var(--text);
 
-  .logo-img { height: 36px; width: auto; display: block; }
+  .logo-img {
+    height: 36px;
+    width: auto;
+    display: block;
+  }
 }
 
 .nav-links {
@@ -48,8 +52,15 @@
     text-decoration: none;
     transition: all 0.15s;
 
-    &:hover { background: var(--surface2); color: var(--text); }
-    &.active { background: var(--surface2); color: var(--text); font-weight: 500; }
+    &:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    &.active {
+      background: var(--surface2);
+      color: var(--text);
+      font-weight: 500;
+    }
   }
 }
 
@@ -75,7 +86,10 @@
   cursor: pointer;
   transition: all 0.15s;
 
-  &:hover { background: var(--surface2); color: var(--text); }
+  &:hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
 }
 
 .user-menu-wrapper {
@@ -95,7 +109,11 @@
   align-items: center;
   gap: 6px;
 
-  &:hover, &.active { background: var(--surface2); color: var(--text); }
+  &:hover,
+  &.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
 }
 
 .user-dropdown {
@@ -106,7 +124,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   z-index: 200;
   display: flex;
@@ -126,8 +144,12 @@
   text-decoration: none;
   transition: background 0.1s;
 
-  &:hover { background: var(--surface2); }
-  &.danger { color: #f87171; }
+  &:hover {
+    background: var(--surface2);
+  }
+  &.danger {
+    color: #f87171;
+  }
 }
 
 .user-name {
@@ -141,12 +163,18 @@
 }
 
 @media (max-width: 640px) {
-  .nav-links { display: none; }
-  .user-name { display: none; }
+  .nav-links {
+    display: none;
+  }
+  .user-name {
+    display: none;
+  }
 }
 
 /* Contador de não lidas no sino. */
-.notif-wrapper .icon-btn { position: relative; }
+.notif-wrapper .icon-btn {
+  position: relative;
+}
 
 .notif-badge {
   position: absolute;
@@ -162,4 +190,12 @@
   font-weight: 700;
   line-height: 16px;
   text-align: center;
+}
+
+/* Troca de idioma: o rótulo mostra para onde vai, não onde está — é o que a
+   pessoa quer clicar. Deliberadamente discreto, ao lado do tema. */
+.lang-btn {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }

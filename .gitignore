@@ -153,3 +153,9 @@ backend/uploads/
 
 # Resíduo do SQLite anterior à migração para MySQL.
 backend/data/
+
+# saídas de execução exploratória (Playwright MCP, screenshots avulsos)
+.playwright-mcp/
+*.png
+!frontend/public/*.png
+!frontend/src/**/*.png

@@ -32,6 +32,6 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
         else auth.clearSession();
       }
       return throwError(() => err);
-    })
+    }),
   );
 };

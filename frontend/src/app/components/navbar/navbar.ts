@@ -1,4 +1,5 @@
 import { Component, signal, inject, HostListener, effect } from '@angular/core';
+import { I18nService } from '../../i18n/i18n';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth';
@@ -13,6 +14,7 @@ import { NotificationPanelComponent } from '../notification-panel/notification-p
   styleUrl: './navbar.scss',
 })
 export class NavbarComponent {
+  i18n = inject(I18nService);
   auth = inject(AuthService);
   theme = inject(ThemeService);
   notif = inject(NotificationService);

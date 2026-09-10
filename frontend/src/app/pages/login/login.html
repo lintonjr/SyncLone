@@ -1,33 +1,49 @@
 <div class="auth-page">
   <div class="auth-card card">
-    <h3 class="auth-title">Welcome back</h3>
+    <h3 class="auth-title">{{ i18n.t('login.welcome') }}</h3>
 
     @if (error()) {
       <div class="error-msg">{{ error() }}</div>
     }
 
     <div class="form-field">
-      <label>Email</label>
-      <input type="email" placeholder="m@example.com" [value]="email()" (input)="email.set($any($event.target).value)" />
+      <label>{{ i18n.t('common.email') }}</label>
+      <input
+        type="email"
+        [placeholder]="i18n.t('common.emailExample')"
+        [value]="email()"
+        (input)="email.set($any($event.target).value)"
+      />
     </div>
 
     <div class="form-field">
       <div class="label-row">
-        <label>Password</label>
-        <a routerLink="/forgot-password" class="forgot-link">Forgot your password?</a>
+        <label>{{ i18n.t('common.password') }}</label>
+        <a routerLink="/forgot-password" class="forgot-link">{{ i18n.t('login.forgot') }}</a>
       </div>
-      <input type="password" placeholder="••••••••" [value]="password()" (input)="password.set($any($event.target).value)" (keyup.enter)="submit()" />
+      <input
+        type="password"
+        placeholder="••••••••"
+        [value]="password()"
+        (input)="password.set($any($event.target).value)"
+        (keyup.enter)="submit()"
+      />
     </div>
 
     <button class="btn btn-primary w-full" (click)="submit()" [disabled]="loading()">
-      @if (loading()) { <span class="spinner-sm"></span> } Let's go!
+      @if (loading()) {
+        <span class="spinner-sm"></span>
+      }
+      Let's go!
     </button>
 
     <p class="auth-footer">
-      Don't have an account? <a routerLink="/register">Sign up</a>
+      {{ i18n.t('login.noAccount') }} <a routerLink="/register">{{ i18n.t('login.signUp') }}</a>
     </p>
   </div>
   <p class="terms">
-    By clicking continue, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+    {{ i18n.t('login.agree') }} <a href="#">{{ i18n.t('common.terms') }}</a>
+    {{ i18n.t('common.and') }} <a href="#">{{ i18n.t('common.privacy') }}</a
+    >.
   </p>
 </div>

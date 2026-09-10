@@ -10,7 +10,10 @@
   justify-content: space-between;
   margin-bottom: 28px;
 
-  h1 { font-size: 26px; font-weight: 700; }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+  }
 }
 
 .tabs {
@@ -38,7 +41,9 @@
     border-bottom-color: var(--accent);
   }
 
-  &:hover:not(.active) { color: var(--text); }
+  &:hover:not(.active) {
+    color: var(--text);
+  }
 }
 
 .events-list {

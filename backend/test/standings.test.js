@@ -147,3 +147,91 @@ test('respeita a pontuação configurada do evento', () => {
   // Empate vale 2 de 4 possíveis.
   close(rows.find((p) => p.id === 'a').mwp, 0.5, 'MWP com pontuação custom');
 });
+
+test('pontos vêm das mesas, não de um total gravado', () => {
+  // Regressão do C-01. A coluna `points` do banco somava cada resultado com a
+  // escala vigente naquele instante; se o organizador mexesse em points_win no
+  // meio do torneio, dois jogadores com o mesmo cartel terminavam com totais
+  // diferentes — e era esse número que ordenava a tabela. Aqui os jogadores
+  // chegam com um total gravado propositalmente errado: ele tem de ser ignorado.
+  const players = [
+    player('a', 999), // "total" absurdo herdado de uma escala antiga
+    player('b', 0),
+    player('c', 7),
+    player('d', 0),
+  ];
+  const pairings = [
+    match('a', 'b', 'player1'), // A vence na rodada 1
+    match('c', 'd', 'player1'), // C vence na rodada 1
+  ];
+
+  const rows = computeStandings(players, pairings, { points_win: 10, points_draw: 4, points_loss: 1 });
+  const por = Object.fromEntries(rows.map((p) => [p.id, p]));
+
+  assert.equal(por.a.points, 10, 'A: uma vitória na escala vigente');
+  assert.equal(por.c.points, 10, 'C: mesmo cartel que A, mesmo total');
+  assert.equal(por.b.points, 1, 'B: uma derrota vale points_loss');
+  assert.equal(por.d.points, 1, 'D: mesmo cartel que B, mesmo total');
+});
+
+test('empate e bye entram na pontuação derivada', () => {
+  const players = [player('a', 0), player('b', 0), player('c', 0)];
+  const pairings = [match('a', 'b', 'draw'), bye('c')];
+  const rows = computeStandings(players, pairings, EVENT);
+  const por = Object.fromEntries(rows.map((p) => [p.id, p]));
+
+  assert.equal(por.a.points, 1, 'empate vale points_draw');
+  assert.equal(por.b.points, 1, 'empate vale points_draw para os dois');
+  assert.equal(por.c.points, 3, 'bye vale uma vitória');
+});
+
+test('resultado pendente de aprovação não pontua', () => {
+  const players = [player('a', 0), player('b', 0)];
+  const pendente = { ...match('a', 'b', 'player1'), result_status: 'pending' };
+  const rows = computeStandings(players, [pendente], EVENT);
+
+  assert.equal(rows.find((p) => p.id === 'a').points, 0, 'pendente não move pontos');
+  assert.equal(rows.find((p) => p.id === 'a').matches_played, 0, 'nem partidas');
+});
+
+test('rodada de mata-mata não conta como rodada perdida', () => {
+  // O selo de entrada tardia compara quantas rodadas o jogador sentou com
+  // quantas o torneio teve. Contar o playoff nessa régua marcava todo mundo que
+  // não passou para o Top 4 como se tivesse chegado atrasado — e no exato
+  // instante em que o mata-mata começava.
+  const players = [player('a', 0), player('b', 0), player('c', 0), player('d', 0)];
+  const suico = (p1, p2, round) => ({ ...match(p1, p2, 'player1'), round_id: round, is_playoff: 0 });
+  const mata = (p1, p2, round) => ({ ...match(p1, p2, 'player1'), round_id: round, is_playoff: 1 });
+
+  const pairings = [
+    suico('a', 'b', 'r1'), suico('c', 'd', 'r1'),
+    suico('a', 'c', 'r2'), suico('b', 'd', 'r2'),
+    mata('a', 'c', 'r3'), // só os dois primeiros seguem para a final
+  ];
+
+  const rows = computeStandings(players, pairings, EVENT);
+  const por = Object.fromEntries(rows.map((p) => [p.id, p]));
+
+  for (const id of ['a', 'b', 'c', 'd']) {
+    assert.equal(por[id].swiss_rounds_seated, 2, `${id} jogou as duas rodadas suíças`);
+  }
+  // e os pontos do mata-mata continuam contando normalmente
+  assert.equal(por.a.points, 9, 'A venceu duas suíças e a final');
+});
+
+test('quem entrou no meio do suíço continua com menos rodadas', () => {
+  const players = [player('a', 0), player('b', 0), player('c', 0), player('d', 0)];
+  const suico = (p1, p2, round) => ({ ...match(p1, p2, 'player1'), round_id: round, is_playoff: 0 });
+  const pairings = [
+    suico('a', 'b', 'r1'),
+    suico('a', 'b', 'r2'),
+    suico('a', 'c', 'r3'), suico('b', 'd', 'r3'), // C e D entram só na rodada 3
+  ];
+
+  const rows = computeStandings(players, pairings, EVENT);
+  const por = Object.fromEntries(rows.map((p) => [p.id, p]));
+
+  assert.equal(por.a.swiss_rounds_seated, 3);
+  assert.equal(por.c.swiss_rounds_seated, 1, 'C entrou na terceira');
+  assert.equal(por.d.swiss_rounds_seated, 1, 'D entrou na terceira');
+});

@@ -1,19 +1,41 @@
 import { Component, inject, signal, input, OnInit, OnDestroy, computed } from '@angular/core';
+import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import * as QRCode from 'qrcode';
-import { EventService, TournamentEvent, Player, Round, Pairing, ClanStanding } from '../../services/event';
+import {
+  EventService,
+  TournamentEvent,
+  Player,
+  Round,
+  Pairing,
+  ClanStanding,
+} from '../../services/event';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
+import { phantomNameGenerator } from './phantom-names';
+import { podPlayers } from './pod-view';
+import { EventStandingsComponent } from '../event-standings/event-standings';
+import { EventMyRoundComponent } from '../event-my-round/event-my-round';
+import { EventPairingsComponent } from '../event-pairings/event-pairings';
+import { EventResultsComponent } from '../event-results/event-results';
 
 @Component({
   selector: 'app-event-detail',
-  imports: [CommonModule, RouterLink],
+  imports: [
+    CommonModule,
+    RouterLink,
+    EventStandingsComponent,
+    EventPairingsComponent,
+    EventResultsComponent,
+    EventMyRoundComponent,
+  ],
   templateUrl: './event-detail.html',
   styleUrl: './event-detail.scss',
 })
 export class EventDetailComponent implements OnInit, OnDestroy {
+  i18n = inject(I18nService);
   id = input<string>('');
   private eventSvc = inject(EventService);
   private router = inject(Router);
@@ -23,7 +45,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   event = signal<TournamentEvent | null>(null);
   loading = signal(true);
   tab = signal<'standings' | 'pairings' | 'results' | 'myround'>('standings');
-  standingsView = signal<'clans' | 'players'>('clans');
   actionLoading = signal(false);
   error = signal('');
   resultModal = signal<{ pairing: Pairing } | null>(null);
@@ -44,32 +65,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   qrCopied = signal(false);
   joinUrl = computed(() => `${window.location.origin}/event/${this.id()}`);
 
-  private readonly FIRST = [
-    'Alice','Bob','Carlos','Diana','Eduardo','Fernanda','Gabriel','Helena',
-    'Igor','Juliana','Klaus','Laura','Marcos','Natalia','Oscar','Paula',
-    'Rafael','Sabrina','Thiago','Ursula','Victor','Wendy','Xavier','Yasmin',
-    'Zara','André','Beatriz','Caio','Débora','Élton','Fátima','Gustavo',
-    'Hígor','Isabela','João','Keila','Leandro','Mariana','Nando','Olivia',
-    'Pedro','Quésia','Rodrigo','Sofia','Tânia','Ugo','Vanessa','Wilson',
-  ];
-  private readonly LAST = [
-    'Silva','Santos','Oliveira','Souza','Rodrigues','Ferreira','Alves','Lima',
-    'Costa','Pereira','Carvalho','Melo','Ribeiro','Almeida','Nascimento',
-    'Gomes','Martins','Araújo','Monteiro','Barbosa','Cardoso','Cavalcanti',
-    'Moreira','Nunes','Correia','Dias','Duarte','Cunha','Freitas','Pinto',
-  ];
-
-  private usedPhantomNames = new Set<string>();
-
-  private randomName(): string {
-    const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-    let name: string;
-    let tries = 0;
-    do { name = `${pick(this.FIRST)} ${pick(this.LAST)}`; tries++; }
-    while (this.usedPhantomNames.has(name) && tries < 200);
-    this.usedPhantomNames.add(name);
-    return name;
-  }
+  private randomName = phantomNameGenerator();
 
   openPhantomModal() {
     this.phantomCount.set(8);
@@ -83,8 +79,20 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     let done = 0;
     for (const name of names) {
       this.eventSvc.addPlayer(this.id(), { display_name: name }).subscribe({
-        next: () => { if (++done === n) { this.load(); this.phantomModal.set(false); this.phantomLoading.set(false); } },
-        error: () => { if (++done === n) { this.load(); this.phantomModal.set(false); this.phantomLoading.set(false); } },
+        next: () => {
+          if (++done === n) {
+            this.load();
+            this.phantomModal.set(false);
+            this.phantomLoading.set(false);
+          }
+        },
+        error: () => {
+          if (++done === n) {
+            this.load();
+            this.phantomModal.set(false);
+            this.phantomLoading.set(false);
+          }
+        },
       });
     }
   }
@@ -103,20 +111,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   // O servidor já devolve a lista na ordem oficial (pontos, OMW%, GW%, OGW%) —
   // a mesma que semeia os playoffs e alimenta a exportação. Aqui só filtramos.
-  sortedStandings = computed(() => (this.event()?.players ?? []).filter((p) => p.status === 'active'));
+  sortedStandings = computed(() =>
+    (this.event()?.players ?? []).filter((p) => p.status === 'active'),
+  );
 
-  // Jogador que sentou em menos rodadas do que o torneio teve entrou depois do
-  // começo — e comparar pontos dele com quem jogou tudo engana.
-  entrouDepois(player: Player): number {
-    const total = this.event()?.rounds_total ?? 0;
-    if (!total || player.rounds_seated === undefined) return 0;
-    return Math.max(0, total - player.rounds_seated);
-  }
-
-  pendingPlayers = computed(() => (this.event()?.players ?? []).filter((p) => p.status === 'pending'));
-
-  droppedPlayers = computed(() =>
-    (this.event()?.players ?? []).filter((p) => p.status !== 'active' && p.status !== 'pending')
+  pendingPlayers = computed(() =>
+    (this.event()?.players ?? []).filter((p) => p.status === 'pending'),
   );
 
   roundsGrouped = computed(() => {
@@ -131,37 +131,11 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   // Clã Fronto joga sempre em mesa de 4, mesmo que `pod_size` tenha sido salvo
   // com outro valor: sem esta segunda condição, a tela desenha a mesa de quatro
   // como duelo e esconde os assentos 3 e 4.
-  isPodMode = computed(() =>
-    (this.event()?.pod_size ?? 2) >= 3 || this.isClanFormat()
-  );
+  isPodMode = computed(() => (this.event()?.pod_size ?? 2) >= 3 || this.isClanFormat());
 
   /* ---------- Clã Fronto ---------- */
 
   isClanFormat = computed(() => this.event()?.tournament_format === 'clafronto');
-  clanStandings = computed<ClanStanding[]>(() => this.event()?.clan_standings ?? []);
-
-  // Nome do clã por jogador, para etiquetar as mesas e a tabela individual.
-  private clanNameByPlayer = computed(() => {
-    const nomes = new Map((this.event()?.clans ?? []).map((c) => [c.id, c.name]));
-    const porJogador = new Map<string, string>();
-    for (const p of this.event()?.players ?? []) {
-      if (p.clan_id) porJogador.set(p.id, nomes.get(p.clan_id) ?? '');
-    }
-    return porJogador;
-  });
-
-  clanOf(playerId: string | undefined | null): string {
-    return playerId ? this.clanNameByPlayer().get(playerId) ?? '' : '';
-  }
-
-  // Uma cor estável por clã, para a mesa ser lida de relance — como nas tabelas
-  // de referência do formato.
-  clanIndex(playerId: string | undefined | null): number {
-    const clans = this.event()?.clans ?? [];
-    const player = (this.event()?.players ?? []).find((p) => p.id === playerId);
-    const i = clans.findIndex((c) => c.id === player?.clan_id);
-    return i < 0 ? 0 : i % 8;
-  }
 
   championClanName = computed(() => {
     const ev = this.event();
@@ -196,7 +170,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   submitClan() {
     const name = this.clanName().trim();
-    if (name.length < 2) { this.clanError.set('Dê um nome ao clã'); return; }
+    if (name.length < 2) {
+      this.clanError.set('Dê um nome ao clã');
+      return;
+    }
 
     const guests = this.clanAsGuests();
     const valores = (guests ? this.clanGuestNames() : this.clanEmails()).map((v) => v.trim());
@@ -209,8 +186,15 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.clanError.set('');
     const payload = guests ? { name, display_names: valores } : { name, emails: valores };
     this.eventSvc.createClan(this.id(), payload).subscribe({
-      next: () => { this.load(); this.clanModal.set(false); this.clanLoading.set(false); },
-      error: (err) => { this.clanError.set(err.error?.error || 'Não foi possível inscrever o clã'); this.clanLoading.set(false); },
+      next: () => {
+        this.load();
+        this.clanModal.set(false);
+        this.clanLoading.set(false);
+      },
+      error: (err) => {
+        this.clanError.set(mensagemDeErro(this.i18n, err));
+        this.clanLoading.set(false);
+      },
     });
   }
 
@@ -218,7 +202,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     if (!confirm(`Remover o clã ${nome} e os seus quatro jogadores?`)) return;
     this.eventSvc.deleteClan(this.id(), clanId).subscribe({
       next: () => this.load(),
-      error: (err) => this.error.set(err.error?.error || 'Não foi possível remover o clã'),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
@@ -226,21 +210,27 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     const ev = this.event();
     if (!ev?.rounds?.length) return null;
     const latest = ev.rounds[ev.rounds.length - 1];
-    return { round: latest, pairings: (ev.pairings ?? []).filter(p => p.round_id === latest.id) };
+    return { round: latest, pairings: (ev.pairings ?? []).filter((p) => p.round_id === latest.id) };
   });
 
   pendingInCurrentRound = computed(() => {
     const current = this.currentRoundPairings();
-    return current ? current.pairings.some((p) => !p.result || p.result_status === 'pending') : false;
+    return current
+      ? current.pairings.some((p) => !p.result || p.result_status === 'pending')
+      : false;
   });
 
   hasPlayoffRound = computed(() => (this.event()?.rounds ?? []).some((r) => r.is_playoff));
 
   private readonly PLAYOFF_LABELS: Record<string, string> = {
-    top4: 'Top 4', top8: 'Top 8', top16: 'Top 16',
+    top4: 'Top 4',
+    top8: 'Top 8',
+    top16: 'Top 16',
   };
 
-  playoffLabel = computed(() => this.PLAYOFF_LABELS[this.event()?.playoff_structure ?? ''] ?? 'Playoffs');
+  playoffLabel = computed(
+    () => this.PLAYOFF_LABELS[this.event()?.playoff_structure ?? ''] ?? 'Playoffs',
+  );
 
   canStartPlayoffs = computed(() => {
     const ev = this.event();
@@ -253,7 +243,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   showAdvancePlayoffs = computed(() => {
     const ev = this.event();
     const current = this.currentRoundPairings();
-    return !!(ev && ev.status !== 'completed' && current?.round.is_playoff && !this.pendingInCurrentRound());
+    return !!(
+      ev &&
+      ev.status !== 'completed' &&
+      current?.round.is_playoff &&
+      !this.pendingInCurrentRound()
+    );
   });
 
   championName = computed(() => {
@@ -271,42 +266,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     const myPlayer = ev.players?.find((p) => p.user_id === user.id);
     if (!myPlayer) return null;
     const pairing = pairings.find(
-      (p) => p.player1_id === myPlayer.id || p.player2_id === myPlayer.id ||
-             p.player3_id === myPlayer.id || p.player4_id === myPlayer.id
+      (p) =>
+        p.player1_id === myPlayer.id ||
+        p.player2_id === myPlayer.id ||
+        p.player3_id === myPlayer.id ||
+        p.player4_id === myPlayer.id,
     );
     return pairing ? { round: latestRound, pairing, myPlayer } : null;
   });
-
-  private pct(v: number | null | undefined): string {
-    return v === null || v === undefined ? '—' : (v * 100).toFixed(1) + '%';
-  }
-
-  // MW% | OMW% | GW% | OGW%, na ordem em que desempatam (MTR 2.3).
-  tiebreakers(player: Player): { mw: string; omw: string; gw: string; ogw: string } {
-    return {
-      mw: this.pct(player.mwp),
-      omw: this.pct(player.omw),
-      gw: this.pct(player.gwp),
-      ogw: this.pct(player.ogw),
-    };
-  }
-
-  podPlayers(p: Pairing): { id: string; name: string; slot: string }[] {
-    const ev = this.event();
-    const entries: { id: string; name: string; slot: string }[] = [];
-    if (p.player1_id) entries.push({ id: p.player1_id, name: p.p1_name ?? '?', slot: 'player1' });
-    if (p.player2_id) entries.push({ id: p.player2_id, name: p.p2_name ?? '?', slot: 'player2' });
-    if (p.player3_id) entries.push({ id: p.player3_id, name: p.p3_name ?? '?', slot: 'player3' });
-    if (p.player4_id) entries.push({ id: p.player4_id, name: p.p4_name ?? '?', slot: 'player4' });
-    return entries;
-  }
-
-  podPlayerResult(p: Pairing, slot: string): 'win' | 'loss' | 'draw' | 'bye' | null {
-    if (!p.result) return null;
-    if (p.result === 'bye') return 'bye';
-    if (p.result === 'draw') return 'draw';
-    return p.result === slot ? 'win' : 'loss';
-  }
 
   // Relógio local: o fim da rodada é derivado de round.created_at + round_minutes,
   // então o servidor não precisa emitir nada a cada segundo — o SSE só avisa quando
@@ -347,8 +314,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     if (!current) return;
     this.actionLoading.set(true);
     this.eventSvc.startRoundTimer(this.id(), current.round.id).subscribe({
-      next: () => { this.load(); this.actionLoading.set(false); },
-      error: (err) => { this.error.set(err.error?.error || 'Não foi possível iniciar o tempo'); this.actionLoading.set(false); },
+      next: () => {
+        this.load();
+        this.actionLoading.set(false);
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
     });
   }
 
@@ -360,7 +333,16 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.load();
-    this.streamSub = this.eventSvc.streamEvent(this.id()).subscribe(() => this.refresh());
+    this.streamSub = this.eventSvc.streamEvent(this.id()).subscribe((sinal) => {
+      if (sinal === 'deleted') {
+        // O evento foi apagado por quem o organiza. Recarregar traria 404, então
+        // a tela sai por conta própria em vez de ficar mostrando dados mortos.
+        this.error.set('Este evento foi removido pelo organizador.');
+        this.router.navigate(['/']);
+        return;
+      }
+      this.refresh();
+    });
     this.clock = setInterval(() => this.now.set(Date.now()), 1000);
   }
 
@@ -372,7 +354,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   load() {
     this.loading.set(true);
     this.eventSvc.getEvent(this.id()).subscribe({
-      next: (ev) => { this.event.set(ev); this.loading.set(false); },
+      next: (ev) => {
+        this.event.set(ev);
+        this.loading.set(false);
+      },
       error: () => this.loading.set(false),
     });
   }
@@ -391,14 +376,20 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.actionLoading.set(false);
         if (res?.pending) alert('Solicitação enviada — aguardando aprovação do organizador.');
       },
-      error: (err) => { this.error.set(err.error?.error || 'Failed to join'); this.actionLoading.set(false); },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
     });
   }
 
   leave() {
     this.actionLoading.set(true);
     this.eventSvc.leaveEvent(this.id()).subscribe({
-      next: () => { this.load(); this.actionLoading.set(false); },
+      next: () => {
+        this.load();
+        this.actionLoading.set(false);
+      },
       error: () => this.actionLoading.set(false),
     });
   }
@@ -406,104 +397,116 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   startRound() {
     this.actionLoading.set(true);
     this.eventSvc.startRound(this.id()).subscribe({
-      next: () => { this.load(); this.actionLoading.set(false); this.tab.set('results'); },
-      error: (err) => { this.error.set(err.error?.error || 'Failed to start round'); this.actionLoading.set(false); },
+      next: () => {
+        this.load();
+        this.actionLoading.set(false);
+        this.tab.set('results');
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
     });
-  }
-
-  mySlot(): string | null {
-    const mr = this.myRound();
-    if (!mr) return null;
-    return this.podPlayers(mr.pairing).find((p) => p.id === mr.myPlayer.id)?.slot ?? null;
-  }
-
-  opponentSlot(): string | null {
-    const slot = this.mySlot();
-    if (slot === 'player1') return 'player2';
-    if (slot === 'player2') return 'player1';
-    return null;
-  }
-
-  canEditResult(pairing: Pairing, round: Round): boolean {
-    if (!pairing.result || pairing.result === 'bye') return false;
-    if (!this.isOwner() || this.swapMode()) return false;
-    const ev = this.event();
-    if (!ev || ev.status === 'completed') return false;
-    // Editable as long as it's still the event's current round — even after every table in it
-    // has reported and the round auto-flips to "completed". Once the organizer advances to the
-    // next round, editing an older round requires Undo instead (destructive, on purpose).
-    return round.round_number === ev.current_round;
   }
 
   // '' = não registrar. Só existe em mesa 1v1; pods não têm placar por games.
   gameScore = signal<'' | '2-0' | '2-1'>('');
 
   openResultModal(pairing: Pairing) {
-    const recorded = pairing.p1_games !== null && pairing.p1_games !== undefined
-      && pairing.p2_games !== null && pairing.p2_games !== undefined
-      ? (Math.min(pairing.p1_games, pairing.p2_games) === 0 ? '2-0' : '2-1')
-      : '';
+    const recorded =
+      pairing.p1_games !== null &&
+      pairing.p1_games !== undefined &&
+      pairing.p2_games !== null &&
+      pairing.p2_games !== undefined
+        ? Math.min(pairing.p1_games, pairing.p2_games) === 0
+          ? '2-0'
+          : '2-1'
+        : '';
     this.gameScore.set(recorded as '' | '2-0' | '2-1');
     this.resultModal.set({ pairing });
-  }
-
-  gameScoreLabel(p: Pairing): string | null {
-    if (p.p1_games === null || p.p1_games === undefined) return null;
-    if (p.p2_games === null || p.p2_games === undefined) return null;
-    return `${p.p1_games}×${p.p2_games}`;
   }
 
   submitResult(pairingId: string, result: string) {
     // O placar acompanha o vencedor: 2×1 significa 2 games para quem venceu.
     const choice = this.gameScore();
     const winnerGames = choice === '2-0' ? [2, 0] : choice === '2-1' ? [2, 1] : null;
-    const games = winnerGames && (result === 'player1' || result === 'player2')
-      ? (result === 'player1'
+    const games =
+      winnerGames && (result === 'player1' || result === 'player2')
+        ? result === 'player1'
           ? { p1: winnerGames[0], p2: winnerGames[1] }
-          : { p1: winnerGames[1], p2: winnerGames[0] })
-      : undefined;
+          : { p1: winnerGames[1], p2: winnerGames[0] }
+        : undefined;
 
     this.eventSvc.submitResult(this.id(), pairingId, result, games).subscribe({
-      next: () => { this.load(); this.resultModal.set(null); this.gameScore.set(''); },
-      error: (err) => this.error.set(err.error?.error || 'Failed to submit result'),
+      next: () => {
+        this.load();
+        this.resultModal.set(null);
+        this.gameScore.set('');
+      },
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
   approveResult(pairingId: string) {
     this.eventSvc.approveResult(this.id(), pairingId).subscribe({
       next: () => this.load(),
-      error: (err) => this.error.set(err.error?.error || 'Failed to approve result'),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
-  startRoundTab() {
-    this.startRound();
-  }
-
   startPlayoffs() {
-    if (!confirm(`Iniciar os playoffs (${this.playoffLabel()})? Os jogadores mais bem colocados na classificação atual serão selecionados para o mata-mata.`)) return;
+    if (
+      !confirm(
+        `Iniciar os playoffs (${this.playoffLabel()})? Os jogadores mais bem colocados na classificação atual serão selecionados para o mata-mata.`,
+      )
+    )
+      return;
     this.actionLoading.set(true);
     this.eventSvc.startPlayoffs(this.id()).subscribe({
-      next: () => { this.load(); this.actionLoading.set(false); this.tab.set('results'); },
-      error: (err) => { this.error.set(err.error?.error || 'Failed to start playoffs'); this.actionLoading.set(false); },
+      next: () => {
+        this.load();
+        this.actionLoading.set(false);
+        this.tab.set('results');
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
     });
   }
 
   advancePlayoffs() {
     this.actionLoading.set(true);
     this.eventSvc.startRound(this.id()).subscribe({
-      next: () => { this.load(); this.actionLoading.set(false); },
-      error: (err) => { this.error.set(err.error?.error || 'Failed to advance playoffs'); this.actionLoading.set(false); },
+      next: () => {
+        this.load();
+        this.actionLoading.set(false);
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
     });
   }
 
   undoRound() {
     const roundNum = this.event()?.current_round;
-    if (!confirm(`Desfazer a Rodada ${roundNum}? Todos os pareamentos e resultados desta rodada serão removidos e ela poderá ser pareada novamente. Esta ação não pode ser desfeita.`)) return;
+    if (
+      !confirm(
+        `Desfazer a Rodada ${roundNum}? Todos os pareamentos e resultados desta rodada serão removidos e ela poderá ser pareada novamente. Esta ação não pode ser desfeita.`,
+      )
+    )
+      return;
     this.actionLoading.set(true);
     this.eventSvc.undoRound(this.id()).subscribe({
-      next: () => { this.load(); this.actionLoading.set(false); },
-      error: (err) => { this.error.set(err.error?.error || 'Failed to undo round'); this.actionLoading.set(false); },
+      next: () => {
+        this.load();
+        this.actionLoading.set(false);
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
     });
   }
 
@@ -518,8 +521,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   selectForSwap(playerId: string) {
     if (!this.swapMode()) return;
     const current = this.swapSelected();
-    if (!current) { this.swapSelected.set(playerId); return; }
-    if (current === playerId) { this.swapSelected.set(null); return; }
+    if (!current) {
+      this.swapSelected.set(playerId);
+      return;
+    }
+    if (current === playerId) {
+      this.swapSelected.set(null);
+      return;
+    }
     this.actionLoading.set(true);
     this.eventSvc.swapPlayers(this.id(), current, playerId).subscribe({
       next: () => {
@@ -529,7 +538,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.actionLoading.set(false);
       },
       error: (err) => {
-        this.error.set(err.error?.error || 'Failed to swap players');
+        this.error.set(mensagemDeErro(this.i18n, err));
         this.swapSelected.set(null);
         this.actionLoading.set(false);
       },
@@ -539,16 +548,17 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   approvePlayer(playerId: string) {
     const rodada = this.event()?.current_round ?? 0;
     if (rodada > 0) {
-      const nome = this.pendingPlayers().find((p) => p.id === playerId)?.display_name ?? 'Este jogador';
+      const nome =
+        this.pendingPlayers().find((p) => p.id === playerId)?.display_name ?? 'Este jogador';
       const ok = confirm(
         `${nome} entra a partir da Rodada ${rodada + 1}, com 0 pontos e ${rodada} ` +
-        `${rodada === 1 ? 'rodada' : 'rodadas'} a menos que os demais. Aprovar mesmo assim?`
+          `${rodada === 1 ? 'rodada' : 'rodadas'} a menos que os demais. Aprovar mesmo assim?`,
       );
       if (!ok) return;
     }
     this.eventSvc.updatePlayer(this.id(), playerId, { status: 'active' }).subscribe({
       next: () => this.load(),
-      error: (err) => this.error.set(err.error?.error || 'Failed to approve player'),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
@@ -557,19 +567,28 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     const pendentes = this.pendingPlayers();
     if (!pendentes.length) return;
     const rodada = this.event()?.current_round ?? 0;
-    const aviso = rodada > 0
-      ? ` Eles entram a partir da Rodada ${rodada + 1}, com ${rodada} ${rodada === 1 ? 'rodada' : 'rodadas'} a menos.`
-      : '';
+    const aviso =
+      rodada > 0
+        ? ` Eles entram a partir da Rodada ${rodada + 1}, com ${rodada} ${rodada === 1 ? 'rodada' : 'rodadas'} a menos.`
+        : '';
     if (!confirm(`Aprovar ${pendentes.length} pedido(s) de inscrição?${aviso}`)) return;
 
     this.actionLoading.set(true);
     let restantes = pendentes.length;
     for (const p of pendentes) {
       this.eventSvc.updatePlayer(this.id(), p.id, { status: 'active' }).subscribe({
-        next: () => { if (--restantes === 0) { this.load(); this.actionLoading.set(false); } },
+        next: () => {
+          if (--restantes === 0) {
+            this.load();
+            this.actionLoading.set(false);
+          }
+        },
         error: (err) => {
-          this.error.set(err.error?.error || 'Falha ao aprovar');
-          if (--restantes === 0) { this.load(); this.actionLoading.set(false); }
+          this.error.set(mensagemDeErro(this.i18n, err));
+          if (--restantes === 0) {
+            this.load();
+            this.actionLoading.set(false);
+          }
         },
       });
     }
@@ -579,7 +598,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     if (!confirm('Reject this join request?')) return;
     this.eventSvc.removePlayer(this.id(), playerId).subscribe({
       next: () => this.load(),
-      error: (err) => this.error.set(err.error?.error || 'Failed to reject player'),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
@@ -587,9 +606,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     if (!confirm('Drop this player from the event?')) return;
     this.eventSvc.removePlayer(this.id(), playerId).subscribe({
       next: () => this.load(),
-      error: (err) => this.error.set(err.error?.error || 'Failed to drop player'),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
+
+  // Passada ao filho como valor: a regra depende do usuário logado e do evento,
+  // que só o pai conhece.
+  canEditDeckFn = (player: Player): boolean => this.canEditDeck(player);
 
   canEditDeck(player: Player): boolean {
     if (this.isOwner() || player.user_id === this.auth.currentUser()?.id) return true;
@@ -604,17 +627,27 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   saveDeckName() {
     const modal = this.editDeckModal();
     if (!modal) return;
-    this.eventSvc.updatePlayer(this.id(), modal.playerId, { deck_name: this.deckNameInput() }).subscribe({
-      next: () => { this.load(); this.editDeckModal.set(null); },
-      error: (err) => this.error.set(err.error?.error || 'Failed to update deck'),
-    });
+    this.eventSvc
+      .updatePlayer(this.id(), modal.playerId, { deck_name: this.deckNameInput() })
+      .subscribe({
+        next: () => {
+          this.load();
+          this.editDeckModal.set(null);
+        },
+        error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
+      });
   }
 
   finishEvent() {
-    if (!confirm('Finalizar este evento? Ele será movido para Past Events e não poderá receber novas rodadas.')) return;
+    if (
+      !confirm(
+        'Finalizar este evento? Ele será movido para Past Events e não poderá receber novas rodadas.',
+      )
+    )
+      return;
     this.eventSvc.finishEvent(this.id()).subscribe({
       next: () => this.load(),
-      error: (err) => this.error.set(err.error?.error || 'Failed to finish event'),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
@@ -622,7 +655,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     if (!confirm('Delete this event permanently? This cannot be undone.')) return;
     this.eventSvc.deleteEvent(this.id()).subscribe({
       next: () => this.router.navigate(['/events']),
-      error: (err) => this.error.set(err.error?.error || 'Failed to delete event'),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
@@ -636,7 +669,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   openQrModal() {
     this.qrCopied.set(false);
     this.qrModal.set(true);
-    QRCode.toDataURL(this.joinUrl(), { width: 220, margin: 2 }).then((url) => this.qrDataUrl.set(url));
+    QRCode.toDataURL(this.joinUrl(), { width: 220, margin: 2 }).then((url) =>
+      this.qrDataUrl.set(url),
+    );
   }
 
   copyJoinLink() {
@@ -670,40 +705,27 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
     this.addPlayerLoading.set(true);
     this.addPlayerError.set('');
-    this.eventSvc.addPlayer(this.id(), { email: email || undefined, display_name: name || undefined }).subscribe({
-      next: () => { this.load(); this.addPlayerModal.set(false); this.addPlayerLoading.set(false); },
-      error: (err) => { this.addPlayerError.set(err.error?.error || 'Failed to add player'); this.addPlayerLoading.set(false); },
-    });
+    this.eventSvc
+      .addPlayer(this.id(), { email: email || undefined, display_name: name || undefined })
+      .subscribe({
+        next: () => {
+          this.load();
+          this.addPlayerModal.set(false);
+          this.addPlayerLoading.set(false);
+        },
+        error: (err) => {
+          this.addPlayerError.set(mensagemDeErro(this.i18n, err));
+          this.addPlayerLoading.set(false);
+        },
+      });
   }
+
+  // O modal de resultado continua no pai (é ele que guarda o rascunho do placar),
+  // e desenha os assentos da mesa com a mesma função das abas.
+  podPlayers = podPlayers;
 
   thumbnailUrl(): string {
     const t = this.event()?.thumbnail;
     return t ? `${this.apiUrl}${t}` : '';
-  }
-
-  resultLabel(p: Pairing): string {
-    if (!p.result) return 'Pending';
-    if (p.result_status === 'pending' && !this.isOwner()) return 'Pending Approval';
-    const map: Record<string, string> = { player1: 'P1 Win', player2: 'P2 Win', draw: 'Draw', bye: 'Bye' };
-    return map[p.result] ?? p.result;
-  }
-
-  roundLabel(round: Round): string {
-    return round.is_playoff ? `🏆 Playoffs — ${round.playoff_stage}` : `Round ${round.round_number}`;
-  }
-
-  ordinal(n: number): string {
-    const s = ['th', 'st', 'nd', 'rd'];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-  }
-
-  myResultLabel(pairing: Pairing, myPlayerId: string): { label: string; cls: string } {
-    if (!pairing.result) return { label: 'Pending', cls: 'result-pending' };
-    if (pairing.result === 'bye') return { label: 'Bye (Win)', cls: 'result-win' };
-    if (pairing.result === 'draw') return { label: 'Draw', cls: 'result-draw' };
-    const iAm1 = pairing.player1_id === myPlayerId;
-    const won = (iAm1 && pairing.result === 'player1') || (!iAm1 && pairing.result === 'player2');
-    return won ? { label: 'Win', cls: 'result-win' } : { label: 'Loss', cls: 'result-loss' };
   }
 }

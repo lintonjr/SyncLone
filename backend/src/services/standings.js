@@ -10,10 +10,34 @@
  * organizador ainda não aprovou não move pontos (routes/events.js) e também não
  * pode mover desempate.
  */
+const { clanPairSeats } = require('./pairing');
+
 const FLOOR = 1 / 3;
 
 const SEATS = ['player1_id', 'player2_id', 'player3_id', 'player4_id'];
 const WINNER_COLUMN = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
+
+/**
+ * Quem ganhou a mesa, e quem estava do mesmo lado.
+ *
+ * Numa mesa comum é o assento apontado por `result`, sozinho. Na mesa de duplas
+ * do playoff de Clã Fronto são dois: o assento apontado e o companheiro de clã.
+ * A forma da mesa entrega qual é qual — quatro assentos repartidos em exatamente
+ * dois clãs, dois de cada, só acontece no mata-mata em duplas; a rodada normal
+ * do formato tem sempre quatro clãs distintos.
+ *
+ * Isto precisa viver aqui porque é aqui que os pontos são contados. Enquanto a
+ * pontuação era uma coluna somada pela rota, só a rota conhecia a regra — e ao
+ * derivar os pontos o companheiro deixava de receber a vitória.
+ */
+function winningSide(pairing, winnerId, playersById) {
+  const grupos = clanPairSeats(pairing, playersById);
+  const clan = playersById.get(winnerId)?.clan_id;
+  if (!clan || grupos.size !== 2) return [winnerId];
+
+  const lado = grupos.get(clan) ?? [winnerId];
+  return lado.length === 2 ? lado : [winnerId];
+}
 
 /**
  * Recebe TODOS os jogadores do evento (inclusive dropados: eles continuam
@@ -34,21 +58,28 @@ function computeStandings(players, pairings, event) {
       gamesWon: 0,
       gamesPlayed: 0,
       opponents: new Set(),
-      roundsSeated: new Set(),
+      swissRoundsSeated: new Set(),
     });
   }
 
-  // Em quantas rodadas distintas o jogador teve assento, independente de já haver
-  // resultado. É o que identifica quem entrou depois do torneio começar — comparar
-  // `matches` com a rodada atual não serve: com a rodada em andamento e nenhum
-  // resultado lançado, o campo inteiro apareceria como atrasado.
+  // Em quantas rodadas SUÍÇAS o jogador teve assento, independente de já haver
+  // resultado. É o que identifica quem entrou depois do torneio começar —
+  // comparar `matches` com a rodada atual não serve: com a rodada em andamento e
+  // nenhum resultado lançado, o campo inteiro apareceria como atrasado.
+  //
+  // O mata-mata fica de fora de propósito. Ele é seletivo: quem não passou para
+  // o Top 4 tem uma rodada a menos por ter sido eliminado, não por ter chegado
+  // tarde — e contá-lo marcava metade do campo como entrada tardia no instante
+  // em que o playoff começava.
   for (const pairing of pairings) {
-    if (!pairing.round_id) continue;
+    if (!pairing.round_id || pairing.is_playoff) continue;
     for (const col of SEATS) {
       const id = pairing[col];
-      if (id && stats.has(id)) stats.get(id).roundsSeated.add(pairing.round_id);
+      if (id && stats.has(id)) stats.get(id).swissRoundsSeated.add(pairing.round_id);
     }
   }
+
+  const playersById = new Map(players.map((p) => [p.id, p]));
 
   for (const pairing of pairings) {
     if (!pairing.result || pairing.result_status !== 'confirmed') continue;
@@ -62,14 +93,26 @@ function computeStandings(players, pairings, event) {
     const isBye = pairing.result === 'bye';
     const winnerId = WINNER_COLUMN[pairing.result] ? pairing[WINNER_COLUMN[pairing.result]] : null;
 
+    // Em mesa de duplas os dois parceiros compartilham o resultado, e um não é
+    // adversário do outro para efeito de desempate.
+    const vencedores = winnerId ? new Set(winningSide(pairing, winnerId, playersById)) : new Set();
+    const parceiroDe = (id) => (vencedores.has(id) ? vencedores : null);
+
     for (const id of seated) {
       const s = stats.get(id);
       s.matches += 1;
       if (isBye) s.matchPoints += pointsWin;
       else if (pairing.result === 'draw') s.matchPoints += pointsDraw;
-      else s.matchPoints += id === winnerId ? pointsWin : pointsLoss;
+      else s.matchPoints += vencedores.has(id) ? pointsWin : pointsLoss;
 
-      if (!isBye) for (const other of seated) if (other !== id) s.opponents.add(other);
+      if (!isBye) {
+        const meuLado = parceiroDe(id);
+        for (const other of seated) {
+          if (other === id) continue;
+          if (meuLado?.has(other)) continue; // companheiro de dupla, não adversário
+          s.opponents.add(other);
+        }
+      }
     }
 
     // Placar por games só existe em mesa 1v1, e só quando o organizador registrou.
@@ -116,8 +159,14 @@ function computeStandings(players, pairings, event) {
     const oppGwp = opponents.map(gameWinPct).filter((v) => v !== null);
     return {
       ...p,
+      // Os pontos saem daqui, e só daqui. Eles já eram recalculados para o MW%;
+      // o que existia em paralelo era uma coluna somada resultado a resultado com
+      // a escala vigente naquele instante. As duas concordavam enquanto ninguém
+      // mexia na pontuação do evento — e discordavam em silêncio assim que alguém
+      // mexia, deixando dois jogadores com o mesmo cartel e totais diferentes.
+      points: s.matchPoints,
       matches_played: s.matches,
-      rounds_seated: s.roundsSeated.size,
+      swiss_rounds_seated: s.swissRoundsSeated.size,
       mwp: matchWinPct(p.id),
       omw: average(opponents.map(matchWinPct)),
       gwp: gameWinPct(p.id),

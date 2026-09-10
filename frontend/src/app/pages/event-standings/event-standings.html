@@ -1,0 +1,269 @@
+@if (isClanFormat()) {
+  <div class="standings-switch">
+    <button class="switch-btn" [class.active]="view() === 'clans'" (click)="view.set('clans')">
+      Clãs ({{ clanStandings().length }})
+    </button>
+    <button class="switch-btn" [class.active]="view() === 'players'" (click)="view.set('players')">
+      Jogadores ({{ sortedStandings().length }})
+    </button>
+  </div>
+
+  @if (view() === 'clans') {
+    @if (clanStandings().length === 0) {
+      <p class="empty">
+        {{ i18n.t('standings.noClans') }}
+      </p>
+    } @else {
+      <div class="standings-table card">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-rank">{{ i18n.t('common.rank') }}</th>
+              <th>{{ i18n.t('standings.clan') }}</th>
+              <th class="col-num">V</th>
+              <th class="col-num">D</th>
+              <th class="col-num">E</th>
+              <th class="col-pts">{{ i18n.t('common.points') }}</th>
+              <th class="col-tb">{{ i18n.t('standings.clanOmw') }}</th>
+              @if (isOwner() && ev()!.current_round === 0) {
+                <th class="col-actions"></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (clan of clanStandings(); track clan.id; let i = $index) {
+              <tr [class.top-row]="i === 0">
+                <td class="rank-cell">
+                  <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
+                </td>
+                <td class="player-cell">
+                  <span class="clan-dot" [class]="'clan-c' + (i % 8)"></span>
+                  <span class="player-name">{{ clan.name }}</span>
+                  <span class="clan-roster">{{
+                    i18n.t('standings.clanRoster', { n: clan.player_count })
+                  }}</span>
+                </td>
+                <td class="col-num">
+                  <span class="stat-win">{{ clan.wins }}</span>
+                </td>
+                <td class="col-num">
+                  <span class="stat-loss">{{ clan.losses }}</span>
+                </td>
+                <td class="col-num">
+                  <span class="stat-draw">{{ clan.draws }}</span>
+                </td>
+                <td class="col-pts">
+                  <strong class="pts-val">{{ clan.points }}</strong>
+                </td>
+                <td class="col-tb tiebreaker-cell">
+                  {{ clan.omw === null ? '—' : (clan.omw * 100).toFixed(1) + '%' }}
+                </td>
+                @if (isOwner() && ev()!.current_round === 0) {
+                  <td class="col-actions actions-cell">
+                    <button
+                      class="drop-btn"
+                      (click)="removeClanReq.emit({ id: clan.id, nome: clan.name })"
+                      [title]="i18n.t('standings.removeClanHelp')"
+                    >
+                      {{ i18n.t('standings.removeClan') }}
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+}
+
+@if (!isClanFormat() || view() === 'players') {
+  <!-- A fila de aprovacao fica FORA do bloco da tabela: com todo mundo
+             pendente nao existe jogador ativo, e a tabela nao renderiza. Foi
+             exatamente assim que o organizador ficava sem meio de aprovar. -->
+  @if (isOwner() && pendingPlayers().length) {
+    <div class="pending-section">
+      <h4 class="pending-title">
+        {{ i18n.t('standings.pendingTitle', { n: pendingPlayers().length }) }}
+      </h4>
+      <div class="pending-actions-bulk">
+        <button class="btn btn-primary" (click)="approveAll.emit()" [disabled]="actionLoading()">
+          {{ i18n.t('standings.approveAll', { n: pendingPlayers().length }) }}
+        </button>
+      </div>
+      <div class="pending-list">
+        @for (player of pendingPlayers(); track player.id) {
+          <div class="pending-row">
+            <span class="pending-name">{{ player.display_name }}</span>
+            <div class="pending-actions">
+              <button
+                class="btn btn-primary"
+                style="font-size: 12px; padding: 4px 10px"
+                (click)="approve.emit(player.id)"
+              >
+                {{ i18n.t('standings.approve') }}
+              </button>
+              <button
+                class="btn btn-danger"
+                style="font-size: 12px; padding: 4px 10px"
+                (click)="rejectPlayer(player.id)"
+              >
+                {{ i18n.t('standings.reject') }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (sortedStandings().length === 0) {
+    <p class="empty">
+      @if (pendingPlayers().length) {
+        Ninguém aprovado ainda — há {{ pendingPlayers().length }}
+        {{ pendingPlayers().length === 1 ? 'pedido' : 'pedidos' }} de inscrição esperando o
+        organizador.
+      } @else {
+        {{
+          ev()!.status === 'completed'
+            ? 'No players joined this event.'
+            : 'No players yet. Be the first to join!'
+        }}
+      }
+    </p>
+  } @else {
+    <div class="standings-table card">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-rank">{{ i18n.t('common.rank') }}</th>
+            <th>{{ i18n.t('common.player') }}</th>
+            <th>{{ i18n.t('standings.deck') }}</th>
+            <th class="col-num">W</th>
+            <th class="col-num">L</th>
+            <th class="col-num">D</th>
+            <th class="col-pts">{{ i18n.t('common.points') }}</th>
+            <th class="col-tb">
+              <span class="tb-header">
+                {{ i18n.t('standings.tiebreakHeader') }}
+                <span class="tb-info-icon">
+                  ⓘ
+                  <div class="tb-info-popover">
+                    <h4>{{ i18n.t('standings.tbTitle') }}</h4>
+                    <p>{{ i18n.t('standings.tbIntro') }}</p>
+                    <ul>
+                      <li>
+                        <strong>{{ i18n.t('standings.tbMw') }}</strong>
+                        {{ i18n.t('standings.tbMwHelp') }}
+                      </li>
+                      <li>
+                        <strong>{{ i18n.t('standings.tbOmw') }}</strong>
+                        {{ i18n.t('standings.tbOmwHelp') }}
+                      </li>
+                      <li>
+                        <strong>{{ i18n.t('standings.tbGw') }}</strong>
+                        {{ i18n.t('standings.tbGwHelp') }}
+                      </li>
+                      <li>
+                        <strong>{{ i18n.t('standings.tbOgw') }}</strong>
+                        {{ i18n.t('standings.tbOgwHelp') }}
+                      </li>
+                    </ul>
+                    <p class="tb-info-footer">{{ i18n.t('standings.tbFooter') }}</p>
+                  </div>
+                </span>
+              </span>
+            </th>
+            @if (isOwner()) {
+              <th class="col-actions"></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (player of sortedStandings(); track player.id; let i = $index) {
+            <tr [class.top-row]="i === 0">
+              <td class="rank-cell">
+                <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
+              </td>
+              <td class="player-cell">
+                @if (isClanFormat()) {
+                  <span class="clan-dot" [class]="'clan-c' + clanIndex(player.id)"></span>
+                }
+                <span class="player-name">{{ player.display_name }}</span>
+                @if (isClanFormat()) {
+                  <span class="clan-tag">{{ clanOf(player.id) }}</span>
+                }
+                @if (entrouDepois(player); as faltando) {
+                  <span
+                    class="late-tag"
+                    [title]="
+                      'Entrou com o torneio em andamento e não jogou ' + faltando + ' rodada(s)'
+                    "
+                  >
+                    entrou depois · −{{ faltando }}
+                  </span>
+                }
+              </td>
+              <td class="deck-cell">
+                @if (player.deck_name) {
+                  @if (canEditDeck(player)) {
+                    <button class="deck-badge" (click)="openDeckEdit(player)">
+                      {{ player.deck_name }}
+                    </button>
+                  } @else {
+                    <span class="deck-badge-static">{{ player.deck_name }}</span>
+                  }
+                } @else if (canEditDeck(player)) {
+                  <button class="deck-edit-btn" (click)="openDeckEdit(player)">
+                    {{ i18n.t('standings.setDeck') }}
+                  </button>
+                } @else {
+                  <span class="text-muted-sm">—</span>
+                }
+              </td>
+              <td class="col-num">
+                <span class="stat-win">{{ player.wins }}</span>
+              </td>
+              <td class="col-num">
+                <span class="stat-loss">{{ player.losses }}</span>
+              </td>
+              <td class="col-num">
+                <span class="stat-draw">{{ player.draws }}</span>
+              </td>
+              <td class="col-pts">
+                <strong class="pts-val">{{ player.points }}</strong>
+              </td>
+              <td class="col-tb tiebreaker-cell">
+                {{ tiebreakers(player).mw }} | {{ tiebreakers(player).omw }} |
+                {{ tiebreakers(player).gw }} | {{ tiebreakers(player).ogw }}
+              </td>
+              @if (isOwner()) {
+                <td class="col-actions actions-cell">
+                  <button
+                    class="drop-btn"
+                    (click)="drop.emit(player.id)"
+                    [title]="i18n.t('standings.dropHelp')"
+                  >
+                    {{ i18n.t('standings.drop') }}
+                  </button>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (droppedPlayers().length && !isClanFormat()) {
+      <div class="dropped-section">
+        <h4 class="dropped-title">{{ i18n.t('standings.dropped') }}</h4>
+        <div class="dropped-list">
+          @for (player of droppedPlayers(); track player.id) {
+            <span class="dropped-name">{{ player.display_name }}</span>
+          }
+        </div>
+      </div>
+    }
+  }
+}

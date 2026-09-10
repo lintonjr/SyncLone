@@ -20,7 +20,11 @@
   padding: 24px;
   margin-bottom: 28px;
 
-  h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
 }
 
 .league-meta {
@@ -73,13 +77,21 @@
       color: var(--text);
     }
 
-    tr:last-child td { border-bottom: none; }
-    tr:not(.cut-divider):hover td { background: var(--surface2); }
-    tr.top-row td { background: rgba(139, 92, 246, 0.04); }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:not(.cut-divider):hover td {
+      background: var(--surface2);
+    }
+    tr.top-row td {
+      background: rgba(139, 92, 246, 0.04);
+    }
   }
 }
 
-.rank-cell { text-align: center; }
+.rank-cell {
+  text-align: center;
+}
 .rank-badge {
   display: inline-block;
   padding: 2px 8px;
@@ -89,9 +101,18 @@
   background: var(--surface2);
   color: var(--text-muted);
 
-  &.rank-1 { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
-  &.rank-2 { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
-  &.rank-3 { background: rgba(180, 83, 9, 0.2); color: #c2784b; }
+  &.rank-1 {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+  }
+  &.rank-2 {
+    background: rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+  }
+  &.rank-3 {
+    background: rgba(180, 83, 9, 0.2);
+    color: #c2784b;
+  }
 }
 
 .cut-divider td {
@@ -125,7 +146,9 @@
   color: inherit;
   transition: border-color 0.15s;
 
-  &:hover { border-color: var(--accent); }
+  &:hover {
+    border-color: var(--accent);
+  }
 }
 
 .event-row-name {

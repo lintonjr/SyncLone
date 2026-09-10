@@ -1,0 +1,142 @@
+@if (!mr()) {
+  <div class="myround-empty">
+    <div class="myround-icon">🏆</div>
+    <p>
+      {{
+        ev()!.rounds?.length
+          ? 'You have no active pairing in the current round.'
+          : "The event hasn't started yet. Wait for the organizer to start Round 1."
+      }}
+    </p>
+  </div>
+} @else {
+  <div class="myround-card card">
+    <div class="myround-header">
+      <span class="round-label">{{ roundLabel(mr()!.round) }}</span>
+      <span class="table-label"
+        >{{ isPodMode() ? 'Pod' : 'Table' }} {{ mr()!.pairing.table_number }}</span
+      >
+      @if (roundTimer(); as timer) {
+        <span
+          class="round-timer"
+          [class.timer-warning]="timer.warning"
+          [class.timer-over]="timer.over"
+          [class.timer-waiting]="timer.waiting"
+        >
+          ⏱ {{ timer.label }}{{ timer.over ? ' — Time!' : '' }}
+        </span>
+      }
+    </div>
+
+    @if (isPodMode()) {
+      <!-- Pod layout: list of all players -->
+      <div class="pod-matchup">
+        @for (player of podPlayers(mr()!.pairing); track player.id) {
+          <div class="pod-matchup-row" [class.is-me]="player.id === mr()!.myPlayer.id">
+            <div class="pod-avatar">{{ player.name.charAt(0) }}</div>
+            <span class="pod-matchup-name">{{ player.name }}</span>
+            @if (player.id === mr()!.myPlayer.id) {
+              <span class="you-tag">{{ i18n.t('myRound.you') }}</span>
+            }
+            @if (mr()!.pairing.result) {
+              @if (podPlayerResult(mr()!.pairing, player.slot); as pr) {
+                <span class="pod-result-badge ml-auto" [class]="'prb-' + pr">
+                  {{
+                    pr === 'win' ? 'WIN' : pr === 'draw' ? 'DRAW' : pr === 'bye' ? 'BYE' : 'LOSS'
+                  }}
+                </span>
+              }
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- 1v1 layout -->
+      <div class="matchup">
+        <div class="player-side" [class.is-me]="mr()!.pairing.player1_id === mr()!.myPlayer.id">
+          <div class="player-avatar">{{ mr()!.pairing.p1_name?.charAt(0) }}</div>
+          <div class="player-info">
+            <span class="player-label">{{ mr()!.pairing.p1_name }}</span>
+            @if (mr()!.pairing.player1_id === mr()!.myPlayer.id) {
+              <span class="you-tag">{{ i18n.t('myRound.you') }}</span>
+            }
+          </div>
+        </div>
+        <div class="vs-divider">VS</div>
+        <div class="player-side" [class.is-me]="mr()!.pairing.player2_id === mr()!.myPlayer.id">
+          <div class="player-avatar">{{ (mr()!.pairing.p2_name || 'B').charAt(0) }}</div>
+          <div class="player-info">
+            <span class="player-label">{{ mr()!.pairing.p2_name || 'Bye' }}</span>
+            @if (mr()!.pairing.player2_id === mr()!.myPlayer.id) {
+              <span class="you-tag">{{ i18n.t('myRound.you') }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="myround-result">
+      @if (mr()!.pairing.result && mr()!.pairing.result_status !== 'pending') {
+        @if (podPlayers(mr()!.pairing).find((p) => p.id === mr()!.myPlayer.id); as me) {
+          @if (podPlayerResult(mr()!.pairing, me.slot); as pr) {
+            <span class="my-result-badge" [class]="'result-' + pr">
+              {{
+                pr === 'win' ? 'Win' : pr === 'draw' ? 'Draw' : pr === 'bye' ? 'Bye (Win)' : 'Loss'
+              }}
+            </span>
+          }
+        }
+      } @else if (mr()!.pairing.result) {
+        <span class="result-pill pill-pending">{{ i18n.t('myRound.pendingApproval') }}</span>
+      } @else {
+        <span class="result-pill pill-pending">{{ i18n.t('myRound.awaiting') }}</span>
+        @if (ev()!.async_draws) {
+          <div class="self-report-actions">
+            <button
+              class="btn btn-ghost report-draw-btn"
+              (click)="reportar(mr()!.pairing.id, mySlot()!)"
+            >
+              {{ i18n.t('myRound.iWon') }}
+            </button>
+            @if (!isPodMode()) {
+              <button
+                class="btn btn-ghost report-draw-btn"
+                (click)="reportar(mr()!.pairing.id, opponentSlot()!)"
+              >
+                {{ i18n.t('myRound.iLost') }}
+              </button>
+            }
+            <button
+              class="btn btn-ghost report-draw-btn"
+              (click)="reportar(mr()!.pairing.id, 'draw')"
+            >
+              {{ i18n.t('myRound.reportDraw') }}
+            </button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="my-standings card">
+    <h4>{{ i18n.t('myRound.record') }}</h4>
+    <div class="my-stats">
+      <div class="stat-box">
+        <span class="stat-num">{{ mr()!.myPlayer.wins }}</span>
+        <span class="stat-lbl">{{ i18n.t('myRound.wins') }}</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">{{ mr()!.myPlayer.losses }}</span>
+        <span class="stat-lbl">{{ i18n.t('myRound.losses') }}</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">{{ mr()!.myPlayer.draws }}</span>
+        <span class="stat-lbl">{{ i18n.t('myRound.draws') }}</span>
+      </div>
+      <div class="stat-box accent">
+        <span class="stat-num">{{ mr()!.myPlayer.points }}</span>
+        <span class="stat-lbl">{{ i18n.t('myRound.points') }}</span>
+      </div>
+    </div>
+  </div>
+}

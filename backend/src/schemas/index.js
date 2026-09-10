@@ -109,8 +109,8 @@ const schemas = {
     p2_games: int(0, 9),
   }),
 
-  // Cl&#227; Fronto: o cl&#227; entra inteiro ou n&#227;o entra. Ou quatro e-mails de contas
-  // existentes (inscri&#231;&#227;o do pr&#243;prio jogador), ou quatro nomes (convidados do dono).
+  // Clã Fronto: o clã entra inteiro ou não entra. Ou quatro e-mails de contas
+  // existentes (inscrição do próprio jogador), ou quatro nomes (convidados do dono).
   createClan: z.object({
     name: z.string().trim().min(2).max(60),
     emails: z.array(z.email().max(255)).length(4).optional(),

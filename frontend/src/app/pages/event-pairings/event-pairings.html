@@ -1,0 +1,299 @@
+@if (!currentRoundPairings()) {
+  <p class="empty">{{ i18n.t('pairings.noRounds') }}</p>
+} @else {
+  <div class="round-section">
+    <div class="round-header">
+      <h3 class="round-title">{{ roundLabel(currentRoundPairings()!.round) }} — Pairings</h3>
+      <span
+        class="round-status-badge"
+        [class]="
+          currentRoundPairings()!.round.status !== 'completed' ? 'status-open' : 'status-done'
+        "
+      >
+        {{ currentRoundPairings()!.round.status !== 'completed' ? 'In Progress' : 'Completed' }}
+      </span>
+      @if (roundTimer(); as timer) {
+        @if (timer.waiting && isOwner()) {
+          <button
+            class="btn btn-primary timer-start-btn"
+            (click)="startRoundTimer()"
+            [disabled]="actionLoading()"
+          >
+            {{ i18n.t('pairings.startTimer') }}
+          </button>
+        } @else {
+          <span
+            class="round-timer"
+            [class.timer-warning]="timer.warning"
+            [class.timer-over]="timer.over"
+            [class.timer-waiting]="timer.waiting"
+            [title]="
+              timer.waiting
+                ? 'O organizador ainda não iniciou o tempo'
+                : timer.over
+                  ? 'O tempo acabou'
+                  : 'Tempo restante na rodada'
+            "
+          >
+            ⏱ {{ timer.label }}{{ timer.over ? ' — Time!' : '' }}
+          </span>
+        }
+      }
+      @if (isOwner() && ev()!.status !== 'completed') {
+        <div class="round-actions">
+          @if (currentRoundPairings()!.pairings.some((p) => !p.result)) {
+            <button
+              class="btn swap-toggle-btn"
+              [class.active]="swapMode()"
+              (click)="toggleSwapMode()"
+              [disabled]="actionLoading()"
+              [title]="i18n.t('pairings.swapHelp')"
+            >
+              {{ i18n.t('pairings.swap') }}
+            </button>
+          }
+          <button
+            class="btn undo-btn"
+            (click)="undoRound()"
+            [disabled]="actionLoading()"
+            [title]="i18n.t('pairings.undoHelp')"
+          >
+            {{ i18n.t('pairings.undo') }}
+          </button>
+        </div>
+      }
+    </div>
+    @if (isPodMode()) {
+      <div class="pods-grid">
+        @for (p of currentRoundPairings()!.pairings; track p.id) {
+          <div class="pod-card card">
+            <div class="pod-header">
+              <span class="pod-label">{{ i18n.t('pairings.pod') }} {{ p.table_number }}</span>
+              @if (!p.result && isOwner() && !swapMode()) {
+                <button
+                  class="btn btn-ghost"
+                  style="font-size: 11px; padding: 3px 8px"
+                  (click)="openResultModal(p)"
+                >
+                  {{ i18n.t('pairings.setResult') }}
+                </button>
+              }
+              @if (p.result) {
+                <span class="pod-header-actions">
+                  <span
+                    class="result-pill"
+                    [class]="
+                      p.result === 'bye'
+                        ? 'pill-bye'
+                        : p.result_status === 'pending'
+                          ? 'pill-pending'
+                          : 'pill-done'
+                    "
+                  >
+                    {{
+                      p.result === 'bye'
+                        ? 'BYE'
+                        : p.result === 'draw'
+                          ? 'DRAW'
+                          : p.result_status === 'pending'
+                            ? 'Pending'
+                            : 'Done'
+                    }}
+                  </span>
+                  @if (isOwner() && p.result_status === 'pending') {
+                    <button
+                      class="btn btn-primary"
+                      style="font-size: 11px; padding: 3px 8px"
+                      (click)="approveResult(p.id)"
+                    >
+                      {{ i18n.t('pairings.approve') }}
+                    </button>
+                  }
+                  @if (canEditResult(p, currentRoundPairings()!.round)) {
+                    <button
+                      class="edit-result-btn"
+                      (click)="openResultModal(p)"
+                      [title]="i18n.t('pairings.editResult')"
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                  }
+                </span>
+              }
+            </div>
+            <div class="pod-players">
+              @for (player of podPlayers(p); track player.id) {
+                <div
+                  class="pod-player"
+                  [class]="'pr-' + (podPlayerResult(p, player.slot) ?? 'pending')"
+                >
+                  @if (isClanFormat()) {
+                    <span
+                      class="clan-dot"
+                      [class]="'clan-c' + clanIndex(player.id)"
+                      [title]="clanOf(player.id)"
+                    ></span>
+                  } @else {
+                    <span class="pod-seat">{{ $index + 1 }}</span>
+                  }
+                  <span class="pod-name">{{ player.name }}</span>
+                  @if (isClanFormat()) {
+                    <span class="clan-tag">{{ clanOf(player.id) }}</span>
+                  }
+                  @if (p.result && (p.result_status === 'confirmed' || isOwner())) {
+                    <span
+                      class="pod-result-badge"
+                      [class]="'prb-' + podPlayerResult(p, player.slot)"
+                    >
+                      {{
+                        podPlayerResult(p, player.slot) === 'win'
+                          ? 'WIN'
+                          : podPlayerResult(p, player.slot) === 'draw'
+                            ? 'DRAW'
+                            : podPlayerResult(p, player.slot) === 'bye'
+                              ? 'BYE'
+                              : 'LOSS'
+                      }}
+                    </span>
+                  } @else if (p.result) {
+                    <span class="pod-result-badge prb-pending">{{
+                      i18n.t('pairings.pending')
+                    }}</span>
+                  } @else if (isOwner() && swapMode()) {
+                    <button
+                      class="swap-select-btn"
+                      [class.selected]="swapSelected() === player.id"
+                      (click)="selectForSwap(player.id)"
+                      [title]="i18n.t('pairings.selectSwap')"
+                    >
+                      ↺
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="pairings-table card">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-table">{{ i18n.t('pairings.table') }}</th>
+              <th>{{ i18n.t('pairings.player1') }}</th>
+              <th class="col-vs"></th>
+              <th>{{ i18n.t('pairings.player2') }}</th>
+              <th>{{ i18n.t('pairings.result') }}</th>
+              @if (isOwner()) {
+                <th></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of currentRoundPairings()!.pairings; track p.id) {
+              <tr>
+                <td class="col-table table-num">{{ p.table_number }}</td>
+                <td class="player-col">
+                  {{ p.p1_name }}
+                  @if (!p.result && isOwner() && swapMode()) {
+                    <button
+                      class="swap-select-btn"
+                      [class.selected]="swapSelected() === p.player1_id"
+                      (click)="selectForSwap(p.player1_id)"
+                      [title]="i18n.t('pairings.selectSwap')"
+                    >
+                      ↺
+                    </button>
+                  }
+                </td>
+                <td class="col-vs vs">vs</td>
+                <td class="player-col">
+                  {{ p.p2_name || 'Bye' }}
+                  @if (!p.result && isOwner() && swapMode() && p.player2_id) {
+                    <button
+                      class="swap-select-btn"
+                      [class.selected]="swapSelected() === p.player2_id"
+                      (click)="selectForSwap(p.player2_id)"
+                      [title]="i18n.t('pairings.selectSwap')"
+                    >
+                      ↺
+                    </button>
+                  }
+                </td>
+                <td>
+                  <span
+                    class="result-pill"
+                    [class]="
+                      !p.result
+                        ? 'pill-pending'
+                        : p.result_status === 'pending'
+                          ? 'pill-pending'
+                          : 'pill-done'
+                    "
+                  >
+                    {{ resultLabel(p) }}
+                  </span>
+                  @if (gameScoreLabel(p)) {
+                    <span class="game-score-badge">{{ gameScoreLabel(p) }}</span>
+                  }
+                </td>
+                @if (isOwner()) {
+                  <td>
+                    @if (!p.result && !swapMode()) {
+                      <button
+                        class="btn btn-ghost"
+                        style="font-size: 12px; padding: 4px 8px"
+                        (click)="openResultModal(p)"
+                      >
+                        {{ i18n.t('pairings.setResult') }}
+                      </button>
+                    }
+                    @if (p.result_status === 'pending') {
+                      <button
+                        class="btn btn-primary"
+                        style="font-size: 11px; padding: 2px 6px"
+                        (click)="approveResult(p.id)"
+                      >
+                        {{ i18n.t('pairings.approve') }}
+                      </button>
+                    }
+                    @if (canEditResult(p, currentRoundPairings()!.round)) {
+                      <button
+                        class="edit-result-btn"
+                        (click)="openResultModal(p)"
+                        [title]="i18n.t('pairings.editResult')"
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

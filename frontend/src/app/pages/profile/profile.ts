@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth';
 
@@ -9,6 +10,7 @@ import { AuthService } from '../../services/auth';
   styleUrl: './profile.scss',
 })
 export class ProfileComponent {
+  i18n = inject(I18nService);
   auth = inject(AuthService);
   loading = signal(false);
   error = signal('');
@@ -19,7 +21,7 @@ export class ProfileComponent {
     this.auth.upgradeToOrganizer().subscribe({
       next: () => this.loading.set(false),
       error: (err) => {
-        this.error.set(err.error?.error || 'Something went wrong');
+        this.error.set(mensagemDeErro(this.i18n, err));
         this.loading.set(false);
       },
     });

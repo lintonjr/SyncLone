@@ -1,0 +1,363 @@
+/* Estilos da aba "Minha Rodada". Componentes Angular encapsulam estilo, então o
+   que esta tela usa mora aqui — inclusive alguns utilitários que também existem
+   no pai, porque encapsulamento não herda. */
+
+.result-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+
+  &.pill-done {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+  &.pill-pending {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+  }
+}
+
+/* ── My Round Tab ── */
+.myround-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 64px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.myround-icon {
+  font-size: 48px;
+}
+
+.myround-card {
+  padding: 28px;
+  margin-bottom: 16px;
+}
+
+.myround-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.round-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.table-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.matchup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.player-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+
+  &.is-me {
+    border-color: var(--accent);
+    background: rgba(139, 92, 246, 0.06);
+  }
+}
+
+.player-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.player-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.you-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.2);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.vs-divider {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.myround-result {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.self-report-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.report-draw-btn {
+  font-size: 12px;
+  padding: 5px 14px;
+}
+
+.my-result-badge {
+  display: inline-block;
+  padding: 6px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+
+  &.result-win {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+  &.result-loss {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+  }
+  &.result-draw {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fbbf24;
+  }
+  &.result-pending {
+    background: var(--surface2);
+    color: var(--text-muted);
+  }
+}
+
+.my-standings {
+  padding: 20px 24px;
+
+  h4 {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+}
+
+.my-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.stat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: var(--surface2);
+  border-radius: 10px;
+  gap: 4px;
+
+  &.accent {
+    background: rgba(139, 92, 246, 0.1);
+    .stat-num {
+      color: #a78bfa;
+    }
+  }
+}
+
+.stat-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.stat-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.pod-result-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 999px;
+
+  &.prb-win {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+  &.prb-loss {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+  }
+  &.prb-draw {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fbbf24;
+  }
+  &.prb-bye {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+  }
+  &.prb-pending {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+  }
+}
+
+/* ── My Round: Pod Layout ── */
+.pod-matchup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 24px;
+}
+
+.pod-matchup-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+
+  &.is-me {
+    border-color: var(--accent);
+    background: rgba(139, 92, 246, 0.06);
+  }
+}
+
+.pod-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.pod-matchup-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+/* ── Result badge aliases used in My Round ── */
+.result-win {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+.result-loss {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.result-draw {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+}
+.result-bye {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+/* ---------- Timer de rodada ---------- */
+/* Contado no cliente a partir de round.created_at + round_minutes: o servidor
+   não emite nada por segundo, só quando a rodada em si muda. */
+.round-timer {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+
+  &.timer-warning {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+    border-color: rgba(234, 179, 8, 0.4);
+  }
+  &.timer-over {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* Rodada pareada com o cronômetro ainda parado: estado neutro, sem alarme. */
+.round-timer.timer-waiting {
+  background: transparent;
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.timer-start-btn {
+  font-size: 12px;
+  padding: 4px 12px;
+}

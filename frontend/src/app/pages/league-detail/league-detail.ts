@@ -1,4 +1,5 @@
 import { Component, inject, signal, input, OnInit } from '@angular/core';
+import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { LeagueService, LeagueDetail } from '../../services/league';
@@ -11,6 +12,7 @@ import { AuthService } from '../../services/auth';
   styleUrl: './league-detail.scss',
 })
 export class LeagueDetailComponent implements OnInit {
+  i18n = inject(I18nService);
   id = input<string>('');
   private leagueSvc = inject(LeagueService);
   private router = inject(Router);
@@ -32,7 +34,10 @@ export class LeagueDetailComponent implements OnInit {
   load() {
     this.loading.set(true);
     this.leagueSvc.getLeague(this.id()).subscribe({
-      next: (l) => { this.league.set(l); this.loading.set(false); },
+      next: (l) => {
+        this.league.set(l);
+        this.loading.set(false);
+      },
       error: () => this.loading.set(false),
     });
   }
@@ -44,11 +49,19 @@ export class LeagueDetailComponent implements OnInit {
   }
 
   deleteLeague() {
-    if (!confirm('Delete this league? Linked tournaments will keep existing but stop being part of it.')) return;
+    if (
+      !confirm(
+        'Delete this league? Linked tournaments will keep existing but stop being part of it.',
+      )
+    )
+      return;
     this.actionLoading.set(true);
     this.leagueSvc.deleteLeague(this.id()).subscribe({
       next: () => this.router.navigate(['/leagues']),
-      error: (err) => { this.error.set(err.error?.error || 'Failed to delete league'); this.actionLoading.set(false); },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
     });
   }
 }

@@ -15,125 +15,232 @@
         <div class="banner-content">
           <div class="badges">
             <span class="badge badge-purple">{{ event()!.game }}</span>
-            @if (event()!.format) { <span class="badge badge-purple">{{ event()!.format }}</span> }
-            <span class="badge" [class]="'badge badge-' + (event()!.status === 'upcoming' ? 'purple' : event()!.status === 'ongoing' ? 'yellow' : 'green')">{{ event()!.status }}</span>
+            @if (event()!.format) {
+              <span class="badge badge-purple">{{ event()!.format }}</span>
+            }
+            <span
+              class="badge"
+              [class]="
+                'badge badge-' +
+                (event()!.status === 'upcoming'
+                  ? 'purple'
+                  : event()!.status === 'ongoing'
+                    ? 'yellow'
+                    : 'green')
+              "
+              >{{ i18n.t('status.' + event()!.status) }}</span
+            >
           </div>
           <h1 class="event-title">{{ event()!.name }}</h1>
           @if (event()!.league_id) {
-            <a [routerLink]="['/leagues', event()!.league_id]" class="league-link">🏆 Part of {{ event()!.league_name }}</a>
+            <a [routerLink]="['/leagues', event()!.league_id]" class="league-link"
+              >🏆 Part of {{ event()!.league_name }}</a
+            >
           }
           <p class="event-meta">
-            📅 {{ event()!.date | date:'MMM d, y · h:mm a' }} &nbsp;•&nbsp;
-            📍 {{ event()!.online ? 'Online' : (event()!.city || 'TBD') }}
-            &nbsp;•&nbsp; 👥 {{ sortedStandings().length }} Players
+            📅 {{ event()!.date | date: 'MMM d, y · h:mm a' }} &nbsp;•&nbsp; 📍
+            {{ event()!.online ? 'Online' : event()!.city || 'TBD' }} &nbsp;•&nbsp; 👥
+            {{ sortedStandings().length }} Players
           </p>
           @if (event()!.description) {
             <p class="event-desc">{{ event()!.description }}</p>
           }
           @if (championClanName()) {
-            <p class="champion-banner">🏆 Clã campeão: <strong>{{ championClanName() }}</strong></p>
+            <p class="champion-banner">
+              {{ i18n.t('event.clanChampion') }} <strong>{{ championClanName() }}</strong>
+            </p>
           } @else if (championName()) {
-            <p class="champion-banner">🏆 Champion: <strong>{{ championName() }}</strong></p>
+            <p class="champion-banner">
+              {{ i18n.t('event.champion') }} <strong>{{ championName() }}</strong>
+            </p>
           }
         </div>
         <div class="banner-actions">
           @if (!auth.isLoggedIn()) {
-            <a routerLink="/login" class="btn btn-primary">Login to Join</a>
+            <a routerLink="/login" class="btn btn-primary">{{ i18n.t('event.loginToJoin') }}</a>
           } @else if (isOwner()) {
             <div class="owner-actions">
               <div class="owner-row">
                 @if (event()!.status !== 'completed') {
                   @if (showAdvancePlayoffs()) {
-                    <button class="btn btn-primary" (click)="advancePlayoffs()" [disabled]="actionLoading()">
-                      ▶ Advance Playoffs
+                    <button
+                      class="btn btn-primary"
+                      (click)="advancePlayoffs()"
+                      [disabled]="actionLoading()"
+                    >
+                      {{ i18n.t('event.advancePlayoffs') }}
                     </button>
                   } @else if (!hasPlayoffRound()) {
-                    <button class="btn btn-primary" (click)="startRound()" [disabled]="actionLoading()">
+                    <button
+                      class="btn btn-primary"
+                      (click)="startRound()"
+                      [disabled]="actionLoading()"
+                    >
                       ▶ Start Round {{ (event()?.current_round ?? 0) + 1 }}
                     </button>
                   }
                   @if (canStartPlayoffs()) {
-                    <button class="btn btn-ghost playoffs-btn" (click)="startPlayoffs()" [disabled]="actionLoading()" title="Start Playoffs">
+                    <button
+                      class="btn btn-ghost playoffs-btn"
+                      (click)="startPlayoffs()"
+                      [disabled]="actionLoading()"
+                      [title]="i18n.t('event.startPlayoffs')"
+                    >
                       🏆 Start Playoffs ({{ playoffLabel() }})
                     </button>
                   }
-                  <button class="btn btn-ghost finish-btn" (click)="finishEvent()" [disabled]="actionLoading()" title="Finish Event">
-                    ✓ Finish
+                  <button
+                    class="btn btn-ghost finish-btn"
+                    (click)="finishEvent()"
+                    [disabled]="actionLoading()"
+                    [title]="i18n.t('event.finishHelp')"
+                  >
+                    {{ i18n.t('event.finish') }}
                   </button>
                 } @else {
-                  <span class="event-finished-badge">✓ Finalizado</span>
+                  <span class="event-finished-badge">{{ i18n.t('event.finished') }}</span>
                 }
                 @if (isClanFormat() && event()!.current_round === 0) {
-                  <button class="btn btn-ghost" (click)="openClanModal()" title="Inscrever clã">⚔ Inscrever clã</button>
+                  <button
+                    class="btn btn-ghost"
+                    (click)="openClanModal()"
+                    [title]="i18n.t('event.enrollClanTitle')"
+                  >
+                    {{ i18n.t('event.enrollClan') }}
+                  </button>
                 }
                 @if (!isClanFormat()) {
-                <button class="btn btn-ghost icon-only" (click)="openAddPlayer()" title="Add Player">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <line x1="19" y1="8" x2="19" y2="14"/>
-                    <line x1="22" y1="11" x2="16" y2="11"/>
-                  </svg>
-                </button>
+                  <button
+                    class="btn btn-ghost icon-only"
+                    (click)="openAddPlayer()"
+                    [title]="i18n.t('event.addPlayer')"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <line x1="19" y1="8" x2="19" y2="14" />
+                      <line x1="22" y1="11" x2="16" y2="11" />
+                    </svg>
+                  </button>
                 }
                 @if (event()!.qr_code_enabled) {
-                  <button class="btn btn-ghost icon-only" (click)="openQrModal()" title="Share">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="18" cy="5" r="3"/>
-                      <circle cx="6" cy="12" r="3"/>
-                      <circle cx="18" cy="19" r="3"/>
-                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  <button
+                    class="btn btn-ghost icon-only"
+                    (click)="openQrModal()"
+                    [title]="i18n.t('event.share')"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="18" cy="5" r="3" />
+                      <circle cx="6" cy="12" r="3" />
+                      <circle cx="18" cy="19" r="3" />
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                     </svg>
                   </button>
                 }
                 @if (event()!.test_event) {
-                  <button class="btn btn-ghost phantom-btn" (click)="openPhantomModal()" title="Add Phantom Players">
-                    👻 Add Phantom
+                  <button
+                    class="btn btn-ghost phantom-btn"
+                    (click)="openPhantomModal()"
+                    [title]="i18n.t('event.addPhantomTitle')"
+                  >
+                    {{ i18n.t('event.addPhantom') }}
                   </button>
                 }
-                <a [routerLink]="['/event', id(), 'edit']" class="btn btn-ghost icon-only" title="Edit Event">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                <a
+                  [routerLink]="['/event', id(), 'edit']"
+                  class="btn btn-ghost icon-only"
+                  [title]="i18n.t('event.editEvent')"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 </a>
-                <button class="btn btn-ghost icon-only danger-icon" (click)="deleteEvent()" title="Delete Event">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6M14 11v6"/>
-                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                <button
+                  class="btn btn-ghost icon-only danger-icon"
+                  (click)="deleteEvent()"
+                  [title]="i18n.t('event.deleteEvent')"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                   </svg>
                 </button>
               </div>
             </div>
           } @else if (isClanFormat()) {
             @if (event()!.current_round === 0 && event()!.status !== 'completed') {
-              <button class="btn btn-primary" (click)="openClanModal()" [disabled]="actionLoading()">
-                Inscrever clã
+              <button
+                class="btn btn-primary"
+                (click)="openClanModal()"
+                [disabled]="actionLoading()"
+              >
+                {{ i18n.t('event.enrollClanTitle') }}
               </button>
             }
           } @else if (isJoined()) {
-            <button class="btn btn-ghost" (click)="leave()" [disabled]="actionLoading()">Leave Event</button>
+            <button class="btn btn-ghost" (click)="leave()" [disabled]="actionLoading()">
+              {{ i18n.t('event.leave') }}
+            </button>
           } @else if (event()!.status !== 'completed') {
-            <button class="btn btn-primary" (click)="join()" [disabled]="actionLoading()">Join Event</button>
+            <button class="btn btn-primary" (click)="join()" [disabled]="actionLoading()">
+              {{ i18n.t('event.join') }}
+            </button>
           }
         </div>
       </div>
     </div>
 
-    @if (error()) { <div class="error-msg">{{ error() }}</div> }
+    @if (error()) {
+      <div class="error-msg">{{ error() }}</div>
+    }
 
     @if (event()!.players?.length) {
       <div class="export-bar">
-        <span class="export-label">Export</span>
-        <a class="export-link" [href]="exportUrl('standings')" download>⬇ Standings (CSV)</a>
+        <span class="export-label">{{ i18n.t('event.export') }}</span>
+        <a class="export-link" [href]="exportUrl('standings')" download>{{
+          i18n.t('event.exportStandings')
+        }}</a>
         @if (isClanFormat()) {
-          <a class="export-link" [href]="exportUrl('clans')" download>⬇ Clãs (CSV)</a>
+          <a class="export-link" [href]="exportUrl('clans')" download>{{
+            i18n.t('event.exportClans')
+          }}</a>
         }
         @if (event()!.rounds?.length) {
-          <a class="export-link" [href]="exportUrl('pairings')" download>⬇ Pairings (CSV)</a>
+          <a class="export-link" [href]="exportUrl('pairings')" download>{{
+            i18n.t('event.exportPairings')
+          }}</a>
         }
       </div>
     }
@@ -141,19 +248,19 @@
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn" [class.active]="tab() === 'standings'" (click)="tab.set('standings')">
-        Standings ({{ sortedStandings().length }})
+        {{ i18n.t('event.tabStandings', { n: sortedStandings().length }) }}
       </button>
       @if (event()!.rounds?.length) {
         <button class="tab-btn" [class.active]="tab() === 'pairings'" (click)="tab.set('pairings')">
-          Pairings
+          {{ i18n.t('event.tabPairings') }}
         </button>
       }
       <button class="tab-btn" [class.active]="tab() === 'results'" (click)="tab.set('results')">
-        Results ({{ event()!.rounds?.length ?? 0 }} rounds)
+        {{ i18n.t('event.tabResults', { n: event()!.rounds?.length ?? 0 }) }}
       </button>
       @if (auth.isLoggedIn() && isJoined()) {
         <button class="tab-btn" [class.active]="tab() === 'myround'" (click)="tab.set('myround')">
-          My Round
+          {{ i18n.t('event.tabMyRound') }}
         </button>
       }
     </div>
@@ -161,614 +268,64 @@
     <div class="tab-content">
       <!-- STANDINGS TAB -->
       @if (tab() === 'standings') {
-        @if (isClanFormat()) {
-          <div class="standings-switch">
-            <button class="switch-btn" [class.active]="standingsView() === 'clans'" (click)="standingsView.set('clans')">
-              Clãs ({{ clanStandings().length }})
-            </button>
-            <button class="switch-btn" [class.active]="standingsView() === 'players'" (click)="standingsView.set('players')">
-              Jogadores ({{ sortedStandings().length }})
-            </button>
-          </div>
-
-          @if (standingsView() === 'clans') {
-            @if (clanStandings().length === 0) {
-              <p class="empty">Nenhum clã inscrito ainda. São necessários pelo menos 4 clãs de 4 jogadores.</p>
-            } @else {
-              <div class="standings-table card">
-                <table>
-                  <thead>
-                    <tr>
-                      <th class="col-rank">Rank</th>
-                      <th>Clã</th>
-                      <th class="col-num">V</th>
-                      <th class="col-num">D</th>
-                      <th class="col-num">E</th>
-                      <th class="col-pts">Pts</th>
-                      <th class="col-tb">OMW% do clã</th>
-                      @if (isOwner() && event()!.current_round === 0) { <th class="col-actions"></th> }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (clan of clanStandings(); track clan.id; let i = $index) {
-                      <tr [class.top-row]="i === 0">
-                        <td class="rank-cell">
-                          <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
-                        </td>
-                        <td class="player-cell">
-                          <span class="clan-dot" [class]="'clan-c' + (i % 8)"></span>
-                          <span class="player-name">{{ clan.name }}</span>
-                          <span class="clan-roster">{{ clan.player_count }} jogadores</span>
-                        </td>
-                        <td class="col-num"><span class="stat-win">{{ clan.wins }}</span></td>
-                        <td class="col-num"><span class="stat-loss">{{ clan.losses }}</span></td>
-                        <td class="col-num"><span class="stat-draw">{{ clan.draws }}</span></td>
-                        <td class="col-pts"><strong class="pts-val">{{ clan.points }}</strong></td>
-                        <td class="col-tb tiebreaker-cell">{{ clan.omw === null ? '—' : (clan.omw * 100).toFixed(1) + '%' }}</td>
-                        @if (isOwner() && event()!.current_round === 0) {
-                          <td class="col-actions actions-cell">
-                            <button class="drop-btn" (click)="removeClan(clan.id, clan.name)" title="Remover clã">Remover</button>
-                          </td>
-                        }
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          }
-        }
-
-        @if (!isClanFormat() || standingsView() === 'players') {
-
-        <!-- A fila de aprovacao fica FORA do bloco da tabela: com todo mundo
-             pendente nao existe jogador ativo, e a tabela nao renderiza. Foi
-             exatamente assim que o organizador ficava sem meio de aprovar. -->
-        @if (isOwner() && pendingPlayers().length) {
-          <div class="pending-section">
-            <h4 class="pending-title">Aguardando aprovação ({{ pendingPlayers().length }})</h4>
-            <div class="pending-actions-bulk">
-              <button class="btn btn-primary" (click)="approveAllPending()" [disabled]="actionLoading()">
-                Aprovar todos ({{ pendingPlayers().length }})
-              </button>
-            </div>
-            <div class="pending-list">
-              @for (player of pendingPlayers(); track player.id) {
-                <div class="pending-row">
-                  <span class="pending-name">{{ player.display_name }}</span>
-                  <div class="pending-actions">
-                    <button class="btn btn-primary" style="font-size:12px;padding:4px 10px" (click)="approvePlayer(player.id)">Aprovar</button>
-                    <button class="btn btn-danger" style="font-size:12px;padding:4px 10px" (click)="rejectPlayer(player.id)">Recusar</button>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        @if (sortedStandings().length === 0) {
-          <p class="empty">
-            @if (pendingPlayers().length) {
-              Ninguém aprovado ainda — há {{ pendingPlayers().length }}
-              {{ pendingPlayers().length === 1 ? 'pedido' : 'pedidos' }} de inscrição esperando o organizador.
-            } @else {
-              {{ event()!.status === 'completed' ? 'No players joined this event.' : 'No players yet. Be the first to join!' }}
-            }
-          </p>
-        } @else {
-          <div class="standings-table card">
-            <table>
-              <thead>
-                <tr>
-                  <th class="col-rank">Rank</th>
-                  <th>Player</th>
-                  <th>Deck</th>
-                  <th class="col-num">W</th>
-                  <th class="col-num">L</th>
-                  <th class="col-num">D</th>
-                  <th class="col-pts">Pts</th>
-                  <th class="col-tb">
-                    <span class="tb-header">
-                      MW% · OMW% · GW% · OGW%
-                      <span class="tb-info-icon">
-                        ⓘ
-                        <div class="tb-info-popover">
-                          <h4>Understanding Tie Breakers</h4>
-                          <p>When players have equal points, they are applied in this order:</p>
-                          <ul>
-                            <li><strong>MW%:</strong> your own match win percentage</li>
-                            <li><strong>OMW%:</strong> average match win percentage of everyone you faced</li>
-                            <li><strong>GW%:</strong> your game win percentage — needs game scores recorded</li>
-                            <li><strong>OGW%:</strong> average game win percentage of your opponents</li>
-                          </ul>
-                          <p class="tb-info-footer">All percentages have a 33% floor, and byes count as a 2-0 win that never affects anyone else's average. “—” means there is no data for that column yet.</p>
-                        </div>
-                      </span>
-                    </span>
-                  </th>
-                  @if (isOwner()) { <th class="col-actions"></th> }
-                </tr>
-              </thead>
-              <tbody>
-                @for (player of sortedStandings(); track player.id; let i = $index) {
-                  <tr [class.top-row]="i === 0">
-                    <td class="rank-cell">
-                      <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
-                    </td>
-                    <td class="player-cell">
-                      @if (isClanFormat()) {
-                        <span class="clan-dot" [class]="'clan-c' + clanIndex(player.id)"></span>
-                      }
-                      <span class="player-name">{{ player.display_name }}</span>
-                      @if (isClanFormat()) { <span class="clan-tag">{{ clanOf(player.id) }}</span> }
-                      @if (entrouDepois(player); as faltando) {
-                        <span class="late-tag"
-                              [title]="'Entrou com o torneio em andamento e não jogou ' + faltando + ' rodada(s)'">
-                          entrou depois · −{{ faltando }}
-                        </span>
-                      }
-                    </td>
-                    <td class="deck-cell">
-                      @if (player.deck_name) {
-                        @if (canEditDeck(player)) {
-                          <button class="deck-badge" (click)="openDeckEdit(player)">{{ player.deck_name }}</button>
-                        } @else {
-                          <span class="deck-badge-static">{{ player.deck_name }}</span>
-                        }
-                      } @else if (canEditDeck(player)) {
-                        <button class="deck-edit-btn" (click)="openDeckEdit(player)">+ Set Deck</button>
-                      } @else {
-                        <span class="text-muted-sm">—</span>
-                      }
-                    </td>
-                    <td class="col-num"><span class="stat-win">{{ player.wins }}</span></td>
-                    <td class="col-num"><span class="stat-loss">{{ player.losses }}</span></td>
-                    <td class="col-num"><span class="stat-draw">{{ player.draws }}</span></td>
-                    <td class="col-pts"><strong class="pts-val">{{ player.points }}</strong></td>
-                    <td class="col-tb tiebreaker-cell">
-                      {{ tiebreakers(player).mw }} | {{ tiebreakers(player).omw }} |
-                      {{ tiebreakers(player).gw }} | {{ tiebreakers(player).ogw }}
-                    </td>
-                    @if (isOwner()) {
-                      <td class="col-actions actions-cell">
-                        <button class="drop-btn" (click)="dropPlayer(player.id)" title="Drop player">Drop</button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          @if (droppedPlayers().length && !isClanFormat()) {
-            <div class="dropped-section">
-              <h4 class="dropped-title">Dropped Players</h4>
-              <div class="dropped-list">
-                @for (player of droppedPlayers(); track player.id) {
-                  <span class="dropped-name">{{ player.display_name }}</span>
-                }
-              </div>
-            </div>
-          }
-        }
-        }
+        <app-event-standings
+          [ev]="event()!"
+          [isOwner]="isOwner()"
+          [actionLoading]="actionLoading()"
+          [podeEditarDeck]="canEditDeckFn"
+          (approve)="approvePlayer($event)"
+          (approveAll)="approveAllPending()"
+          (reject)="rejectPlayer($event)"
+          (drop)="dropPlayer($event)"
+          (removeClanReq)="removeClan($event.id, $event.nome)"
+          (editDeck)="openDeckEdit($event)"
+        />
       }
 
       <!-- PAIRINGS TAB: current round only -->
       @if (tab() === 'pairings') {
-        @if (!currentRoundPairings()) {
-          <p class="empty">No rounds started yet.</p>
-        } @else {
-          <div class="round-section">
-            <div class="round-header">
-              <h3 class="round-title">{{ roundLabel(currentRoundPairings()!.round) }} — Pairings</h3>
-              <span class="round-status-badge" [class]="currentRoundPairings()!.round.status !== 'completed' ? 'status-open' : 'status-done'">
-                {{ currentRoundPairings()!.round.status !== 'completed' ? 'In Progress' : 'Completed' }}
-              </span>
-              @if (roundTimer(); as timer) {
-                @if (timer.waiting && isOwner()) {
-                  <button class="btn btn-primary timer-start-btn" (click)="startRoundTimer()" [disabled]="actionLoading()">
-                    ⏱ Iniciar tempo
-                  </button>
-                } @else {
-                  <span class="round-timer" [class.timer-warning]="timer.warning" [class.timer-over]="timer.over"
-                        [class.timer-waiting]="timer.waiting"
-                        [title]="timer.waiting ? 'O organizador ainda não iniciou o tempo' : (timer.over ? 'O tempo acabou' : 'Tempo restante na rodada')">
-                    ⏱ {{ timer.label }}{{ timer.over ? ' — Time!' : '' }}
-                  </span>
-                }
-              }
-              @if (isOwner() && event()!.status !== 'completed') {
-                <div class="round-actions">
-                  @if (currentRoundPairings()!.pairings.some(p => !p.result)) {
-                    <button class="btn swap-toggle-btn" [class.active]="swapMode()" (click)="toggleSwapMode()" [disabled]="actionLoading()" title="Swap players between pods">
-                      🔀 Swap
-                    </button>
-                  }
-                  <button class="btn undo-btn" (click)="undoRound()" [disabled]="actionLoading()" title="Undo this round">
-                    ↺ Undo
-                  </button>
-                </div>
-              }
-            </div>
-            @if (isPodMode()) {
-              <div class="pods-grid">
-                @for (p of currentRoundPairings()!.pairings; track p.id) {
-                  <div class="pod-card card">
-                    <div class="pod-header">
-                      <span class="pod-label">Pod {{ p.table_number }}</span>
-                      @if (!p.result && isOwner() && !swapMode()) {
-                        <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" (click)="openResultModal(p)">Set Result</button>
-                      }
-                      @if (p.result) {
-                        <span class="pod-header-actions">
-                          <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : p.result_status === 'pending' ? 'pill-pending' : 'pill-done'">
-                            {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : p.result_status === 'pending' ? 'Pending' : 'Done' }}
-                          </span>
-                          @if (isOwner() && p.result_status === 'pending') {
-                            <button class="btn btn-primary" style="font-size:11px;padding:3px 8px" (click)="approveResult(p.id)">Approve</button>
-                          }
-                          @if (canEditResult(p, currentRoundPairings()!.round)) {
-                            <button class="edit-result-btn" (click)="openResultModal(p)" title="Edit Result">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                              </svg>
-                            </button>
-                          }
-                        </span>
-                      }
-                    </div>
-                    <div class="pod-players">
-                      @for (player of podPlayers(p); track player.id) {
-                        <div class="pod-player" [class]="'pr-' + (podPlayerResult(p, player.slot) ?? 'pending')">
-                          @if (isClanFormat()) {
-                            <span class="clan-dot" [class]="'clan-c' + clanIndex(player.id)" [title]="clanOf(player.id)"></span>
-                          } @else {
-                            <span class="pod-seat">{{ $index + 1 }}</span>
-                          }
-                          <span class="pod-name">{{ player.name }}</span>
-                          @if (isClanFormat()) { <span class="clan-tag">{{ clanOf(player.id) }}</span> }
-                          @if (p.result && (p.result_status === 'confirmed' || isOwner())) {
-                            <span class="pod-result-badge" [class]="'prb-' + podPlayerResult(p, player.slot)">
-                              {{ podPlayerResult(p, player.slot) === 'win' ? 'WIN' :
-                                 podPlayerResult(p, player.slot) === 'draw' ? 'DRAW' :
-                                 podPlayerResult(p, player.slot) === 'bye' ? 'BYE' : 'LOSS' }}
-                            </span>
-                          } @else if (p.result) {
-                            <span class="pod-result-badge prb-pending">PENDING</span>
-                          } @else if (isOwner() && swapMode()) {
-                            <button class="swap-select-btn" [class.selected]="swapSelected() === player.id" (click)="selectForSwap(player.id)" title="Select for swap">
-                              ↺
-                            </button>
-                          }
-                        </div>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              <div class="pairings-table card">
-                <table>
-                  <thead>
-                    <tr>
-                      <th class="col-table">Table</th>
-                      <th>Player 1</th>
-                      <th class="col-vs"></th>
-                      <th>Player 2</th>
-                      <th>Result</th>
-                      @if (isOwner()) { <th></th> }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of currentRoundPairings()!.pairings; track p.id) {
-                      <tr>
-                        <td class="col-table table-num">{{ p.table_number }}</td>
-                        <td class="player-col">
-                          {{ p.p1_name }}
-                          @if (!p.result && isOwner() && swapMode()) {
-                            <button class="swap-select-btn" [class.selected]="swapSelected() === p.player1_id" (click)="selectForSwap(p.player1_id)" title="Select for swap">↺</button>
-                          }
-                        </td>
-                        <td class="col-vs vs">vs</td>
-                        <td class="player-col">
-                          {{ p.p2_name || 'Bye' }}
-                          @if (!p.result && isOwner() && swapMode() && p.player2_id) {
-                            <button class="swap-select-btn" [class.selected]="swapSelected() === p.player2_id" (click)="selectForSwap(p.player2_id)" title="Select for swap">↺</button>
-                          }
-                        </td>
-                        <td>
-                          <span class="result-pill" [class]="!p.result ? 'pill-pending' : p.result_status === 'pending' ? 'pill-pending' : 'pill-done'">
-                            {{ resultLabel(p) }}
-                          </span>
-                          @if (gameScoreLabel(p)) { <span class="game-score-badge">{{ gameScoreLabel(p) }}</span> }
-                        </td>
-                        @if (isOwner()) {
-                          <td>
-                            @if (!p.result && !swapMode()) {
-                              <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="openResultModal(p)">Set Result</button>
-                            }
-                            @if (p.result_status === 'pending') {
-                              <button class="btn btn-primary" style="font-size:11px;padding:2px 6px" (click)="approveResult(p.id)">Approve</button>
-                            }
-                            @if (canEditResult(p, currentRoundPairings()!.round)) {
-                              <button class="edit-result-btn" (click)="openResultModal(p)" title="Edit Result">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                </svg>
-                              </button>
-                            }
-                          </td>
-                        }
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          </div>
-        }
+        <app-event-pairings
+          [ev]="event()!"
+          [isOwner]="isOwner()"
+          [actionLoading]="actionLoading()"
+          [current]="currentRoundPairings()"
+          [timer]="roundTimer()"
+          [swapMode]="swapMode()"
+          [swapSelected]="swapSelected()"
+          (startTimer)="startRoundTimer()"
+          (toggleSwap)="toggleSwapMode()"
+          (selectSwap)="selectForSwap($event)"
+          (undo)="undoRound()"
+          (openResult)="openResultModal($event)"
+          (approve)="approveResult($event)"
+        />
       }
 
       <!-- RESULTS TAB -->
       @if (tab() === 'results') {
-        @if (roundsGrouped().length === 0) {
-          <p class="empty">No rounds started yet.</p>
-        } @else {
-          @for (round of roundsGrouped(); track round.id) {
-            <div class="round-section">
-              <div class="round-header">
-                <h3 class="round-title">{{ roundLabel(round) }}</h3>
-                <span class="round-status-badge" [class]="round.status !== 'completed' ? 'status-open' : 'status-done'">
-                  {{ round.status !== 'completed' ? 'In Progress' : 'Completed' }}
-                </span>
-                @if (isOwner() && event()!.status !== 'completed' && round.round_number === event()!.current_round) {
-                  <div class="round-actions">
-                    @if (round.pairings.some(p => !p.result)) {
-                      <button class="btn swap-toggle-btn" [class.active]="swapMode()" (click)="toggleSwapMode()" [disabled]="actionLoading()" title="Swap players between pods">
-                        🔀 Swap
-                      </button>
-                    }
-                    <button class="btn undo-btn" (click)="undoRound()" [disabled]="actionLoading()" title="Undo this round">
-                      ↺ Undo
-                    </button>
-                  </div>
-                }
-              </div>
-              @if (isPodMode()) {
-                <!-- POD VIEW -->
-                <div class="pods-grid">
-                  @for (p of round.pairings; track p.id) {
-                    <div class="pod-card card">
-                      <div class="pod-header">
-                        <span class="pod-label">Pod {{ p.table_number }}</span>
-                        @if (!p.result && isOwner() && !(swapMode() && round.round_number === event()!.current_round)) {
-                          <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" (click)="openResultModal(p)">Set Result</button>
-                        }
-                        @if (p.result) {
-                          <span class="pod-header-actions">
-                            <span class="result-pill" [class]="p.result === 'bye' ? 'pill-bye' : p.result_status === 'pending' ? 'pill-pending' : 'pill-done'">
-                              {{ p.result === 'bye' ? 'BYE' : p.result === 'draw' ? 'DRAW' : p.result_status === 'pending' ? 'Pending' : 'Done' }}
-                            </span>
-                            @if (isOwner() && p.result_status === 'pending') {
-                              <button class="btn btn-primary" style="font-size:11px;padding:3px 8px" (click)="approveResult(p.id)">Approve</button>
-                            }
-                            @if (canEditResult(p, round)) {
-                              <button class="edit-result-btn" (click)="openResultModal(p)" title="Edit Result">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                </svg>
-                              </button>
-                            }
-                          </span>
-                        }
-                      </div>
-                      <div class="pod-players">
-                        @for (player of podPlayers(p); track player.id) {
-                          <div class="pod-player" [class]="'pr-' + (podPlayerResult(p, player.slot) ?? 'pending')">
-                            <span class="pod-seat">{{ $index + 1 }}</span>
-                            <span class="pod-name">{{ player.name }}</span>
-                            @if (p.result && (p.result_status === 'confirmed' || isOwner())) {
-                              <span class="pod-result-badge" [class]="'prb-' + podPlayerResult(p, player.slot)">
-                                {{ podPlayerResult(p, player.slot) === 'win' ? 'WIN' :
-                                   podPlayerResult(p, player.slot) === 'draw' ? 'DRAW' :
-                                   podPlayerResult(p, player.slot) === 'bye' ? 'BYE' : 'LOSS' }}
-                              </span>
-                            } @else if (p.result) {
-                              <span class="pod-result-badge prb-pending">PENDING</span>
-                            } @else if (isOwner() && swapMode() && round.round_number === event()!.current_round) {
-                              <button class="swap-select-btn" [class.selected]="swapSelected() === player.id" (click)="selectForSwap(player.id)" title="Select for swap">
-                                ↺
-                              </button>
-                            }
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-              } @else {
-                <!-- 1v1 VIEW -->
-                <div class="pairings-table card">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th class="col-table">Table</th>
-                        <th>Player 1</th>
-                        <th class="col-vs"></th>
-                        <th>Player 2</th>
-                        <th>Result</th>
-                        @if (isOwner()) { <th></th> }
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (p of round.pairings; track p.id) {
-                        <tr>
-                          <td class="col-table table-num">{{ p.table_number }}</td>
-                          <td class="player-col">
-                            {{ p.p1_name }}
-                            @if (!p.result && isOwner() && swapMode() && round.round_number === event()!.current_round) {
-                              <button class="swap-select-btn" [class.selected]="swapSelected() === p.player1_id" (click)="selectForSwap(p.player1_id)" title="Select for swap">↺</button>
-                            }
-                          </td>
-                          <td class="col-vs vs">vs</td>
-                          <td class="player-col">
-                            {{ p.p2_name || 'Bye' }}
-                            @if (!p.result && isOwner() && swapMode() && round.round_number === event()!.current_round && p.player2_id) {
-                              <button class="swap-select-btn" [class.selected]="swapSelected() === p.player2_id" (click)="selectForSwap(p.player2_id)" title="Select for swap">↺</button>
-                            }
-                          </td>
-                          <td>
-                            <span class="result-pill" [class]="!p.result ? 'pill-pending' : p.result_status === 'pending' ? 'pill-pending' : 'pill-done'">
-                              {{ resultLabel(p) }}
-                            </span>
-                            @if (gameScoreLabel(p)) { <span class="game-score-badge">{{ gameScoreLabel(p) }}</span> }
-                          </td>
-                          @if (isOwner()) {
-                            <td>
-                              @if (!p.result && !(swapMode() && round.round_number === event()!.current_round)) {
-                                <button class="btn btn-ghost" style="font-size:12px;padding:4px 8px" (click)="openResultModal(p)">Set Result</button>
-                              }
-                              @if (p.result_status === 'pending') {
-                                <button class="btn btn-primary" style="font-size:11px;padding:2px 6px" (click)="approveResult(p.id)">Approve</button>
-                              }
-                              @if (canEditResult(p, round)) {
-                                <button class="edit-result-btn" (click)="openResultModal(p)" title="Edit Result">
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                  </svg>
-                                </button>
-                              }
-                            </td>
-                          }
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              }
-            </div>
-          }
-        }
+        <app-event-results
+          [ev]="event()!"
+          [isOwner]="isOwner()"
+          [actionLoading]="actionLoading()"
+          [rounds]="roundsGrouped()"
+          [swapMode]="swapMode()"
+          [swapSelected]="swapSelected()"
+          (toggleSwap)="toggleSwapMode()"
+          (selectSwap)="selectForSwap($event)"
+          (undo)="undoRound()"
+          (openResult)="openResultModal($event)"
+          (approve)="approveResult($event)"
+        />
       }
 
       <!-- MY ROUND TAB -->
       @if (tab() === 'myround') {
-        @if (!myRound()) {
-          <div class="myround-empty">
-            <div class="myround-icon">🏆</div>
-            <p>{{ event()!.rounds?.length ? "You have no active pairing in the current round." : "The event hasn't started yet. Wait for the organizer to start Round 1." }}</p>
-          </div>
-        } @else {
-          <div class="myround-card card">
-            <div class="myround-header">
-              <span class="round-label">{{ roundLabel(myRound()!.round) }}</span>
-              <span class="table-label">{{ isPodMode() ? 'Pod' : 'Table' }} {{ myRound()!.pairing.table_number }}</span>
-              @if (roundTimer(); as timer) {
-                <span class="round-timer" [class.timer-warning]="timer.warning" [class.timer-over]="timer.over"
-                      [class.timer-waiting]="timer.waiting">
-                  ⏱ {{ timer.label }}{{ timer.over ? ' — Time!' : '' }}
-                </span>
-              }
-            </div>
-
-            @if (isPodMode()) {
-              <!-- Pod layout: list of all players -->
-              <div class="pod-matchup">
-                @for (player of podPlayers(myRound()!.pairing); track player.id) {
-                  <div class="pod-matchup-row" [class.is-me]="player.id === myRound()!.myPlayer.id">
-                    <div class="pod-avatar">{{ player.name.charAt(0) }}</div>
-                    <span class="pod-matchup-name">{{ player.name }}</span>
-                    @if (player.id === myRound()!.myPlayer.id) { <span class="you-tag">You</span> }
-                    @if (myRound()!.pairing.result) {
-                      @if (podPlayerResult(myRound()!.pairing, player.slot); as pr) {
-                        <span class="pod-result-badge ml-auto" [class]="'prb-' + pr">
-                          {{ pr === 'win' ? 'WIN' : pr === 'draw' ? 'DRAW' : pr === 'bye' ? 'BYE' : 'LOSS' }}
-                        </span>
-                      }
-                    }
-                  </div>
-                }
-              </div>
-            } @else {
-              <!-- 1v1 layout -->
-              <div class="matchup">
-                <div class="player-side" [class.is-me]="myRound()!.pairing.player1_id === myRound()!.myPlayer.id">
-                  <div class="player-avatar">{{ myRound()!.pairing.p1_name?.charAt(0) }}</div>
-                  <div class="player-info">
-                    <span class="player-label">{{ myRound()!.pairing.p1_name }}</span>
-                    @if (myRound()!.pairing.player1_id === myRound()!.myPlayer.id) { <span class="you-tag">You</span> }
-                  </div>
-                </div>
-                <div class="vs-divider">VS</div>
-                <div class="player-side" [class.is-me]="myRound()!.pairing.player2_id === myRound()!.myPlayer.id">
-                  <div class="player-avatar">{{ (myRound()!.pairing.p2_name || 'B').charAt(0) }}</div>
-                  <div class="player-info">
-                    <span class="player-label">{{ myRound()!.pairing.p2_name || 'Bye' }}</span>
-                    @if (myRound()!.pairing.player2_id === myRound()!.myPlayer.id) { <span class="you-tag">You</span> }
-                  </div>
-                </div>
-              </div>
-            }
-
-            <div class="myround-result">
-              @if (myRound()!.pairing.result && myRound()!.pairing.result_status !== 'pending') {
-                @if (podPlayers(myRound()!.pairing).find(p => p.id === myRound()!.myPlayer.id); as me) {
-                  @if (podPlayerResult(myRound()!.pairing, me.slot); as pr) {
-                    <span class="my-result-badge" [class]="'result-' + pr">
-                      {{ pr === 'win' ? 'Win' : pr === 'draw' ? 'Draw' : pr === 'bye' ? 'Bye (Win)' : 'Loss' }}
-                    </span>
-                  }
-                }
-              } @else if (myRound()!.pairing.result) {
-                <span class="result-pill pill-pending">Pending Approval — waiting on organizer</span>
-              } @else {
-                <span class="result-pill pill-pending">Awaiting Result</span>
-                @if (event()!.async_draws) {
-                  <div class="self-report-actions">
-                    <button class="btn btn-ghost report-draw-btn" (click)="submitResult(myRound()!.pairing.id, mySlot()!)">
-                      I Won
-                    </button>
-                    @if (!isPodMode()) {
-                      <button class="btn btn-ghost report-draw-btn" (click)="submitResult(myRound()!.pairing.id, opponentSlot()!)">
-                        I Lost
-                      </button>
-                    }
-                    <button class="btn btn-ghost report-draw-btn" (click)="submitResult(myRound()!.pairing.id, 'draw')">
-                      Report Draw
-                    </button>
-                  </div>
-                }
-              }
-            </div>
-          </div>
-
-          <div class="my-standings card">
-            <h4>Your Record</h4>
-            <div class="my-stats">
-              <div class="stat-box">
-                <span class="stat-num">{{ myRound()!.myPlayer.wins }}</span>
-                <span class="stat-lbl">Wins</span>
-              </div>
-              <div class="stat-box">
-                <span class="stat-num">{{ myRound()!.myPlayer.losses }}</span>
-                <span class="stat-lbl">Losses</span>
-              </div>
-              <div class="stat-box">
-                <span class="stat-num">{{ myRound()!.myPlayer.draws }}</span>
-                <span class="stat-lbl">Draws</span>
-              </div>
-              <div class="stat-box accent">
-                <span class="stat-num">{{ myRound()!.myPlayer.points }}</span>
-                <span class="stat-lbl">Points</span>
-              </div>
-            </div>
-          </div>
-        }
+        <app-event-my-round
+          [ev]="event()!"
+          [mr]="myRound()"
+          [timer]="roundTimer()"
+          (report)="submitResult($event.pairingId, $event.result)"
+        />
       }
     </div>
   </div>
@@ -777,52 +334,81 @@
   @if (clanModal()) {
     <div class="modal-overlay" (click)="clanModal.set(false)">
       <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>Inscrever clã</h3>
+        <h3>{{ i18n.t('event.enrollClanTitle') }}</h3>
         <p class="modal-sub">
-          O clã entra com quatro jogadores. Depois que o torneio começar, o elenco não muda mais.
+          {{ i18n.t('clan.help') }}
         </p>
 
         <div class="clan-form">
-          <label class="clan-label">Nome do clã</label>
-          <input class="clan-input" type="text" placeholder="Dragões"
-                 [value]="clanName()" (input)="clanName.set($any($event.target).value)" />
+          <label class="clan-label">{{ i18n.t('clan.name') }}</label>
+          <input
+            class="clan-input"
+            type="text"
+            [placeholder]="i18n.t('clan.namePlaceholder')"
+            [value]="clanName()"
+            (input)="clanName.set($any($event.target).value)"
+          />
 
           @if (isOwner()) {
             <div class="clan-switch">
-              <button class="switch-btn" [class.active]="!clanAsGuests()" (click)="clanAsGuests.set(false)">
-                Contas cadastradas
+              <button
+                class="switch-btn"
+                [class.active]="!clanAsGuests()"
+                (click)="clanAsGuests.set(false)"
+              >
+                {{ i18n.t('clan.registered') }}
               </button>
-              <button class="switch-btn" [class.active]="clanAsGuests()" (click)="clanAsGuests.set(true)">
-                Convidados
+              <button
+                class="switch-btn"
+                [class.active]="clanAsGuests()"
+                (click)="clanAsGuests.set(true)"
+              >
+                {{ i18n.t('clan.guests') }}
               </button>
             </div>
           }
 
           @if (clanAsGuests()) {
-            <label class="clan-label">Nomes dos quatro jogadores</label>
+            <label class="clan-label">{{ i18n.t('clan.fourNames') }}</label>
             @for (nome of clanGuestNames(); track $index) {
-              <input class="clan-input" type="text" [placeholder]="'Jogador ' + ($index + 1)"
-                     [value]="nome" (input)="setClanGuest($index, $any($event.target).value)" />
+              <input
+                class="clan-input"
+                type="text"
+                [placeholder]="'Jogador ' + ($index + 1)"
+                [value]="nome"
+                (input)="setClanGuest($index, $any($event.target).value)"
+              />
             }
           } @else {
             <label class="clan-label">
               E-mails dos quatro jogadores
-              @if (!isOwner()) { <span class="clan-hint">— o seu precisa estar entre eles</span> }
+              @if (!isOwner()) {
+                <span class="clan-hint">{{ i18n.t('clan.yoursAmong') }}</span>
+              }
             </label>
             @for (email of clanEmails(); track $index) {
-              <input class="clan-input" type="email" [placeholder]="'jogador' + ($index + 1) + '@email.com'"
-                     [value]="email" (input)="setClanEmail($index, $any($event.target).value)" />
+              <input
+                class="clan-input"
+                type="email"
+                [placeholder]="'jogador' + ($index + 1) + '@email.com'"
+                [value]="email"
+                (input)="setClanEmail($index, $any($event.target).value)"
+              />
             }
           }
         </div>
 
-        @if (clanError()) { <div class="error-msg">{{ clanError() }}</div> }
+        @if (clanError()) {
+          <div class="error-msg">{{ clanError() }}</div>
+        }
 
         <div class="modal-btns">
           <button class="btn btn-primary" (click)="submitClan()" [disabled]="clanLoading()">
             {{ clanLoading() ? 'Inscrevendo…' : 'Inscrever clã' }}
           </button>
-          <button class="btn btn-danger" (click)="clanModal.set(false)">Cancelar</button>
+          <button class="btn btn-danger" (click)="clanModal.set(false)">
+            {{ i18n.t('common.cancelPt') }}
+          </button>
         </div>
       </div>
     </div>
@@ -833,30 +419,64 @@
     <div class="modal-overlay" (click)="resultModal.set(null)">
       <div class="modal card" (click)="$event.stopPropagation()">
         <h3>{{ resultModal()!.pairing.result ? 'Edit Result' : 'Set Result' }}</h3>
-        <p class="modal-sub">Who won this {{ isPodMode() ? 'pod' : 'match' }}?</p>
+        <p class="modal-sub">
+          {{
+            i18n.t('event.whoWon', {
+              mesa: isPodMode() ? i18n.t('pairings.pod') : i18n.t('pairings.table'),
+            })
+          }}
+        </p>
 
         @if (!isPodMode() && resultModal()!.pairing.player2_id) {
           <div class="game-score">
-            <span class="game-score-label">Game score (optional)</span>
+            <span class="game-score-label">{{ i18n.t('event.gameScore') }}</span>
             <div class="game-score-chips">
-              <button class="game-chip" [class.active]="gameScore() === ''" (click)="gameScore.set('')">Not recorded</button>
-              <button class="game-chip" [class.active]="gameScore() === '2-0'" (click)="gameScore.set('2-0')">2×0</button>
-              <button class="game-chip" [class.active]="gameScore() === '2-1'" (click)="gameScore.set('2-1')">2×1</button>
+              <button
+                class="game-chip"
+                [class.active]="gameScore() === ''"
+                (click)="gameScore.set('')"
+              >
+                {{ i18n.t('event.notRecorded') }}
+              </button>
+              <button
+                class="game-chip"
+                [class.active]="gameScore() === '2-0'"
+                (click)="gameScore.set('2-0')"
+              >
+                2×0
+              </button>
+              <button
+                class="game-chip"
+                [class.active]="gameScore() === '2-1'"
+                (click)="gameScore.set('2-1')"
+              >
+                2×1
+              </button>
             </div>
-            <span class="game-score-hint">Feeds GW% and OGW%. Applies to the winner you pick below; a draw is always recorded without a game score.</span>
+            <span class="game-score-hint">{{ i18n.t('event.gameScoreHelp') }}</span>
           </div>
         }
 
         <div class="modal-btns">
           @for (player of podPlayers(resultModal()!.pairing); track player.id) {
-            <button class="btn btn-primary" [class.current-result]="resultModal()!.pairing.result === player.slot" (click)="submitResult(resultModal()!.pairing.id, player.slot)">
+            <button
+              class="btn btn-primary"
+              [class.current-result]="resultModal()!.pairing.result === player.slot"
+              (click)="submitResult(resultModal()!.pairing.id, player.slot)"
+            >
               {{ player.name }} Won
             </button>
           }
-          <button class="btn btn-ghost" [class.current-result]="resultModal()!.pairing.result === 'draw'" (click)="submitResult(resultModal()!.pairing.id, 'draw')">
-            All Draw
+          <button
+            class="btn btn-ghost"
+            [class.current-result]="resultModal()!.pairing.result === 'draw'"
+            (click)="submitResult(resultModal()!.pairing.id, 'draw')"
+          >
+            {{ i18n.t('event.allDraw') }}
           </button>
-          <button class="btn btn-danger" (click)="resultModal.set(null)">Cancel</button>
+          <button class="btn btn-danger" (click)="resultModal.set(null)">
+            {{ i18n.t('common.cancel') }}
+          </button>
         </div>
       </div>
     </div>
@@ -866,33 +486,44 @@
   @if (addPlayerModal()) {
     <div class="modal-overlay" (click)="addPlayerModal.set(false)">
       <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>Add Player</h3>
-        <p class="modal-sub">Add a registered user by email, or add a guest by name.</p>
-        @if (addPlayerError()) { <div class="error-msg" style="margin-bottom:12px">{{ addPlayerError() }}</div> }
-        <div class="form-field" style="margin-bottom:12px">
-          <label>Email (registered user)</label>
+        <h3>{{ i18n.t('event.addPlayer') }}</h3>
+        <p class="modal-sub">{{ i18n.t('event.addPlayerHelp') }}</p>
+        @if (addPlayerError()) {
+          <div class="error-msg" style="margin-bottom: 12px">{{ addPlayerError() }}</div>
+        }
+        <div class="form-field" style="margin-bottom: 12px">
+          <label>{{ i18n.t('event.emailRegistered') }}</label>
           <input
             type="email"
-            placeholder="player@example.com"
+            [placeholder]="i18n.t('event.playerEmailPlaceholder')"
             [value]="addPlayerEmail()"
             (input)="addPlayerEmail.set($any($event.target).value)"
           />
         </div>
-        <div class="form-field" style="margin-bottom:16px">
-          <label>Or Guest Display Name</label>
+        <div class="form-field" style="margin-bottom: 16px">
+          <label>{{ i18n.t('event.orGuestName') }}</label>
           <input
             type="text"
-            placeholder="Guest name"
+            [placeholder]="i18n.t('event.guestName')"
             [value]="addPlayerName()"
             (input)="addPlayerName.set($any($event.target).value)"
             (keyup.enter)="submitAddPlayer()"
           />
         </div>
         <div class="modal-btns">
-          <button class="btn btn-primary" (click)="submitAddPlayer()" [disabled]="addPlayerLoading()">
-            @if (addPlayerLoading()) { <span class="spinner-sm"></span> } Add Player
+          <button
+            class="btn btn-primary"
+            (click)="submitAddPlayer()"
+            [disabled]="addPlayerLoading()"
+          >
+            @if (addPlayerLoading()) {
+              <span class="spinner-sm"></span>
+            }
+            Add Player
           </button>
-          <button class="btn btn-ghost" (click)="addPlayerModal.set(false)">Cancel</button>
+          <button class="btn btn-ghost" (click)="addPlayerModal.set(false)">
+            {{ i18n.t('common.cancel') }}
+          </button>
         </div>
       </div>
     </div>
@@ -902,30 +533,42 @@
   @if (qrModal()) {
     <div class="modal-overlay" (click)="qrModal.set(false)">
       <div class="modal card share-modal" (click)="$event.stopPropagation()">
-        <button class="modal-close" (click)="qrModal.set(false)" title="Close">✕</button>
+        <button class="modal-close" (click)="qrModal.set(false)" [title]="i18n.t('common.close')">
+          ✕
+        </button>
         <h3>{{ event()!.name }}</h3>
-        <p class="modal-sub">{{ event()!.game }}{{ event()!.format ? ' - ' + event()!.format : '' }}</p>
+        <p class="modal-sub">
+          {{ event()!.game }}{{ event()!.format ? ' - ' + event()!.format : '' }}
+        </p>
 
         <ul class="share-meta">
           <li>🧑 Organized by {{ event()!.owner_name }}</li>
-          <li>📅 {{ event()!.date | date:'M/d/yyyy, h:mm:ss a' }}</li>
-          <li>📍 {{ event()!.online ? 'Online' : (event()!.city || 'TBD') }}</li>
-          <li>👥 {{ event()!.players?.length ?? 0 }} Players</li>
+          <li>📅 {{ event()!.date | date: 'M/d/yyyy, h:mm:ss a' }}</li>
+          <li>📍 {{ event()!.online ? 'Online' : event()!.city || 'TBD' }}</li>
+          <li>👥 {{ i18n.t('event.playersCount', { n: event()!.players?.length ?? 0 }) }}</li>
         </ul>
 
         <div class="qr-code-box">
           @if (qrDataUrl()) {
-            <img [src]="qrDataUrl()" alt="Event entry QR code" width="220" height="220" />
+            <img [src]="qrDataUrl()" [alt]="i18n.t('event.qrTitle')" width="220" height="220" />
           } @else {
             <div class="spinner"></div>
           }
         </div>
 
         <div class="share-actions">
-          <button class="btn btn-ghost" (click)="shareViaWhatsApp()">💬 WhatsApp</button>
-          <button class="btn btn-ghost" (click)="shareViaEmail()">✉️ Email</button>
-          <button class="btn btn-ghost" (click)="copyJoinLink()">🔗 {{ qrCopied() ? 'Copied!' : 'Copy URL' }}</button>
-          <button class="btn btn-ghost" (click)="openJoinLink()">↗ Open Link</button>
+          <button class="btn btn-ghost" (click)="shareViaWhatsApp()">
+            {{ i18n.t('event.whatsapp') }}
+          </button>
+          <button class="btn btn-ghost" (click)="shareViaEmail()">
+            {{ i18n.t('event.emailShare') }}
+          </button>
+          <button class="btn btn-ghost" (click)="copyJoinLink()">
+            🔗 {{ qrCopied() ? 'Copied!' : 'Copy URL' }}
+          </button>
+          <button class="btn btn-ghost" (click)="openJoinLink()">
+            {{ i18n.t('event.openLink') }}
+          </button>
         </div>
       </div>
     </div>
@@ -935,10 +578,10 @@
   @if (phantomModal()) {
     <div class="modal-overlay" (click)="phantomModal.set(false)">
       <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>👻 Add Phantom Players</h3>
-        <p class="modal-sub">Adiciona jogadores fictícios com nomes aleatórios para testes.</p>
+        <h3>{{ i18n.t('event.addPhantomModal') }}</h3>
+        <p class="modal-sub">{{ i18n.t('event.phantomHelp') }}</p>
         <div class="phantom-count-row">
-          <label>Quantidade</label>
+          <label>{{ i18n.t('event.quantity') }}</label>
           <input
             type="number"
             min="1"
@@ -948,11 +591,20 @@
             class="phantom-count-input"
           />
         </div>
-        <div class="modal-btns" style="margin-top:20px">
-          <button class="btn btn-primary" (click)="submitPhantom()" [disabled]="phantomLoading() || phantomCount() < 1">
-            @if (phantomLoading()) { <span class="spinner-sm"></span> } OK — Adicionar {{ phantomCount() }}
+        <div class="modal-btns" style="margin-top: 20px">
+          <button
+            class="btn btn-primary"
+            (click)="submitPhantom()"
+            [disabled]="phantomLoading() || phantomCount() < 1"
+          >
+            @if (phantomLoading()) {
+              <span class="spinner-sm"></span>
+            }
+            OK — Adicionar {{ phantomCount() }}
           </button>
-          <button class="btn btn-ghost" (click)="phantomModal.set(false)">Cancelar</button>
+          <button class="btn btn-ghost" (click)="phantomModal.set(false)">
+            {{ i18n.t('common.cancelPt') }}
+          </button>
         </div>
       </div>
     </div>
@@ -962,24 +614,30 @@
   @if (editDeckModal()) {
     <div class="modal-overlay" (click)="editDeckModal.set(null)">
       <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>Set Deck Name</h3>
-        <p class="modal-sub">Enter the name of your deck for this event.</p>
-        <div class="form-field" style="margin: 16px 0;">
+        <h3>{{ i18n.t('event.setDeckName') }}</h3>
+        <p class="modal-sub">{{ i18n.t('event.deckHelp') }}</p>
+        <div class="form-field" style="margin: 16px 0">
           <input
             type="text"
-            placeholder="e.g. Atraxa Superfriends"
+            [placeholder]="i18n.t('event.deckPlaceholder')"
             [value]="deckNameInput()"
             (input)="deckNameInput.set($any($event.target).value)"
             (keyup.enter)="saveDeckName()"
           />
         </div>
         <div class="modal-btns">
-          <button class="btn btn-primary" (click)="saveDeckName()">Save</button>
-          <button class="btn btn-ghost" (click)="editDeckModal.set(null)">Cancel</button>
+          <button class="btn btn-primary" (click)="saveDeckName()">
+            {{ i18n.t('common.save') }}
+          </button>
+          <button class="btn btn-ghost" (click)="editDeckModal.set(null)">
+            {{ i18n.t('common.cancel') }}
+          </button>
         </div>
       </div>
     </div>
   }
 } @else {
-  <div class="detail-loading"><p>Event not found.</p></div>
+  <div class="detail-loading">
+    <p>{{ i18n.t('event.notFound') }}</p>
+  </div>
 }

@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
@@ -10,6 +11,7 @@ import { AuthService } from '../../services/auth';
   styleUrl: './register.scss',
 })
 export class RegisterComponent {
+  i18n = inject(I18nService);
   auth = inject(AuthService);
   router = inject(Router);
   displayName = signal('');
@@ -34,12 +36,18 @@ export class RegisterComponent {
     }
     this.loading.set(true);
     this.error.set('');
-    this.auth.register({ display_name: this.displayName(), email: this.email(), password: this.password() }).subscribe({
-      next: () => this.router.navigate(['/']),
-      error: (err) => {
-        this.error.set(err.error?.error || 'Registration failed');
-        this.loading.set(false);
-      },
-    });
+    this.auth
+      .register({
+        display_name: this.displayName(),
+        email: this.email(),
+        password: this.password(),
+      })
+      .subscribe({
+        next: () => this.router.navigate(['/']),
+        error: (err) => {
+          this.error.set(mensagemDeErro(this.i18n, err));
+          this.loading.set(false);
+        },
+      });
   }
 }

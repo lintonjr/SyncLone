@@ -317,16 +317,31 @@ const MOLS4 = [
  * 12 adversários possíveis exatamente uma vez — zero repetição, que é o que as
  * tabelas de referência do formato entregam.
  *
- * Os jogadores de cada clã entram na rotação ordenados pela classificação, então
- * a primeira rodada ainda junta os melhores de cada clã. Da 5ª rodada em diante
- * a repetição é inevitável (12 adversários, 12 encontros por rodada acumulados),
- * e o pareamento volta a ser o guloso.
+ * A garantia depende de uma coisa que não é óbvia: os quatro jogadores de cada
+ * clã precisam ocupar as MESMAS posições nas quatro rodadas. O que os quadrados
+ * organizam é a posição, não a pessoa. Ordenar por classificação a cada rodada
+ * — que foi o que este código fez até aqui — faz as posições trocarem de dono no
+ * meio da rotação e destrói a ortogonalidade: medido, 4 clãs saíam de 0 para
+ * cerca de 24 reencontros em 4 rodadas, pior que o guloso que a rotação veio
+ * substituir.
+ *
+ * Não há perda nenhuma em fixar a ordem. Numa rotação exata as rodadas 2 a 4 são
+ * consequência da rodada 1, então reordenar por desempenho no meio não pode
+ * melhorar o pareamento — só quebrá-lo. E na rodada 1 ninguém pontuou ainda, de
+ * modo que a ordem por classificação já era um sorteio disfarçado.
+ *
+ * A ordem estável sai dos próprios ids (uuid): varia de torneio para torneio,
+ * então dois eventos com o mesmo elenco não geram as mesmas mesas, e é imutável
+ * dentro do evento, que é o que a rotação exige. Não precisa de estado novo.
+ *
+ * Da 5ª rodada em diante a repetição é inevitável (12 adversários, 12 encontros
+ * por rodada acumulados) e o pareamento volta a ser o guloso.
  */
+const porId = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
 function rotate4Clans(playersByClan, roundIndex) {
-  const clanIds = [...playersByClan.keys()];
-  const ranked = clanIds.map((id) =>
-    rankWithRandomTiebreak(playersByClan.get(id), byOfficialStanding)
-  );
+  const clanIds = [...playersByClan.keys()].sort();
+  const ranked = clanIds.map((id) => [...playersByClan.get(id)].sort(porId));
   const r = roundIndex % 4;
 
   return Array.from({ length: 4 }, (_, t) => {

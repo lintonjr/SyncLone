@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { I18nService } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EventService, TournamentEvent } from '../../services/event';
@@ -15,6 +16,7 @@ const PAGE_SIZE = 24;
   styleUrl: './home.scss',
 })
 export class HomeComponent implements OnInit {
+  i18n = inject(I18nService);
   private eventSvc = inject(EventService);
   upcoming = signal<TournamentEvent[]>([]);
   past = signal<TournamentEvent[]>([]);

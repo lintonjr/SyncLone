@@ -1,28 +1,33 @@
 <div class="auth-page">
   <div class="auth-card card">
-    <h3 class="auth-title">Profile</h3>
+    <h3 class="auth-title">{{ i18n.t('profile.title') }}</h3>
 
     <div class="form-field">
-      <label>Display Name</label>
+      <label>{{ i18n.t('common.displayName') }}</label>
       <p>{{ auth.currentUser()?.display_name }}</p>
     </div>
     <div class="form-field">
-      <label>Email</label>
+      <label>{{ i18n.t('common.email') }}</label>
       <p>{{ auth.currentUser()?.email }}</p>
     </div>
     <div class="form-field">
-      <label>Role</label>
+      <label>{{ i18n.t('profile.role') }}</label>
       <p class="role-value">{{ auth.currentUser()?.role }}</p>
     </div>
 
     @if (auth.currentUser()?.role === 'player') {
-      @if (error()) { <div class="error-msg">{{ error() }}</div> }
-      <p class="auth-sub">Organizers can create and manage events. Players can only join them.</p>
+      @if (error()) {
+        <div class="error-msg">{{ error() }}</div>
+      }
+      <p class="auth-sub">{{ i18n.t('profile.roleHelp') }}</p>
       <button class="btn btn-primary w-full" (click)="upgrade()" [disabled]="loading()">
-        @if (loading()) { <span class="spinner-sm"></span> } Become an Organizer
+        @if (loading()) {
+          <span class="spinner-sm"></span>
+        }
+        Become an Organizer
       </button>
     } @else {
-      <div class="success-msg">You're an organizer — you can create events.</div>
+      <div class="success-msg">{{ i18n.t('profile.isOrganizer') }}</div>
     }
   </div>
 </div>

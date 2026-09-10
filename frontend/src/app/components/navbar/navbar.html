@@ -5,11 +5,13 @@
         <img src="/mercadia-logo.png" alt="Mercadia" class="logo-img" />
       </a>
       <div class="nav-links">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a>
-        <a routerLink="/events" routerLinkActive="active">My Events</a>
-        <a routerLink="/leagues" routerLinkActive="active">Leagues</a>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{
+          i18n.t('nav.home')
+        }}</a>
+        <a routerLink="/events" routerLinkActive="active">{{ i18n.t('nav.myEvents') }}</a>
+        <a routerLink="/leagues" routerLinkActive="active">{{ i18n.t('nav.leagues') }}</a>
         @if (auth.currentUser()?.role === 'organizer') {
-          <a routerLink="/create" routerLinkActive="active">Create Event</a>
+          <a routerLink="/create" routerLinkActive="active">{{ i18n.t('nav.createEvent') }}</a>
         }
       </div>
     </div>
@@ -17,14 +19,30 @@
     <div class="navbar-right">
       @if (auth.isLoggedIn()) {
         <div class="notif-wrapper">
-          <button class="icon-btn" (click)="toggleNotifications(); $event.stopPropagation()"
-                  [attr.aria-label]="notif.unreadCount() ? 'Open notifications (' + notif.unreadCount() + ' unread)' : 'Open notifications'">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          <button
+            class="icon-btn"
+            (click)="toggleNotifications(); $event.stopPropagation()"
+            [attr.aria-label]="
+              notif.unreadCount()
+                ? 'Open notifications (' + notif.unreadCount() + ' unread)'
+                : 'Open notifications'
+            "
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
             @if (notif.unreadCount()) {
-              <span class="notif-badge">{{ notif.unreadCount() > 9 ? '9+' : notif.unreadCount() }}</span>
+              <span class="notif-badge">{{
+                notif.unreadCount() > 9 ? '9+' : notif.unreadCount()
+              }}</span>
             }
           </button>
           @if (showNotifications()) {
@@ -32,30 +50,69 @@
           }
         </div>
         <div class="user-menu-wrapper" (click)="$event.stopPropagation()">
-          <button class="icon-btn user-btn" [class.active]="showUserMenu()" (click)="toggleUserMenu($event)">
+          <button
+            class="icon-btn user-btn"
+            [class.active]="showUserMenu()"
+            (click)="toggleUserMenu($event)"
+          >
             <span class="user-name">{{ auth.currentUser()?.display_name }}</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 [style.transform]="showUserMenu() ? 'rotate(180deg)' : 'rotate(0deg)'"
-                 style="transition: transform 0.15s">
-              <polyline points="6 9 12 15 18 9"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              [style.transform]="showUserMenu() ? 'rotate(180deg)' : 'rotate(0deg)'"
+              style="transition: transform 0.15s"
+            >
+              <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
           @if (showUserMenu()) {
             <div class="user-dropdown">
-              <a routerLink="/events" class="dropdown-item" (click)="closeUserMenu()">My Events</a>
-              <a routerLink="/profile" class="dropdown-item" (click)="closeUserMenu()">Profile</a>
-              <button class="dropdown-item danger" (click)="closeUserMenu(); auth.logout()">Logout</button>
+              <a routerLink="/events" class="dropdown-item" (click)="closeUserMenu()">{{
+                i18n.t('nav.myEvents')
+              }}</a>
+              <a routerLink="/profile" class="dropdown-item" (click)="closeUserMenu()">{{
+                i18n.t('nav.profile')
+              }}</a>
+              <button class="dropdown-item danger" (click)="closeUserMenu(); auth.logout()">
+                {{ i18n.t('nav.logout') }}
+              </button>
             </div>
           }
         </div>
       } @else {
-        <a routerLink="/login" class="btn btn-primary">Login</a>
+        <a routerLink="/login" class="btn btn-primary">{{ i18n.t('nav.login') }}</a>
       }
+      <button
+        class="icon-btn lang-btn"
+        (click)="i18n.setLang(i18n.lang() === 'pt-BR' ? 'en' : 'pt-BR')"
+        [title]="i18n.lang() === 'pt-BR' ? 'Switch to English' : 'Mudar para português'"
+        [attr.aria-label]="i18n.lang() === 'pt-BR' ? 'Switch to English' : 'Mudar para português'"
+      >
+        {{ i18n.lang() === 'pt-BR' ? 'EN' : 'PT' }}
+      </button>
       <button class="icon-btn" (click)="theme.toggle()" aria-label="Toggle theme">
         @if (theme.isDark()) {
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+          </svg>
         } @else {
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+            />
+          </svg>
         }
       </button>
     </div>

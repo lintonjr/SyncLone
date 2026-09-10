@@ -1,0 +1,431 @@
+/* Estilos da aba de pareamentos.
+   Estilo de componente Angular é encapsulado e não herda do pai, então o que
+   esta tela usa mora aqui. As duas abas desenham mesas e por isso repetem
+   algumas regras — a alternativa seria torná-las globais, o que é pior. */
+
+/* ── Results Tab ── */
+.round-section {
+  margin-bottom: 28px;
+}
+
+.round-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.round-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.undo-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  font-weight: 600;
+  &:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #f87171;
+  }
+}
+
+.swap-toggle-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.08);
+  color: #a78bfa;
+  font-weight: 600;
+  &:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: #8b5cf6;
+  }
+  &.active {
+    background: rgba(139, 92, 246, 0.3);
+    border-color: #8b5cf6;
+    color: #fff;
+  }
+}
+
+.swap-select-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #8b5cf6;
+    color: #a78bfa;
+  }
+
+  &.selected {
+    background: #14b8a6;
+    border-color: #14b8a6;
+    color: white;
+  }
+}
+
+.round-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.round-status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 999px;
+
+  &.status-open {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fbbf24;
+  }
+  &.status-done {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+}
+
+.pairings-table {
+  overflow: hidden;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background: var(--surface2);
+    }
+  }
+}
+
+.col-table {
+  width: 60px;
+}
+.col-vs {
+  width: 30px;
+}
+.table-num {
+  font-weight: 700;
+  color: var(--accent);
+}
+.player-col {
+  font-weight: 500;
+}
+.vs {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.result-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+
+  &.pill-done {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+  &.pill-pending {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+  }
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 48px 0;
+  text-align: center;
+}
+
+/* ── Pod Cards (Results/Pairings tabs) ── */
+.pods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.pod-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.pod-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.pod-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.pod-players {
+  padding: 6px 0;
+}
+
+.pod-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.pr-win {
+    background: rgba(34, 197, 94, 0.06);
+  }
+  &.pr-loss {
+    background: rgba(239, 68, 68, 0.04);
+  }
+  &.pr-draw {
+    background: rgba(234, 179, 8, 0.04);
+  }
+  &.pr-bye {
+    background: rgba(99, 102, 241, 0.06);
+  }
+}
+
+.pod-seat {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pod-name {
+  flex: 1;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.pod-result-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 999px;
+
+  &.prb-win {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+  &.prb-loss {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+  }
+  &.prb-draw {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fbbf24;
+  }
+  &.prb-bye {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+  }
+  &.prb-pending {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+  }
+}
+
+.pod-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-result-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  &:hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
+}
+
+/* ── Result badge aliases used in My Round ── */
+.result-win {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+.result-loss {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.result-draw {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+}
+.result-bye {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+/* ---------- Timer de rodada ---------- */
+/* Contado no cliente a partir de round.created_at + round_minutes: o servidor
+   não emite nada por segundo, só quando a rodada em si muda. */
+.round-timer {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+
+  &.timer-warning {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+    border-color: rgba(234, 179, 8, 0.4);
+  }
+  &.timer-over {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+}
+
+.game-score-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* ---------- Clã Fronto ---------- */
+/* Uma cor por clã: é o que deixa a mesa legível de relance, como nas tabelas
+   de referência do formato. O índice vem da ordem de inscrição. */
+.clan-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 7px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.clan-c0 {
+  background: #ef4444;
+}
+.clan-c1 {
+  background: #3b82f6;
+}
+.clan-c2 {
+  background: #06b6d4;
+}
+.clan-c3 {
+  background: #a855f7;
+}
+.clan-c4 {
+  background: #22c55e;
+}
+.clan-c5 {
+  background: #f59e0b;
+}
+.clan-c6 {
+  background: #ec4899;
+}
+.clan-c7 {
+  background: #14b8a6;
+}
+
+.clan-tag {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Rodada pareada com o cronômetro ainda parado: estado neutro, sem alarme. */
+.round-timer.timer-waiting {
+  background: transparent;
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.timer-start-btn {
+  font-size: 12px;
+  padding: 4px 12px;
+}

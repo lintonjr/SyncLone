@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { I18nService } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LeagueService, League } from '../../services/league';
@@ -11,6 +12,7 @@ import { AuthService } from '../../services/auth';
   styleUrl: './leagues.scss',
 })
 export class LeaguesComponent implements OnInit {
+  i18n = inject(I18nService);
   private leagueSvc = inject(LeagueService);
   auth = inject(AuthService);
   leagues = signal<League[]>([]);
@@ -18,7 +20,10 @@ export class LeaguesComponent implements OnInit {
 
   ngOnInit() {
     this.leagueSvc.getLeagues().subscribe({
-      next: (leagues) => { this.leagues.set(leagues); this.loading.set(false); },
+      next: (leagues) => {
+        this.leagues.set(leagues);
+        this.loading.set(false);
+      },
       error: () => this.loading.set(false),
     });
   }

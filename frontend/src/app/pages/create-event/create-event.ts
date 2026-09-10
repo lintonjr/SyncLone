@@ -1,4 +1,5 @@
 import { Component, inject, signal, input, OnInit, computed } from '@angular/core';
+import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { EventService } from '../../services/event';
@@ -13,6 +14,7 @@ import { environment } from '../../../environments/environment';
   styleUrl: './create-event.scss',
 })
 export class CreateEventComponent implements OnInit {
+  i18n = inject(I18nService);
   id = input<string>('');
   private eventSvc = inject(EventService);
   private leagueSvc = inject(LeagueService);
@@ -56,8 +58,18 @@ export class CreateEventComponent implements OnInit {
 
   readonly GAMES = ['MTG', 'Pokémon', 'Yu-Gi-Oh!', 'Lorcana', 'Flesh and Blood', 'Other'];
   readonly FORMATS = {
-    MTG: ['Commander', 'Commander500', 'cEDH', 'Conquest', 'Standard', 'Modern', 'Legacy', 'Pioneer', 'Pauper'],
-    'Pokémon': ['Standard', 'Expanded', 'Unlimited'],
+    MTG: [
+      'Commander',
+      'Commander500',
+      'cEDH',
+      'Conquest',
+      'Standard',
+      'Modern',
+      'Legacy',
+      'Pioneer',
+      'Pauper',
+    ],
+    Pokémon: ['Standard', 'Expanded', 'Unlimited'],
     'Yu-Gi-Oh!': ['Advanced', 'Traditional'],
     Lorcana: ['Constructed'],
     'Flesh and Blood': ['Classic Constructed', 'Blitz', 'Draft'],
@@ -189,7 +201,7 @@ export class CreateEventComponent implements OnInit {
         this.router.navigate(['/event', ev.id]);
       },
       error: (err: any) => {
-        this.error.set(err.error?.error || (this.isEditMode ? 'Failed to update event' : 'Failed to create event'));
+        this.error.set(mensagemDeErro(this.i18n, err));
         this.loading.set(false);
       },
     });

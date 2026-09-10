@@ -1,4 +1,5 @@
 import { Component, inject, signal, input, OnInit } from '@angular/core';
+import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LeagueService } from '../../services/league';
@@ -10,6 +11,7 @@ import { LeagueService } from '../../services/league';
   styleUrl: './create-league.scss',
 })
 export class CreateLeagueComponent implements OnInit {
+  i18n = inject(I18nService);
   id = input<string>('');
   private leagueSvc = inject(LeagueService);
   private router = inject(Router);
@@ -48,7 +50,7 @@ export class CreateLeagueComponent implements OnInit {
     request.subscribe({
       next: (league) => this.router.navigate(['/leagues', league.id]),
       error: (err) => {
-        this.error.set(err.error?.error || (this.isEditMode ? 'Failed to update league' : 'Failed to create league'));
+        this.error.set(mensagemDeErro(this.i18n, err));
         this.loading.set(false);
       },
     });

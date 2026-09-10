@@ -3,6 +3,8 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export type EventSignal = 'update' | 'deleted';
+
 export interface TournamentEvent {
   id: string;
   name: string;
@@ -42,7 +44,9 @@ export interface TournamentEvent {
   pairings?: Pairing[];
   clans?: Clan[];
   clan_standings?: ClanStanding[];
-  rounds_total?: number;
+  // Rodadas suíças do evento — o mata-mata fica de fora, porque é seletivo e
+  // não serve de régua para saber quem entrou depois.
+  swiss_rounds_total?: number;
 }
 
 export interface Clan {
@@ -83,7 +87,7 @@ export interface Player {
   // dado suficiente: sem adversários enfrentados, ou sem placar de games registrado.
   matches_played: number;
   // rodadas em que o jogador teve assento — menor que o total = entrou depois
-  rounds_seated: number;
+  swiss_rounds_seated: number;
   mwp: number;
   omw: number | null;
   gwp: number | null;
@@ -147,11 +151,13 @@ export class EventService {
     return this.http.get<TournamentEvent>(`${this.API}/${id}`);
   }
 
-  // Pings whenever this event changes server-side; caller re-fetches via getEvent() on each tick.
-  streamEvent(id: string): Observable<void> {
-    return new Observable<void>((subscriber) => {
+  // Avisa sempre que o evento muda no servidor. 'update' pede um re-fetch via
+  // getEvent(); 'deleted' diz que o evento deixou de existir — a tela precisa
+  // sair, porque recarregar só traria um 404.
+  streamEvent(id: string): Observable<EventSignal> {
+    return new Observable<EventSignal>((subscriber) => {
       const es = new EventSource(`${this.API}/${id}/stream`);
-      es.onmessage = () => subscriber.next();
+      es.onmessage = (e) => subscriber.next(e.data === 'deleted' ? 'deleted' : 'update');
       return () => es.close();
     });
   }
@@ -183,7 +189,7 @@ export class EventService {
   getMyEvents() {
     return this.http.get<{ owned: TournamentEvent[]; joined: TournamentEvent[] }>(
       `${this.API}/user/mine`,
-      { headers: this.authHeaders() }
+      { headers: this.authHeaders() },
     );
   }
 
@@ -192,32 +198,49 @@ export class EventService {
   }
 
   startPlayoffs(eventId: string) {
-    return this.http.post(`${this.API}/${eventId}/playoffs/start`, {}, { headers: this.authHeaders() });
+    return this.http.post(
+      `${this.API}/${eventId}/playoffs/start`,
+      {},
+      { headers: this.authHeaders() },
+    );
   }
 
   // Solta o cronômetro da rodada — separado de criá-la, para os jogadores terem
   // tempo de achar a mesa antes do relógio correr.
   startRoundTimer(eventId: string, roundId: string) {
-    return this.http.post(`${this.API}/${eventId}/rounds/${roundId}/timer`, {}, { headers: this.authHeaders() });
+    return this.http.post(
+      `${this.API}/${eventId}/rounds/${roundId}/timer`,
+      {},
+      { headers: this.authHeaders() },
+    );
   }
 
   undoRound(eventId: string) {
-    return this.http.post(`${this.API}/${eventId}/rounds/undo`, {}, { headers: this.authHeaders() });
+    return this.http.post(
+      `${this.API}/${eventId}/rounds/undo`,
+      {},
+      { headers: this.authHeaders() },
+    );
   }
 
   swapPlayers(eventId: string, player1Id: string, player2Id: string) {
     return this.http.post(
       `${this.API}/${eventId}/rounds/swap`,
       { player1Id, player2Id },
-      { headers: this.authHeaders() }
+      { headers: this.authHeaders() },
     );
   }
 
-  submitResult(eventId: string, pairingId: string, result: string, games?: { p1: number; p2: number }) {
+  submitResult(
+    eventId: string,
+    pairingId: string,
+    result: string,
+    games?: { p1: number; p2: number },
+  ) {
     return this.http.put(
       `${this.API}/${eventId}/pairings/${pairingId}`,
       games ? { result, p1_games: games.p1, p2_games: games.p2 } : { result },
-      { headers: this.authHeaders() }
+      { headers: this.authHeaders() },
     );
   }
 
@@ -225,7 +248,7 @@ export class EventService {
     return this.http.post(
       `${this.API}/${eventId}/pairings/${pairingId}/approve`,
       {},
-      { headers: this.authHeaders() }
+      { headers: this.authHeaders() },
     );
   }
 
@@ -249,12 +272,19 @@ export class EventService {
 
   // Clã Fronto: o clã entra inteiro, com quatro e-mails de contas existentes —
   // ou quatro nomes, quando é o organizador cadastrando convidados.
-  createClan(eventId: string, payload: { name: string; emails?: string[]; display_names?: string[] }) {
-    return this.http.post<Clan>(`${this.API}/${eventId}/clans`, payload, { headers: this.authHeaders() });
+  createClan(
+    eventId: string,
+    payload: { name: string; emails?: string[]; display_names?: string[] },
+  ) {
+    return this.http.post<Clan>(`${this.API}/${eventId}/clans`, payload, {
+      headers: this.authHeaders(),
+    });
   }
 
   deleteClan(eventId: string, clanId: string) {
-    return this.http.delete(`${this.API}/${eventId}/clans/${clanId}`, { headers: this.authHeaders() });
+    return this.http.delete(`${this.API}/${eventId}/clans/${clanId}`, {
+      headers: this.authHeaders(),
+    });
   }
 
   finishEvent(eventId: string) {

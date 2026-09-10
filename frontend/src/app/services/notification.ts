@@ -29,7 +29,7 @@ export class NotificationService {
       tap((notes) => {
         this.notifications.set(notes);
         this.unreadCount.set(notes.filter((n) => !n.read).length);
-      })
+      }),
     );
   }
 
@@ -38,7 +38,7 @@ export class NotificationService {
       tap(() => {
         this.notifications.update((ns) => ns.map((n) => (n.id === id ? { ...n, read: 1 } : n)));
         this.unreadCount.update((c) => Math.max(0, c - 1));
-      })
+      }),
     );
   }
 
@@ -53,7 +53,7 @@ export class NotificationService {
       tap(() => {
         this.notifications.update((ns) => ns.map((n) => ({ ...n, read: 1 })));
         this.unreadCount.set(0);
-      })
+      }),
     );
   }
 }

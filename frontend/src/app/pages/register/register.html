@@ -1,8 +1,8 @@
 <div class="auth-page">
   <div class="auth-card card">
     <div class="auth-header">
-      <h3 class="auth-title">Create an account</h3>
-      <p class="auth-sub">Sign up to start organizing and joining events</p>
+      <h3 class="auth-title">{{ i18n.t('register.title') }}</h3>
+      <p class="auth-sub">{{ i18n.t('register.subtitle') }}</p>
     </div>
 
     @if (error()) {
@@ -10,31 +10,57 @@
     }
 
     <div class="form-field">
-      <label>Display Name</label>
-      <input type="text" placeholder="John Doe" [value]="displayName()" (input)="displayName.set($any($event.target).value)" />
+      <label>{{ i18n.t('common.displayName') }}</label>
+      <input
+        type="text"
+        [placeholder]="i18n.t('register.namePlaceholder')"
+        [value]="displayName()"
+        (input)="displayName.set($any($event.target).value)"
+      />
     </div>
     <div class="form-field">
-      <label>Email</label>
-      <input type="email" placeholder="m@example.com" [value]="email()" (input)="email.set($any($event.target).value)" />
+      <label>{{ i18n.t('common.email') }}</label>
+      <input
+        type="email"
+        [placeholder]="i18n.t('common.emailExample')"
+        [value]="email()"
+        (input)="email.set($any($event.target).value)"
+      />
     </div>
     <div class="form-field">
-      <label>Password</label>
-      <input type="password" placeholder="••••••••" [value]="password()" (input)="password.set($any($event.target).value)" />
+      <label>{{ i18n.t('common.password') }}</label>
+      <input
+        type="password"
+        placeholder="••••••••"
+        [value]="password()"
+        (input)="password.set($any($event.target).value)"
+      />
     </div>
     <div class="form-field">
-      <label>Confirm Password</label>
-      <input type="password" placeholder="••••••••" [value]="confirmPassword()" (input)="confirmPassword.set($any($event.target).value)" (keyup.enter)="submit()" />
+      <label>{{ i18n.t('register.confirm') }}</label>
+      <input
+        type="password"
+        placeholder="••••••••"
+        [value]="confirmPassword()"
+        (input)="confirmPassword.set($any($event.target).value)"
+        (keyup.enter)="submit()"
+      />
     </div>
 
     <button class="btn btn-primary w-full" (click)="submit()" [disabled]="loading()">
-      @if (loading()) { <span class="spinner-sm"></span> } Let's go!
+      @if (loading()) {
+        <span class="spinner-sm"></span>
+      }
+      Let's go!
     </button>
 
     <p class="auth-footer">
-      Already have an account? <a routerLink="/login">Sign in</a>
+      {{ i18n.t('register.hasAccount') }} <a routerLink="/login">{{ i18n.t('register.signIn') }}</a>
     </p>
   </div>
   <p class="terms">
-    By clicking create account, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+    {{ i18n.t('register.agree') }} <a href="#">{{ i18n.t('common.terms') }}</a>
+    {{ i18n.t('common.and') }} <a href="#">{{ i18n.t('common.privacy') }}</a
+    >.
   </p>
 </div>

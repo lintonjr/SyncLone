@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { generateClanPairings, seedClanPlayoffPods } = require('../src/services/pairing');
+const { generateClanPairings, seedClanPlayoffPods, clanPairSeats } = require('../src/services/pairing');
 
 // n clãs de 4 jogadores. Pontos decrescentes para a ordem por desempenho ser previsível.
 function field(n) {
@@ -73,9 +73,20 @@ test('clã fronto: 4 clãs colocam um jogador de cada clã em toda mesa', () => 
   }
 });
 
-// Reencontros das tabelas de refer&#234;ncia da pasta clafronto, medidos: 4 cl&#227;s = 0,
-// 5 = 18, 6 = 17, 7 = 20. S&#227;o modelos feitos &#224; m&#227;o, e servem de r&#233;gua.
+// Reencontros das tabelas de referência da pasta clafronto, medidos: 4 clãs = 0,
+// 5 = 18, 6 = 17, 7 = 20. São modelos feitos à mão, e servem de régua.
 const REFERENCIA = { 4: 0, 5: 18, 6: 17, 7: 20 };
+
+// Um torneio de verdade muda a classificação a cada rodada, e era exatamente
+// isso que faltava aqui: com os pontos congelados, a ordem dentro do clã nunca
+// mudava e a rotação parecia exata mesmo quando não era. Um vencedor por mesa,
+// como o evento faz.
+function pontuarMesas(pods) {
+  for (const pod of pods) {
+    const seats = seatsOf(pod);
+    seats[Math.floor(Math.random() * seats.length)].points += 3;
+  }
+}
 
 function reencontrosEm4Rodadas(n) {
   const players = field(n);
@@ -84,6 +95,7 @@ function reencontrosEm4Rodadas(n) {
     const pods = generateClanPairings(players, 'swiss-less-repetition', past, 200, round);
     assertEstrutura(pods, players, `n=${n} r=${round + 1}`);
     past = past.concat(asPast(pods));
+    pontuarMesas(pods);
   }
   const encontros = new Map();
   for (const p of past) {
@@ -96,21 +108,68 @@ function reencontrosEm4Rodadas(n) {
   return [...encontros.values()].filter((v) => v > 1).length;
 }
 
-test('4 cl&#227;s: 4 rodadas sem nenhum reencontro, sempre', () => {
-  // Caso exato: a rota&#231;&#227;o por quadrados latinos garante que cada jogador enfrenta
-  // os seus 12 advers&#225;rios poss&#237;veis uma vez cada. N&#227;o depende de sorte.
+test('4 clãs: 4 rodadas sem nenhum reencontro, sempre', () => {
+  // Caso exato: a rotação por quadrados latinos garante que cada jogador enfrenta
+  // os seus 12 adversários possíveis uma vez cada. Não depende de sorte.
   for (let i = 0; i < 15; i++) {
-    assert.equal(reencontrosEm4Rodadas(4), 0, 'a rota&#231;&#227;o de 4 cl&#227;s deve ser exata');
+    assert.equal(reencontrosEm4Rodadas(4), 0, 'a rotação de 4 clãs deve ser exata');
   }
 });
 
-test('5 a 7 cl&#227;s: muito abaixo do que as tabelas de refer&#234;ncia deixam', () => {
-  // Medido em 50 execu&#231;&#245;es: m&#225;ximo observado 7, contra 17-20 das tabelas.
-  // A r&#233;gua fica em 9 para o teste n&#227;o oscilar com o sorteio.
+test('4 clãs: a rotação não depende da classificação do momento', () => {
+  // O que os quadrados latinos organizam é a posição, não a pessoa. Se a ordem
+  // dentro do clã mudar entre as rodadas, a garantia some — e some em silêncio,
+  // porque cada rodada isolada continua válida. Este teste fixa a rodada e mexe
+  // só nos pontos: as mesas têm de sair idênticas.
+  const chave = (pods) =>
+    pods
+      .map((pod) => seatsOf(pod).map((p) => p.id).sort().join('+'))
+      .sort()
+      .join(' | ');
+
+  for (const round of [0, 1, 2, 3]) {
+    const a = field(4);
+    const antes = chave(generateClanPairings(a, 'swiss-less-repetition', [], 200, round));
+
+    const b = field(4);
+    for (const p of b) p.points = Math.floor(Math.random() * 30);
+    const depois = chave(generateClanPairings(b, 'swiss-less-repetition', [], 200, round));
+
+    assert.equal(depois, antes, `rodada ${round + 1} mudou com a classificação`);
+  }
+});
+
+test('4 clãs: as 4 rodadas cobrem os 12 adversários de cada jogador', () => {
+  // A forma forte da mesma garantia: não basta não repetir, a rotação precisa
+  // esgotar o cartaz. 16 jogadores, 12 adversários possíveis cada, 96 duplas.
+  const players = field(4);
+  let past = [];
+  for (let round = 0; round < 4; round++) {
+    const pods = generateClanPairings(players, 'swiss-less-repetition', past, 200, round);
+    past = past.concat(asPast(pods));
+    pontuarMesas(pods);
+  }
+
+  const duplas = new Set();
+  for (const p of past) {
+    const seats = [p.player1_id, p.player2_id, p.player3_id, p.player4_id].filter(Boolean).sort();
+    for (const [a, b] of pairsIn(seats)) duplas.add(`${a}|${b}`);
+  }
+  assert.equal(duplas.size, 96, 'as 4 rodadas deveriam produzir 96 duplas distintas');
+
+  for (const jogador of players) {
+    const enfrentou = [...duplas].filter((k) => k.split('|').includes(jogador.id)).length;
+    assert.equal(enfrentou, 12, `${jogador.id} enfrentou ${enfrentou} adversários, deveria ser 12`);
+  }
+});
+
+test('5 a 7 clãs: muito abaixo do que as tabelas de referência deixam', () => {
+  // Medido em 50 execuções: máximo observado 7, contra 17-20 das tabelas.
+  // A régua fica em 9 para o teste não oscilar com o sorteio.
   for (const n of [5, 6, 7]) {
     const r = reencontrosEm4Rodadas(n);
-    assert.ok(r <= 9, `${n} cl&#227;s: ${r} reencontros, acima do teto de 9`);
-    assert.ok(r < REFERENCIA[n], `${n} cl&#227;s: ${r} n&#227;o melhora a tabela (${REFERENCIA[n]})`);
+    assert.ok(r <= 9, `${n} clãs: ${r} reencontros, acima do teto de 9`);
+    assert.ok(r < REFERENCIA[n], `${n} clãs: ${r} não melhora a tabela (${REFERENCIA[n]})`);
   }
 });
 
@@ -129,7 +188,7 @@ test('clã fronto: adversário do próprio clã nunca aparece, em nenhuma rodada
 
 test('clã fronto: recusa campo que não fecha em mesas de 4', () => {
   const players = field(4).slice(0, 15);
-  assert.throws(() => generateClanPairings(players, 'swiss', []), /m&#250;ltiplo de 4|múltiplo de 4/);
+  assert.throws(() => generateClanPairings(players, 'swiss', []), /múltiplo de 4|múltiplo de 4/);
 });
 
 test('clã fronto: recusa menos de 4 clãs', () => {
@@ -191,35 +250,59 @@ const { computeStandings, computeClanStandings } = require('../src/services/stan
 const EVENTO = { points_win: 3, points_draw: 1, points_loss: 0 };
 
 test('classificação de clãs: soma os pontos dos quatro membros', () => {
-  const players = [
-    { id: 'a1', clan_id: 'A', display_name: 'A1', points: 9, wins: 3, losses: 1, draws: 0, status: 'active' },
-    { id: 'a2', clan_id: 'A', display_name: 'A2', points: 6, wins: 2, losses: 2, draws: 0, status: 'active' },
-    { id: 'a3', clan_id: 'A', display_name: 'A3', points: 3, wins: 1, losses: 3, draws: 0, status: 'active' },
-    { id: 'a4', clan_id: 'A', display_name: 'A4', points: 0, wins: 0, losses: 4, draws: 0, status: 'active' },
-    { id: 'b1', clan_id: 'B', display_name: 'B1', points: 6, wins: 2, losses: 2, draws: 0, status: 'active' },
-    { id: 'b2', clan_id: 'B', display_name: 'B2', points: 6, wins: 2, losses: 2, draws: 0, status: 'active' },
-    { id: 'b3', clan_id: 'B', display_name: 'B3', points: 3, wins: 1, losses: 3, draws: 0, status: 'active' },
-    { id: 'b4', clan_id: 'B', display_name: 'B4', points: 0, wins: 0, losses: 4, draws: 0, status: 'active' },
+  // Os pontos são derivados das mesas, então o cenário precisa ser um torneio
+  // possível — não uma tabela inventada. Quatro rodadas de a{i} contra b{i}:
+  // Dragões levam as duas primeiras inteiras e vão perdendo espaço depois.
+  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id.toUpperCase(), wins: 0, losses: 0, draws: 0, status: 'active' });
+  const players = ['a', 'b'].flatMap((c) => [1, 2, 3, 4].map((k) => jog(`${c}${k}`, c === 'a' ? 'A' : 'B')));
+  const porId = Object.fromEntries(players.map((p) => [p.id, p]));
+
+  const duelo = (p1, p2, vencedor) => ({
+    player1_id: p1, player2_id: p2, player3_id: null, player4_id: null,
+    result: vencedor, result_status: 'confirmed', p1_games: null, p2_games: null,
+  });
+  // 'A' = venceu o do clã A naquela mesa; 'B' = venceu o do clã B.
+  const rodadas = [
+    ['A', 'A', 'A', 'A'],
+    ['A', 'A', 'A', 'A'],
+    ['A', 'A', 'B', 'B'],
+    ['A', 'B', 'B', 'B'],
   ];
-  const ranked = computeStandings(players, [], EVENTO);
+  const pairings = rodadas.flatMap((r) =>
+    r.map((quem, i) => duelo(`a${i + 1}`, `b${i + 1}`, quem === 'A' ? 'player1' : 'player2'))
+  );
+
+  // wins/losses continuam sendo colunas incrementais do banco — não derivadas —
+  // então o cenário as mantém em dia com as mesas, como a rota faz.
+  for (const r of rodadas) {
+    r.forEach((quem, i) => {
+      const venceu = quem === 'A' ? `a${i + 1}` : `b${i + 1}`;
+      const perdeu = quem === 'A' ? `b${i + 1}` : `a${i + 1}`;
+      porId[venceu].wins += 1;
+      porId[perdeu].losses += 1;
+    });
+  }
+
+  const ranked = computeStandings(players, pairings, EVENTO);
   const clans = computeClanStandings(ranked, [{ id: 'A', name: 'Dragões' }, { id: 'B', name: 'Corvos' }]);
 
-  // Dragões 9+6+3+0 = 18; Corvos 6+6+3+0 = 15
+  // 16 mesas, 16 vitórias no total: 11 dos Dragões (33 pts), 5 dos Corvos (15 pts).
   assert.equal(clans[0].name, 'Dragões');
-  assert.equal(clans[0].points, 18);
+  assert.equal(clans[0].points, 33);
+  assert.equal(clans[0].wins, 11, 'vitórias somadas dos quatro');
   assert.equal(clans[1].name, 'Corvos');
   assert.equal(clans[1].points, 15);
-  assert.equal(clans[0].wins, 6, 'vitórias somadas dos quatro');
   assert.equal(clans[0].player_count, 4);
+  assert.equal(clans[0].points + clans[1].points, 16 * EVENTO.points_win, 'nenhum ponto criado ou perdido');
 });
 
 test('classificação de clãs: empate de pontos é decidido pelo desempate agregado', () => {
   // Os dois clãs somam o mesmo; A enfrentou adversários mais fortes.
-  const jog = (id, clan, pts) => ({ id, clan_id: clan, display_name: id, points: pts, wins: 0, losses: 0, draws: 0, status: 'active' });
+  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id, wins: 0, losses: 0, draws: 0, status: 'active' });
   const players = [
-    jog('a1', 'A', 3), jog('a2', 'A', 3), jog('a3', 'A', 0), jog('a4', 'A', 0),
-    jog('b1', 'B', 3), jog('b2', 'B', 3), jog('b3', 'B', 0), jog('b4', 'B', 0),
-    jog('c1', 'C', 9), jog('c2', 'C', 0), jog('c3', 'C', 0), jog('c4', 'C', 0),
+    jog('a1', 'A'), jog('a2', 'A'), jog('a3', 'A'), jog('a4', 'A'),
+    jog('b1', 'B'), jog('b2', 'B'), jog('b3', 'B'), jog('b4', 'B'),
+    jog('c1', 'C'), jog('c2', 'C'), jog('c3', 'C'), jog('c4', 'C'),
   ];
   // A enfrentou c1 (forte); B enfrentou c2 (fraco)
   const mesa = (p1, p2, p3, p4, vencedor) => ({
@@ -240,10 +323,89 @@ test('classificação de clãs: empate de pontos é decidido pelo desempate agre
 });
 
 test('classificação de clãs: ordem estável quando tudo empata', () => {
-  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id, points: 0, wins: 0, losses: 0, draws: 0, status: 'active' });
+  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id, wins: 0, losses: 0, draws: 0, status: 'active' });
   const players = ['A', 'B'].flatMap((c) => [1, 2, 3, 4].map((k) => jog(`${c}${k}`, c)));
   const ranked = computeStandings(players, [], EVENTO);
   const nomes = () => computeClanStandings(ranked, [{ id: 'B', name: 'Zulu' }, { id: 'A', name: 'Alfa' }]).map((c) => c.name);
   assert.deepEqual(nomes(), ['Alfa', 'Zulu']);
   assert.deepEqual(nomes(), nomes());
+});
+
+test('clanPairSeats: agrupa os assentos da mesa de duplas por clã', () => {
+  // A regra dos parceiros vive aqui e é consumida pela rota de resultado. Os
+  // assentos do playoff são alternados (1-3 de um clã, 2-4 do outro), que é como
+  // as duplas se sentam de fato à mesa.
+  const players = new Map([
+    ['a1', { clan_id: 'A' }], ['b1', { clan_id: 'B' }],
+    ['a2', { clan_id: 'A' }], ['b2', { clan_id: 'B' }],
+  ]);
+  const pairing = { player1_id: 'a1', player2_id: 'b1', player3_id: 'a2', player4_id: 'b2' };
+  const grupos = clanPairSeats(pairing, players);
+
+  assert.deepEqual([...grupos.keys()].sort(), ['A', 'B']);
+  assert.deepEqual(grupos.get('A'), ['a1', 'a2'], 'assentos 1 e 3 são do mesmo clã');
+  assert.deepEqual(grupos.get('B'), ['b1', 'b2'], 'assentos 2 e 4 são do mesmo clã');
+});
+
+test('clanPairSeats: mesa comum de 4 clãs distintos vira quatro grupos de um', () => {
+  const players = new Map([
+    ['p1', { clan_id: 'A' }], ['p2', { clan_id: 'B' }],
+    ['p3', { clan_id: 'C' }], ['p4', { clan_id: 'D' }],
+  ]);
+  const pairing = { player1_id: 'p1', player2_id: 'p2', player3_id: 'p3', player4_id: 'p4' };
+  const grupos = clanPairSeats(pairing, players);
+  assert.equal(grupos.size, 4);
+  for (const ids of grupos.values()) assert.equal(ids.length, 1);
+});
+
+test('playoff em duplas: os dois parceiros recebem a vitória', () => {
+  // Regressão: quando os pontos passaram a ser derivados das mesas, a regra de
+  // duplas vivia só na rota que gravava a coluna — e o companheiro do vencedor
+  // deixava de pontuar. A mesa de 2 clãs × 2 assentos é a forma que identifica
+  // o mata-mata em duplas.
+  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id, wins: 0, losses: 0, draws: 0, status: 'active' });
+  const players = [jog('a1', 'A'), jog('b1', 'B'), jog('a2', 'A'), jog('b2', 'B')];
+  const mesa = {
+    player1_id: 'a1', player2_id: 'b1', player3_id: 'a2', player4_id: 'b2',
+    result: 'player1', result_status: 'confirmed', p1_games: null, p2_games: null,
+  };
+
+  const rows = computeStandings(players, [mesa], EVENTO);
+  const por = Object.fromEntries(rows.map((p) => [p.id, p]));
+
+  assert.equal(por.a1.points, 3, 'assento vencedor');
+  assert.equal(por.a2.points, 3, 'companheiro de clã ganha junto');
+  assert.equal(por.b1.points, 0, 'os dois adversários perdem');
+  assert.equal(por.b2.points, 0, 'os dois adversários perdem');
+});
+
+test('playoff em duplas: o companheiro não conta como adversário enfrentado', () => {
+  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id, wins: 0, losses: 0, draws: 0, status: 'active' });
+  const players = [jog('a1', 'A'), jog('b1', 'B'), jog('a2', 'A'), jog('b2', 'B')];
+  const mesa = {
+    player1_id: 'a1', player2_id: 'b1', player3_id: 'a2', player4_id: 'b2',
+    result: 'player1', result_status: 'confirmed', p1_games: null, p2_games: null,
+  };
+  const rows = computeStandings(players, [mesa], EVENTO);
+  const a1 = rows.find((p) => p.id === 'a1');
+
+  // OMW% de a1 é a média dos dois adversários (b1 e b2), ambos no piso de 33%.
+  // Se o parceiro a2 entrasse na conta, a média subiria — e o desempate mentiria.
+  assert.ok(Math.abs(a1.omw - 1 / 3) < 1e-9, `OMW% de a1: ${a1.omw}`);
+});
+
+test('mesa normal de 4 clãs: só o assento vencedor pontua', () => {
+  // A contraprova do teste acima: a rodada comum do formato tem quatro clãs
+  // distintos, e nela ninguém divide resultado com ninguém.
+  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id, wins: 0, losses: 0, draws: 0, status: 'active' });
+  const players = [jog('a1', 'A'), jog('b1', 'B'), jog('c1', 'C'), jog('d1', 'D')];
+  const mesa = {
+    player1_id: 'a1', player2_id: 'b1', player3_id: 'c1', player4_id: 'd1',
+    result: 'player1', result_status: 'confirmed', p1_games: null, p2_games: null,
+  };
+  const rows = computeStandings(players, [mesa], EVENTO);
+  const por = Object.fromEntries(rows.map((p) => [p.id, p]));
+
+  assert.equal(por.a1.points, 3);
+  assert.equal(por.b1.points + por.c1.points + por.d1.points, 0);
 });

@@ -1,4 +1,5 @@
-import { Component, input } from '@angular/core';
+import { Component, input, inject } from '@angular/core';
+import { I18nService } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TournamentEvent } from '../../services/event';
@@ -11,6 +12,7 @@ import { environment } from '../../../environments/environment';
   styleUrl: './event-card.scss',
 })
 export class EventCardComponent {
+  i18n = inject(I18nService);
   event = input.required<TournamentEvent>();
   apiUrl = environment.apiUrl.replace('/api', '');
 

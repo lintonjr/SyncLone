@@ -18,7 +18,10 @@ export class AuthService {
   currentUser = signal<User | null>(this.loadUser());
   token = signal<string | null>(localStorage.getItem('token'));
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+  ) {}
 
   private loadUser(): User | null {
     const raw = localStorage.getItem('user');
@@ -26,15 +29,15 @@ export class AuthService {
   }
 
   register(payload: { display_name: string; email: string; password: string }) {
-    return this.http.post<{ token: string; user: User }>(`${this.API}/register`, payload).pipe(
-      tap(({ token, user }) => this.persist(token, user))
-    );
+    return this.http
+      .post<{ token: string; user: User }>(`${this.API}/register`, payload)
+      .pipe(tap(({ token, user }) => this.persist(token, user)));
   }
 
   login(payload: { email: string; password: string }) {
-    return this.http.post<{ token: string; user: User }>(`${this.API}/login`, payload).pipe(
-      tap(({ token, user }) => this.persist(token, user))
-    );
+    return this.http
+      .post<{ token: string; user: User }>(`${this.API}/login`, payload)
+      .pipe(tap(({ token, user }) => this.persist(token, user)));
   }
 
   forgotPassword(email: string) {
@@ -43,9 +46,13 @@ export class AuthService {
 
   upgradeToOrganizer() {
     const headers = new HttpHeaders({ Authorization: `Bearer ${this.token()}` });
-    return this.http.post<{ token: string; user: User }>(`${this.USERS_API}/me/upgrade-to-organizer`, {}, { headers }).pipe(
-      tap(({ token, user }) => this.persist(token, user))
-    );
+    return this.http
+      .post<{ token: string; user: User }>(
+        `${this.USERS_API}/me/upgrade-to-organizer`,
+        {},
+        { headers },
+      )
+      .pipe(tap(({ token, user }) => this.persist(token, user)));
   }
 
   // Descarta a sessão sem tirar o usuário de onde ele está. É o que a expiração

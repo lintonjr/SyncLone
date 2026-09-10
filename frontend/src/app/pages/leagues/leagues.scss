@@ -10,7 +10,10 @@
   justify-content: space-between;
   margin-bottom: 28px;
 
-  h1 { font-size: 26px; font-weight: 700; }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+  }
 }
 
 .loading {
@@ -46,9 +49,15 @@
   color: inherit;
   transition: border-color 0.15s;
 
-  &:hover { border-color: var(--accent); }
+  &:hover {
+    border-color: var(--accent);
+  }
 
-  h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
 }
 
 .league-meta {

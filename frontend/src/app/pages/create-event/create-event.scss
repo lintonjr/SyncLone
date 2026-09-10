@@ -22,7 +22,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 
-  > * { min-width: 0; }
+  > * {
+    min-width: 0;
+  }
 }
 
 .row-3 {
@@ -30,7 +32,9 @@
   grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
 
-  > * { min-width: 0; }
+  > * {
+    min-width: 0;
+  }
 }
 
 .checkbox-label {
@@ -41,7 +45,7 @@
   color: var(--text);
   cursor: pointer;
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     width: 16px;
     height: 16px;
     accent-color: var(--accent);
@@ -75,7 +79,9 @@
   object-fit: cover;
 }
 
-.upload-btn { cursor: pointer; }
+.upload-btn {
+  cursor: pointer;
+}
 
 .optionals-title {
   font-size: 14px;
@@ -92,7 +98,11 @@
 }
 
 @media (max-width: 600px) {
-  .row-2, .row-3, .checkboxes { grid-template-columns: 1fr; }
+  .row-2,
+  .row-3,
+  .checkboxes {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Explicação curta abaixo de um campo, para o número não ficar sem contexto. */

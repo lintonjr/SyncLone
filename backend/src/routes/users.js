@@ -6,13 +6,13 @@ const { HttpError, asyncHandler } = require('../lib/http');
 
 router.get('/me', auth, asyncHandler(async (req, res) => {
   const user = await db.get('SELECT id, display_name, email, role FROM users WHERE id = ?', [req.user.id]);
-  if (!user) throw new HttpError(404, 'User not found');
+  if (!user) throw new HttpError(404, 'User not found', 'api.userNotFound');
   res.json(user);
 }));
 
 router.post('/me/upgrade-to-organizer', auth, asyncHandler(async (req, res) => {
   const user = await db.get('SELECT * FROM users WHERE id = ?', [req.user.id]);
-  if (!user) throw new HttpError(404, 'User not found');
+  if (!user) throw new HttpError(404, 'User not found', 'api.userNotFound');
 
   if (user.role !== 'organizer') {
     await db.run("UPDATE users SET role = 'organizer' WHERE id = ?", [user.id]);

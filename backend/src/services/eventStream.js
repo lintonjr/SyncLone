@@ -13,10 +13,13 @@ function unsubscribe(eventId, res) {
   if (set.size === 0) listeners.delete(eventId);
 }
 
-function broadcast(eventId) {
+// `kind` diz o que aconteceu. 'update' (o padrão) manda a tela recarregar o
+// evento; 'deleted' avisa que não há mais o que recarregar — sem isso a página
+// ficaria viva apontando para um 404, porque o refresh do cliente não trata erro.
+function broadcast(eventId, kind = 'update') {
   const set = listeners.get(eventId);
   if (!set) return;
-  for (const res of set) res.write('data: update\n\n');
+  for (const res of set) res.write(`data: ${kind}\n\n`);
 }
 
 module.exports = { subscribe, unsubscribe, broadcast };
