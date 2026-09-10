@@ -23,7 +23,8 @@ const dateString = z
   .refine((v) => !Number.isNaN(Date.parse(v)), 'must be a valid date');
 
 const PAIRING_METHODS = ['swiss', 'swiss-less-repetition', 'avoid-repetition', 'random'];
-const PLAYOFF_STRUCTURES = ['none', 'top4', 'top8', 'top16'];
+const PLAYOFF_STRUCTURES = ['none', 'top4', 'top8', 'top16', 'clan2', 'clan4'];
+const TOURNAMENT_FORMATS = ['standard', 'clafronto'];
 const EVENT_STATUSES = ['upcoming', 'ongoing', 'completed'];
 const PLAYER_STATUSES = ['active', 'pending', 'dropped'];
 const RESULTS = ['player1', 'player2', 'player3', 'player4', 'draw', 'bye'];
@@ -36,6 +37,7 @@ const eventFields = {
   address: str(500),
   online: boolish,
   format: str(50),
+  tournament_format: blank(z.enum(TOURNAMENT_FORMATS).optional()),
   pairing_method: blank(z.enum(PAIRING_METHODS).optional()),
   playoff_structure: blank(z.enum(PLAYOFF_STRUCTURES).optional()),
   allow_byes: boolish,
@@ -106,6 +108,17 @@ const schemas = {
     p1_games: int(0, 9),
     p2_games: int(0, 9),
   }),
+
+  // Cl&#227; Fronto: o cl&#227; entra inteiro ou n&#227;o entra. Ou quatro e-mails de contas
+  // existentes (inscri&#231;&#227;o do pr&#243;prio jogador), ou quatro nomes (convidados do dono).
+  createClan: z.object({
+    name: z.string().trim().min(2).max(60),
+    emails: z.array(z.email().max(255)).length(4).optional(),
+    display_names: z.array(z.string().trim().min(1).max(100)).length(4).optional(),
+  }).refine(
+    (v) => Boolean(v.emails) !== Boolean(v.display_names),
+    { message: 'Informe quatro e-mails ou quatro nomes de convidado, n\u00e3o os dois' }
+  ),
 
   createLeague: z.object({
     name: z.string().trim().min(1).max(100),

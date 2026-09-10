@@ -1128,3 +1128,91 @@
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
 }
+
+/* ---------- Clã Fronto ---------- */
+/* Uma cor por clã: é o que deixa a mesa legível de relance, como nas tabelas
+   de referência do formato. O índice vem da ordem de inscrição. */
+.clan-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 7px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.clan-c0 { background: #ef4444; }
+.clan-c1 { background: #3b82f6; }
+.clan-c2 { background: #06b6d4; }
+.clan-c3 { background: #a855f7; }
+.clan-c4 { background: #22c55e; }
+.clan-c5 { background: #f59e0b; }
+.clan-c6 { background: #ec4899; }
+.clan-c7 { background: #14b8a6; }
+
+.clan-tag {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.clan-roster {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.standings-switch,
+.clan-switch {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.switch-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { color: var(--text); border-color: var(--accent); }
+  &.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+}
+
+.clan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 14px;
+  text-align: left;
+}
+
+.clan-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.clan-hint { text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+.clan-input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+
+  &:focus { outline: none; border-color: var(--accent); }
+}

@@ -125,4 +125,51 @@ function computeStandings(players, pairings, event) {
   return enriched;
 }
 
-module.exports = { computeStandings };
+/**
+ * Classificação de clãs do Clã Fronto.
+ *
+ * A pontuação do clã é a soma dos seus quatro jogadores — é ela que ordena a
+ * tabela principal do torneio. O desempate reaproveita a ordem oficial do
+ * individual, agregada pelos membros: vence quem, no conjunto, enfrentou
+ * adversários mais fortes.
+ *
+ * Recebe os jogadores já enriquecidos por `computeStandings`, para não recalcular
+ * os desempates duas vezes.
+ */
+function computeClanStandings(rankedPlayers, clans) {
+  const media = (valores) => {
+    const v = valores.filter((x) => x !== null && x !== undefined);
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  };
+
+  const linhas = clans.map((clan) => {
+    const membros = rankedPlayers.filter((p) => p.clan_id === clan.id);
+    return {
+      id: clan.id,
+      name: clan.name,
+      players: membros,
+      player_count: membros.length,
+      points: membros.reduce((sum, p) => sum + p.points, 0),
+      wins: membros.reduce((sum, p) => sum + p.wins, 0),
+      losses: membros.reduce((sum, p) => sum + p.losses, 0),
+      draws: membros.reduce((sum, p) => sum + p.draws, 0),
+      mwp: media(membros.map((p) => p.mwp)),
+      omw: media(membros.map((p) => p.omw)),
+      gwp: media(membros.map((p) => p.gwp)),
+      ogw: media(membros.map((p) => p.ogw)),
+    };
+  });
+
+  const or = (v, fallback) => (v === null || v === undefined ? fallback : v);
+  linhas.sort((a, b) =>
+    b.points - a.points ||
+    or(b.omw, 0) - or(a.omw, 0) ||
+    or(b.gwp, 0) - or(a.gwp, 0) ||
+    or(b.ogw, 0) - or(a.ogw, 0) ||
+    a.name.localeCompare(b.name)
+  );
+
+  return linhas;
+}
+
+module.exports = { computeStandings, computeClanStandings };

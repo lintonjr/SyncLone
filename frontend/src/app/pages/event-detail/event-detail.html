@@ -30,7 +30,9 @@
           @if (event()!.description) {
             <p class="event-desc">{{ event()!.description }}</p>
           }
-          @if (championName()) {
+          @if (championClanName()) {
+            <p class="champion-banner">🏆 Clã campeão: <strong>{{ championClanName() }}</strong></p>
+          } @else if (championName()) {
             <p class="champion-banner">🏆 Champion: <strong>{{ championName() }}</strong></p>
           }
         </div>
@@ -61,6 +63,10 @@
                 } @else {
                   <span class="event-finished-badge">✓ Finalizado</span>
                 }
+                @if (isClanFormat() && event()!.current_round === 0) {
+                  <button class="btn btn-ghost" (click)="openClanModal()" title="Inscrever clã">⚔ Inscrever clã</button>
+                }
+                @if (!isClanFormat()) {
                 <button class="btn btn-ghost icon-only" (click)="openAddPlayer()" title="Add Player">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
@@ -69,6 +75,7 @@
                     <line x1="22" y1="11" x2="16" y2="11"/>
                   </svg>
                 </button>
+                }
                 @if (event()!.qr_code_enabled) {
                   <button class="btn btn-ghost icon-only" (click)="openQrModal()" title="Share">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -101,6 +108,12 @@
                 </button>
               </div>
             </div>
+          } @else if (isClanFormat()) {
+            @if (event()!.current_round === 0 && event()!.status !== 'completed') {
+              <button class="btn btn-primary" (click)="openClanModal()" [disabled]="actionLoading()">
+                Inscrever clã
+              </button>
+            }
           } @else if (isJoined()) {
             <button class="btn btn-ghost" (click)="leave()" [disabled]="actionLoading()">Leave Event</button>
           } @else if (event()!.status !== 'completed') {
@@ -145,6 +158,65 @@
     <div class="tab-content">
       <!-- STANDINGS TAB -->
       @if (tab() === 'standings') {
+        @if (isClanFormat()) {
+          <div class="standings-switch">
+            <button class="switch-btn" [class.active]="standingsView() === 'clans'" (click)="standingsView.set('clans')">
+              Clãs ({{ clanStandings().length }})
+            </button>
+            <button class="switch-btn" [class.active]="standingsView() === 'players'" (click)="standingsView.set('players')">
+              Jogadores ({{ sortedStandings().length }})
+            </button>
+          </div>
+
+          @if (standingsView() === 'clans') {
+            @if (clanStandings().length === 0) {
+              <p class="empty">Nenhum clã inscrito ainda. São necessários pelo menos 4 clãs de 4 jogadores.</p>
+            } @else {
+              <div class="standings-table card">
+                <table>
+                  <thead>
+                    <tr>
+                      <th class="col-rank">Rank</th>
+                      <th>Clã</th>
+                      <th class="col-num">V</th>
+                      <th class="col-num">D</th>
+                      <th class="col-num">E</th>
+                      <th class="col-pts">Pts</th>
+                      <th class="col-tb">OMW% do clã</th>
+                      @if (isOwner() && event()!.current_round === 0) { <th class="col-actions"></th> }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (clan of clanStandings(); track clan.id; let i = $index) {
+                      <tr [class.top-row]="i === 0">
+                        <td class="rank-cell">
+                          <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
+                        </td>
+                        <td class="player-cell">
+                          <span class="clan-dot" [class]="'clan-c' + (i % 8)"></span>
+                          <span class="player-name">{{ clan.name }}</span>
+                          <span class="clan-roster">{{ clan.player_count }} jogadores</span>
+                        </td>
+                        <td class="col-num"><span class="stat-win">{{ clan.wins }}</span></td>
+                        <td class="col-num"><span class="stat-loss">{{ clan.losses }}</span></td>
+                        <td class="col-num"><span class="stat-draw">{{ clan.draws }}</span></td>
+                        <td class="col-pts"><strong class="pts-val">{{ clan.points }}</strong></td>
+                        <td class="col-tb tiebreaker-cell">{{ clan.omw === null ? '—' : (clan.omw * 100).toFixed(1) + '%' }}</td>
+                        @if (isOwner() && event()!.current_round === 0) {
+                          <td class="col-actions actions-cell">
+                            <button class="drop-btn" (click)="removeClan(clan.id, clan.name)" title="Remover clã">Remover</button>
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+        }
+
+        @if (!isClanFormat() || standingsView() === 'players') {
         @if (sortedStandings().length === 0) {
           <p class="empty">{{ event()!.status === 'completed' ? 'No players joined this event.' : 'No players yet. Be the first to join!' }}</p>
         } @else {
@@ -188,7 +260,11 @@
                       <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
                     </td>
                     <td class="player-cell">
+                      @if (isClanFormat()) {
+                        <span class="clan-dot" [class]="'clan-c' + clanIndex(player.id)"></span>
+                      }
                       <span class="player-name">{{ player.display_name }}</span>
+                      @if (isClanFormat()) { <span class="clan-tag">{{ clanOf(player.id) }}</span> }
                     </td>
                     <td class="deck-cell">
                       @if (player.deck_name) {
@@ -239,7 +315,7 @@
             </div>
           }
 
-          @if (droppedPlayers().length) {
+          @if (droppedPlayers().length && !isClanFormat()) {
             <div class="dropped-section">
               <h4 class="dropped-title">Dropped Players</h4>
               <div class="dropped-list">
@@ -249,6 +325,7 @@
               </div>
             </div>
           }
+        }
         }
       }
 
@@ -313,8 +390,13 @@
                     <div class="pod-players">
                       @for (player of podPlayers(p); track player.id) {
                         <div class="pod-player" [class]="'pr-' + (podPlayerResult(p, player.slot) ?? 'pending')">
-                          <span class="pod-seat">{{ $index + 1 }}</span>
+                          @if (isClanFormat()) {
+                            <span class="clan-dot" [class]="'clan-c' + clanIndex(player.id)" [title]="clanOf(player.id)"></span>
+                          } @else {
+                            <span class="pod-seat">{{ $index + 1 }}</span>
+                          }
                           <span class="pod-name">{{ player.name }}</span>
+                          @if (isClanFormat()) { <span class="clan-tag">{{ clanOf(player.id) }}</span> }
                           @if (p.result && (p.result_status === 'confirmed' || isOwner())) {
                             <span class="pod-result-badge" [class]="'prb-' + podPlayerResult(p, player.slot)">
                               {{ podPlayerResult(p, player.slot) === 'win' ? 'WIN' :
@@ -657,6 +739,61 @@
       }
     </div>
   </div>
+
+  <!-- Inscrição de clã (Clã Fronto) -->
+  @if (clanModal()) {
+    <div class="modal-overlay" (click)="clanModal.set(false)">
+      <div class="modal card" (click)="$event.stopPropagation()">
+        <h3>Inscrever clã</h3>
+        <p class="modal-sub">
+          O clã entra com quatro jogadores. Depois que o torneio começar, o elenco não muda mais.
+        </p>
+
+        <div class="clan-form">
+          <label class="clan-label">Nome do clã</label>
+          <input class="clan-input" type="text" placeholder="Dragões"
+                 [value]="clanName()" (input)="clanName.set($any($event.target).value)" />
+
+          @if (isOwner()) {
+            <div class="clan-switch">
+              <button class="switch-btn" [class.active]="!clanAsGuests()" (click)="clanAsGuests.set(false)">
+                Contas cadastradas
+              </button>
+              <button class="switch-btn" [class.active]="clanAsGuests()" (click)="clanAsGuests.set(true)">
+                Convidados
+              </button>
+            </div>
+          }
+
+          @if (clanAsGuests()) {
+            <label class="clan-label">Nomes dos quatro jogadores</label>
+            @for (nome of clanGuestNames(); track $index) {
+              <input class="clan-input" type="text" [placeholder]="'Jogador ' + ($index + 1)"
+                     [value]="nome" (input)="setClanGuest($index, $any($event.target).value)" />
+            }
+          } @else {
+            <label class="clan-label">
+              E-mails dos quatro jogadores
+              @if (!isOwner()) { <span class="clan-hint">— o seu precisa estar entre eles</span> }
+            </label>
+            @for (email of clanEmails(); track $index) {
+              <input class="clan-input" type="email" [placeholder]="'jogador' + ($index + 1) + '@email.com'"
+                     [value]="email" (input)="setClanEmail($index, $any($event.target).value)" />
+            }
+          }
+        </div>
+
+        @if (clanError()) { <div class="error-msg">{{ clanError() }}</div> }
+
+        <div class="modal-btns">
+          <button class="btn btn-primary" (click)="submitClan()" [disabled]="clanLoading()">
+            {{ clanLoading() ? 'Inscrevendo…' : 'Inscrever clã' }}
+          </button>
+          <button class="btn btn-danger" (click)="clanModal.set(false)">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- Result Modal -->
   @if (resultModal()) {

@@ -292,4 +292,195 @@ function seedPlayoffPods(seededPlayers, podSize) {
   return groups.map(asPod);
 }
 
-module.exports = { generateSwissPairings, seedPlayoffPods };
+/* ==========================================================================
+   Clã Fronto — pareamento por clãs
+   ========================================================================== */
+
+/**
+ * Rota&ccedil;&atilde;o fechada para o caso de exatamente 4 cl&atilde;s.
+ */
+const MOLS4 = [
+  [[0, 1, 2, 3], [1, 0, 3, 2], [2, 3, 0, 1], [3, 2, 1, 0]],
+  [[0, 2, 3, 1], [1, 3, 2, 0], [2, 0, 1, 3], [3, 1, 0, 2]],
+  [[0, 3, 1, 2], [1, 2, 0, 3], [2, 1, 3, 0], [3, 0, 2, 1]],
+];
+
+/**
+ * Com exatamente 4 clãs não há escolha nenhuma sobre a composição das mesas:
+ * toda mesa é obrigatoriamente um jogador de cada clã. A única liberdade é qual
+ * jogador de cada clã vai para qual mesa — e é justamente aí que um algoritmo
+ * guloso, decidindo uma rodada por vez, se enrosca: medido, ele deixa cerca de
+ * 8 reencontros em 4 rodadas.
+ *
+ * Este caso tem solução exata conhecida. Três quadrados latinos mutuamente
+ * ortogonais de ordem 4 produzem 4 rodadas em que cada jogador enfrenta os seus
+ * 12 adversários possíveis exatamente uma vez — zero repetição, que é o que as
+ * tabelas de referência do formato entregam.
+ *
+ * Os jogadores de cada clã entram na rotação ordenados pela classificação, então
+ * a primeira rodada ainda junta os melhores de cada clã. Da 5ª rodada em diante
+ * a repetição é inevitável (12 adversários, 12 encontros por rodada acumulados),
+ * e o pareamento volta a ser o guloso.
+ */
+function rotate4Clans(playersByClan, roundIndex) {
+  const clanIds = [...playersByClan.keys()];
+  const ranked = clanIds.map((id) =>
+    rankWithRandomTiebreak(playersByClan.get(id), byOfficialStanding)
+  );
+  const r = roundIndex % 4;
+
+  return Array.from({ length: 4 }, (_, t) => {
+    const seats = ranked.map((list, clan) => list[clan === 0 ? t : MOLS4[clan - 1][r][t]]);
+    return asPod(seats);
+  });
+}
+
+/**
+ * Monta as mesas de uma rodada de Clã Fronto.
+ *
+ * A regra dura: cada mesa tem 4 jogadores de 4 clãs diferentes, e ninguém joga
+ * contra o próprio clã. Como todo clã tem exatamente 4 jogadores e ninguém pode
+ * desistir, o total é sempre múltiplo de 4 — não existe bye nem mesa menor.
+ *
+ * A ordem inicial vem do método configurado no evento (desempenho ou sorteio),
+ * exatamente como nos outros formatos; a restrição de clã é aplicada por cima.
+ *
+ * Duas escolhas fazem o algoritmo funcionar:
+ *
+ *   1. A cada assento, atende primeiro o clã com MAIS jogadores ainda livres.
+ *      Sem isso a rodada termina com quatro sobras do mesmo clã, que não formam
+ *      mesa — é o jeito de nunca se pintar num canto.
+ *   2. Dentro do clã escolhido, senta quem menos já enfrentou os que já estão
+ *      naquela mesa. É a mesma ideia da anti-repetição dos outros formatos.
+ *
+ * Uma passada gulosa pode ser azarada, então tenta várias e fica com a que
+ * somar menos reencontros — a mesma estratégia de `generateSwissPairings`.
+ */
+function generateClanPairings(players, method = 'swiss', pastPairings = [], attempts = 200, roundIndex = null) {
+  if (players.length === 0) return [];
+  if (players.length % 4 !== 0) {
+    throw new Error('Clã Fronto exige um número de jogadores múltiplo de 4');
+  }
+
+  const history = buildOpponentHistory(pastPairings);
+  const clansOf = (list) => {
+    const byClan = new Map();
+    for (const p of list) {
+      if (!byClan.has(p.clan_id)) byClan.set(p.clan_id, []);
+      byClan.get(p.clan_id).push(p);
+    }
+    return byClan;
+  };
+
+  const byClan = clansOf(players);
+  if (byClan.size < 4) {
+    throw new Error('Clã Fronto exige pelo menos 4 clãs');
+  }
+
+  // 4 clãs nas 4 primeiras rodadas: usa a rotação exata em vez de procurar.
+  const round = roundIndex ?? Math.floor(pastPairings.length / Math.max(players.length / 4, 1));
+  if (byClan.size === 4 && round < 4 && method !== 'random') {
+    return rotate4Clans(byClan, round);
+  }
+
+  let best = null;
+  let bestScore = Infinity;
+
+  for (let attempt = 0; attempt < attempts && bestScore > 0; attempt++) {
+    const ordered = method === 'random' || method === 'avoid-repetition'
+      ? shuffle(players)
+      : rankWithRandomTiebreak(players, byOfficialStanding);
+
+    const remaining = clansOf(ordered);
+    const tables = [];
+    let failed = false;
+
+    while (!failed && [...remaining.values()].some((v) => v.length)) {
+      const table = [];
+      for (let seat = 0; seat < 4; seat++) {
+        // Clãs ainda com gente, o mais "cheio" primeiro, e nunca um já sentado nesta mesa.
+        // Embaralhar antes da ordenação estável desempata clãs de mesmo tamanho por
+        // sorteio — sem isso, com pontuações todas distintas, as tentativas seguintes
+        // repetiriam exatamente a primeira e a busca não exploraria nada.
+        const usedClans = new Set(table.map((p) => p.clan_id));
+        const candidates = shuffle(
+          [...remaining.entries()].filter(([, list]) => list.length > 0)
+        )
+          .filter(([clanId]) => !usedClans.has(clanId))
+          .sort((a, b) => b[1].length - a[1].length);
+
+        if (candidates.length === 0) { failed = true; break; }
+
+        const [, list] = candidates[0];
+        // menor número de reencontros com quem já está na mesa; empate resolvido por sorteio
+        const cost = (p) => table.reduce((sum, seated) => sum + (history.get(seated.id)?.has(p.id) ? 1 : 0), 0);
+        const cheapest = Math.min(...list.map(cost));
+        const pool = list.filter((p) => cost(p) === cheapest);
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+
+        table.push(pick);
+        list.splice(list.indexOf(pick), 1);
+      }
+      if (!failed) tables.push(table);
+    }
+
+    if (failed) continue;
+    const score = countRepeats(tables, history);
+    if (score < bestScore) {
+      bestScore = score;
+      best = tables;
+    }
+  }
+
+  if (!best) throw new Error('Não foi possível montar as mesas respeitando os clãs');
+  return best.map(asPod);
+}
+
+/**
+ * Monta as mesas de uma fase de playoff do Clã Fronto.
+ *
+ * Aqui a mesa muda de natureza: são 2 clãs, com 2 jogadores cada, jogando em
+ * parceria. Companheiro de clã senta junto em vez de enfrentar.
+ *
+ * `seededClans` vem ordenado do melhor colocado ao pior, cada um com os seus
+ * dois representantes. O cruzamento é o clássico de chaveamento — melhor contra
+ * pior — para que os dois primeiros só se encontrem na final.
+ */
+function seedClanPlayoffPods(seededClans) {
+  const pods = [];
+  let i = 0;
+  let j = seededClans.length - 1;
+  while (i < j) {
+    const [a1, a2] = seededClans[i].players;
+    const [b1, b2] = seededClans[j].players;
+    // assentos alternados: parceiros em 1-3 e 2-4, como se sentariam à mesa
+    pods.push({ player1: a1, player2: b1, player3: a2, player4: b2 });
+    i++;
+    j--;
+  }
+  return pods;
+}
+
+/**
+ * Dado um pareamento de playoff em duplas e o clã vencedor, diz quem ganhou e
+ * quem perdeu. Os dois parceiros compartilham o resultado da mesa.
+ */
+function clanPairSeats(pairing, playersById) {
+  const seats = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
+  const byClan = new Map();
+  for (const id of seats) {
+    const clanId = playersById.get(id)?.clan_id;
+    if (!clanId) continue;
+    if (!byClan.has(clanId)) byClan.set(clanId, []);
+    byClan.get(clanId).push(id);
+  }
+  return byClan;
+}
+
+module.exports = {
+  generateSwissPairings,
+  seedPlayoffPods,
+  generateClanPairings,
+  seedClanPlayoffPods,
+  clanPairSeats,
+};

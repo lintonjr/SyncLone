@@ -14,6 +14,7 @@ export interface TournamentEvent {
   date: string;
   game: string;
   format?: string;
+  tournament_format: 'standard' | 'clafronto';
   pairing_method: string;
   playoff_structure: string;
   allow_byes: number;
@@ -32,17 +33,43 @@ export interface TournamentEvent {
   status: string;
   current_round: number;
   champion_id?: string;
+  champion_clan_id?: string | null;
   owner_id: string;
   owner_name?: string;
   player_count?: number;
   players?: Player[];
   rounds?: Round[];
   pairings?: Pairing[];
+  clans?: Clan[];
+  clan_standings?: ClanStanding[];
+}
+
+export interface Clan {
+  id: string;
+  event_id: string;
+  name: string;
+}
+
+// Tabela principal do Clã Fronto: a soma dos quatro membros.
+export interface ClanStanding {
+  id: string;
+  name: string;
+  players: Player[];
+  player_count: number;
+  points: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  mwp: number | null;
+  omw: number | null;
+  gwp: number | null;
+  ogw: number | null;
 }
 
 export interface Player {
   id: string;
   event_id: string;
+  clan_id?: string | null;
   user_id: string;
   display_name: string;
   deck_name?: string;
@@ -207,6 +234,16 @@ export class EventService {
     return this.http.post(`${this.API}/${eventId}/players`, data, {
       headers: this.authHeaders(),
     });
+  }
+
+  // Clã Fronto: o clã entra inteiro, com quatro e-mails de contas existentes —
+  // ou quatro nomes, quando é o organizador cadastrando convidados.
+  createClan(eventId: string, payload: { name: string; emails?: string[]; display_names?: string[] }) {
+    return this.http.post<Clan>(`${this.API}/${eventId}/clans`, payload, { headers: this.authHeaders() });
+  }
+
+  deleteClan(eventId: string, clanId: string) {
+    return this.http.delete(`${this.API}/${eventId}/clans/${clanId}`, { headers: this.authHeaders() });
   }
 
   finishEvent(eventId: string) {

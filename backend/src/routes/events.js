@@ -8,8 +8,11 @@ const requireOrganizer = require('../middleware/requireOrganizer');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
-const { generateSwissPairings, seedPlayoffPods } = require('../services/pairing');
-const { computeStandings } = require('../services/standings');
+const {
+  generateSwissPairings, seedPlayoffPods,
+  generateClanPairings, seedClanPlayoffPods,
+} = require('../services/pairing');
+const { computeStandings, computeClanStandings } = require('../services/standings');
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
 const eventStream = require('../services/eventStream');
 
@@ -110,6 +113,124 @@ async function liveOwnedEvent(conn, eventId, userId) {
 const eventPairings = (conn, eventId) =>
   conn.query('SELECT * FROM pairings WHERE event_id = ?', [eventId]);
 
+/* ---------------------------------------------------------------------------
+   Clã Fronto
+   --------------------------------------------------------------------------- */
+
+const isClanFormat = (event) => event.tournament_format === 'clafronto';
+
+const CLAN_SIZE = 4;
+const MIN_CLANS = 4;
+const CLAN_PLAYOFF_SIZES = { clan2: 2, clan4: 4 };
+
+const eventClans = (conn, eventId) =>
+  conn.query('SELECT * FROM event_clans WHERE event_id = ? ORDER BY created_at', [eventId]);
+
+// Um Clã Fronto só pareia com pelo menos 4 clãs, todos completos. Sem isso a mesa
+// de 4 clãs distintos não existe, e o formato inteiro não fecha.
+async function assertClanFieldReady(conn, eventId) {
+  const rows = await conn.query(
+    `SELECT c.id, c.name, COUNT(p.id) AS total
+     FROM event_clans c
+     LEFT JOIN event_players p ON p.clan_id = c.id AND p.status = 'active'
+     WHERE c.event_id = ? GROUP BY c.id, c.name`,
+    [eventId]
+  );
+  if (rows.length < MIN_CLANS) {
+    throw new HttpError(400, `Clã Fronto precisa de pelo menos ${MIN_CLANS} clãs — há ${rows.length}`);
+  }
+  const incompleto = rows.find((r) => Number(r.total) !== CLAN_SIZE);
+  if (incompleto) {
+    throw new HttpError(400, `O clã ${incompleto.name} tem ${incompleto.total} jogadores; todos precisam ter ${CLAN_SIZE}`);
+  }
+  return rows;
+}
+
+/**
+ * Quem venceu uma mesa de playoff em duplas.
+ *
+ * O `result` continua apontando um assento, como em qualquer mesa — mas aqui esse
+ * assento representa a dupla inteira: o clã dele vence, o outro sai. É o que evita
+ * uma coluna nova só para dizer "a dupla tal ganhou".
+ */
+function clanOfResult(pairing, playersById) {
+  const seatOf = {
+    player1: pairing.player1_id, player2: pairing.player2_id,
+    player3: pairing.player3_id, player4: pairing.player4_id,
+  };
+  const seatId = seatOf[pairing.result];
+  return seatId ? playersById.get(seatId)?.clan_id ?? null : null;
+}
+
+/**
+ * Quais assentos contam como vencedores de uma mesa.
+ *
+ * Mesa comum: só o assento apontado por `result`. Mesa de duplas do Clã Fronto:
+ * o assento apontado **e o parceiro dele** — os dois ganham, os dois adversários
+ * perdem. É aqui que a diferença entre as duas naturezas de mesa vira pontuação.
+ */
+function winningSeatIds(pairing, result, playersById, partnerTable) {
+  const seatOf = {
+    player1: pairing.player1_id, player2: pairing.player2_id,
+    player3: pairing.player3_id, player4: pairing.player4_id,
+  };
+  const winnerId = seatOf[result];
+  if (!winnerId) return new Set();
+  if (!partnerTable) return new Set([winnerId]);
+
+  const clan = playersById.get(winnerId)?.clan_id;
+  if (!clan) return new Set([winnerId]);
+  return new Set(
+    [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id]
+      .filter(Boolean)
+      .filter((id) => playersById.get(id)?.clan_id === clan)
+  );
+}
+
+// Uma mesa é de duplas quando o evento é Clã Fronto e a rodada é de mata-mata.
+async function isPartnerTable(conn, event, roundId) {
+  if (!isClanFormat(event)) return false;
+  const round = await conn.get('SELECT is_playoff FROM rounds WHERE id = ?', [roundId]);
+  return Boolean(round?.is_playoff);
+}
+
+// Monta a fase seguinte do mata-mata a partir dos clãs que avançaram.
+async function buildClanPlayoffRound(tx, event, clanIds, roundNumber, ranked) {
+  const clans = await eventClans(tx, event.id);
+  const porId = new Map(clans.map((c) => [c.id, c]));
+
+  // ordem: melhor colocado primeiro, para o cruzamento ser 1º contra último
+  const clanStandings = computeClanStandings(ranked, clans).filter((c) => clanIds.includes(c.id));
+  const seeded = clanStandings.map((c) => ({
+    id: c.id,
+    name: porId.get(c.id)?.name,
+    // os dois melhores do clã na classificação individual
+    players: ranked.filter((p) => p.clan_id === c.id && p.status === 'active').slice(0, 2),
+  }));
+
+  const incompleto = seeded.find((c) => c.players.length < 2);
+  if (incompleto) {
+    throw new HttpError(400, `O clã ${incompleto.name} não tem dois jogadores para o mata-mata`);
+  }
+
+  const stage = seeded.length <= 2 ? 'Final' : seeded.length <= 4 ? 'Semifinals' : `Round of ${seeded.length}`;
+  const roundId = uuidv4();
+  await tx.run(
+    'INSERT INTO rounds (id, event_id, round_number, is_playoff, playoff_stage) VALUES (?, ?, ?, 1, ?)',
+    [roundId, event.id, roundNumber, stage]
+  );
+  await insertPods(tx, event.id, roundId, seedClanPlayoffPods(seeded), event.points_win);
+  return { roundId, stage, seeded };
+}
+
+// Clã Fronto tranca o elenco na inscrição: ninguém entra nem sai depois.
+function assertClanRosterOpen(event, acao) {
+  if (!isClanFormat(event)) return;
+  if (event.current_round > 0) {
+    throw new HttpError(400, `Clã Fronto não permite ${acao} com o torneio em andamento`);
+  }
+}
+
 // Auth: get my events (must be before /:id)
 router.get('/user/mine', auth, asyncHandler(async (req, res) => {
   const owned = await db.query(`
@@ -194,7 +315,18 @@ router.get('/:id', asyncHandler(async (req, res) => {
   // Standings e desempates saem prontos do servidor: a mesma ordem alimenta a
   // tabela, o seeding dos playoffs e a exportação, sem cada cliente recalcular
   // (e divergir) por conta própria.
-  res.json({ ...event, players: computeStandings(players, pairings, event), rounds, pairings });
+  const ranked = computeStandings(players, pairings, event);
+
+  // Em Clã Fronto a tabela principal é a de clãs; a individual fica ao lado e
+  // é ela que define os dois representantes de cada clã no mata-mata.
+  let clans = [];
+  let clanStandings = [];
+  if (isClanFormat(event)) {
+    clans = await eventClans(db, req.params.id);
+    clanStandings = computeClanStandings(ranked, clans);
+  }
+
+  res.json({ ...event, players: ranked, rounds, pairings, clans, clan_standings: clanStandings });
 }));
 
 // Public: SSE stream — pings connected clients whenever this event changes so they know to refetch
@@ -290,7 +422,7 @@ router.get('/:id/export', asyncHandler(async (req, res) => {
 // Auth: create event (organizer only)
 router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(schemas.createEvent), asyncHandler(async (req, res) => {
   const {
-    name, description, city, address, online, date, game, format,
+    name, description, city, address, online, date, game, format, tournament_format,
     pairing_method, playoff_structure, allow_byes, test_event,
     collaborative_deck, async_draws, confirm_players, qr_code_enabled, league_id, pod_size,
     points_win, points_draw, points_loss,
@@ -306,21 +438,25 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(sc
 
   const id = uuidv4();
   const thumbnail = req.file ? `/uploads/${req.file.filename}` : null;
-  const podSizeVal = parseInt(pod_size) || 2;
+  // O formato manda no tamanho da mesa e nos byes: mesa de 4 clãs distintos, e
+  // como o total é sempre múltiplo de 4, folga não existe.
+  const clanFormat = (tournament_format || 'standard') === 'clafronto';
+  const podSizeVal = clanFormat ? 4 : (parseInt(pod_size) || 2);
   const pointsWinVal = points_win !== undefined && points_win !== '' ? parseInt(points_win) : 3;
   const pointsDrawVal = points_draw !== undefined && points_draw !== '' ? parseInt(points_draw) : 1;
   const pointsLossVal = points_loss !== undefined && points_loss !== '' ? parseInt(points_loss) : 0;
 
   await db.run(`
     INSERT INTO events (id, name, description, city, address, online, thumbnail, date, game, format,
-      pairing_method, playoff_structure, allow_byes, test_event, collaborative_deck, async_draws,
+      tournament_format, pairing_method, playoff_structure, allow_byes, test_event, collaborative_deck, async_draws,
       confirm_players, qr_code_enabled, league_id, pod_size, points_win, points_draw, points_loss, owner_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     id, name, description || null, city || null, address || null,
     parseBool(online) ? 1 : 0, thumbnail, date, game, format || null,
+    tournament_format || 'standard',
     pairing_method || 'swiss', playoff_structure || 'none',
-    parseBool(allow_byes) ? 1 : 0, parseBool(test_event) ? 1 : 0,
+    clanFormat ? 0 : (parseBool(allow_byes) ? 1 : 0), parseBool(test_event) ? 1 : 0,
     parseBool(collaborative_deck) ? 1 : 0, parseBool(async_draws) ? 1 : 0,
     parseBool(confirm_players) ? 1 : 0, parseBool(qr_code_enabled) ? 1 : 0, leagueIdVal, podSizeVal,
     pointsWinVal, pointsDrawVal, pointsLossVal, req.user.id,
@@ -334,7 +470,7 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
   const event = await ownedEvent(db, req.params.id, req.user.id);
 
   const {
-    name, description, city, address, online, date, game, format,
+    name, description, city, address, online, date, game, format, tournament_format,
     pairing_method, pod_size, playoff_structure, allow_byes, test_event,
     collaborative_deck, async_draws, confirm_players, qr_code_enabled, league_id, status,
     points_win, points_draw, points_loss,
@@ -356,13 +492,15 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
 
   await db.run(`
     UPDATE events SET name=?, description=?, city=?, address=?, online=?, thumbnail=?, date=?,
-    game=?, format=?, pairing_method=?, pod_size=?, playoff_structure=?, allow_byes=?, test_event=?,
+    game=?, format=?, tournament_format=?, pairing_method=?, pod_size=?, playoff_structure=?, allow_byes=?, test_event=?,
     collaborative_deck=?, async_draws=?, confirm_players=?, qr_code_enabled=?, league_id=?, points_win=?, points_draw=?, points_loss=?,
     status=? WHERE id=?
   `, [
     name || event.name, description ?? event.description, city ?? event.city,
     address ?? event.address, online !== undefined ? (parseBool(online) ? 1 : 0) : event.online,
     thumbnail, date || event.date, game || event.game, format ?? event.format,
+    // trocar de formato com o torneio em andamento quebraria os pareamentos já feitos
+    event.current_round > 0 ? event.tournament_format : (tournament_format || event.tournament_format),
     pairing_method || event.pairing_method, pod_size ? parseInt(pod_size) : event.pod_size,
     playoff_structure || event.playoff_structure,
     allow_byes !== undefined ? (parseBool(allow_byes) ? 1 : 0) : event.allow_byes,
@@ -398,6 +536,9 @@ router.post('/:id/join', auth, asyncHandler(async (req, res) => {
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
   if (!event) throw new HttpError(404, 'Event not found');
   if (event.status === 'completed') throw new HttpError(400, 'This event has already finished');
+  if (isClanFormat(event)) {
+    throw new HttpError(400, 'Neste torneio a inscrição é por clã: use a inscrição de clã, com quatro jogadores');
+  }
   const existing = await db.get(
     'SELECT id FROM event_players WHERE event_id = ? AND user_id = ?',
     [req.params.id, req.user.id]
@@ -443,6 +584,7 @@ router.delete('/:id/join', auth, asyncHandler(async (req, res) => {
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
   if (!event) throw new HttpError(404, 'Event not found');
   assertNotFinished(event);
+  assertClanRosterOpen(event, 'sair do torneio');
 
   const player = await db.get(
     'SELECT * FROM event_players WHERE event_id = ? AND user_id = ?',
@@ -458,6 +600,9 @@ router.delete('/:id/join', auth, asyncHandler(async (req, res) => {
 // Auth: add player by email or guest name (owner only)
 router.post('/:id/players', auth, validate(schemas.addPlayer), asyncHandler(async (req, res) => {
   const event = await liveOwnedEvent(db, req.params.id, req.user.id);
+  if (isClanFormat(event)) {
+    throw new HttpError(400, 'Neste torneio jogadores entram em clãs de quatro, não um a um');
+  }
 
   const { email, display_name } = req.body;
   let userId = null;
@@ -486,6 +631,122 @@ router.post('/:id/players', auth, validate(schemas.addPlayer), asyncHandler(asyn
   if (userId) await notifyUsers(db, [userId], `Você foi inscrito em ${event.name}.`);
   eventStream.broadcast(req.params.id);
   res.status(201).json(await db.get('SELECT * FROM event_players WHERE id = ?', [id]));
+}));
+
+/**
+ * Clã Fronto: inscreve um clã inteiro.
+ *
+ * Dois caminhos, e nunca os dois juntos:
+ *   - quatro e-mails de contas existentes, e quem envia precisa estar entre eles;
+ *   - quatro nomes de convidado, e só o dono do evento pode usar esse caminho.
+ *
+ * Tudo é validado antes de gravar qualquer linha: um clã entra completo ou não
+ * entra. Meio clã deixaria o torneio impossível de parear.
+ */
+router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async (req, res) => {
+  const { name, emails, display_names } = req.body;
+
+  const criado = await db.transaction(async (tx) => {
+    const event = await tx.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
+    if (!event) throw new HttpError(404, 'Event not found');
+    if (!isClanFormat(event)) throw new HttpError(400, 'Este torneio não é um Clã Fronto');
+    assertNotFinished(event);
+    if (event.current_round > 0) {
+      throw new HttpError(400, 'O torneio já começou: não é mais possível inscrever clãs');
+    }
+
+    const isOwner = event.owner_id === req.user.id;
+    if (display_names && !isOwner) {
+      throw new HttpError(403, 'Só o organizador pode inscrever um clã de convidados');
+    }
+
+    const jaExiste = await tx.get(
+      'SELECT id FROM event_clans WHERE event_id = ? AND name = ?',
+      [req.params.id, name]
+    );
+    if (jaExiste) throw new HttpError(409, `Já existe um clã chamado ${name} neste torneio`);
+
+    // --- resolve os quatro integrantes antes de gravar ---
+    let membros;
+    if (emails) {
+      const normalizados = emails.map((e) => e.trim().toLowerCase());
+      if (new Set(normalizados).size !== CLAN_SIZE) {
+        throw new HttpError(400, 'Os quatro e-mails precisam ser de pessoas diferentes');
+      }
+      if (!normalizados.includes(String(req.user.email).toLowerCase())) {
+        throw new HttpError(403, 'Você precisa fazer parte do clã que está inscrevendo');
+      }
+
+      const usuarios = await tx.query(
+        `SELECT id, email, display_name FROM users WHERE LOWER(email) IN (${normalizados.map(() => '?').join(',')})`,
+        normalizados
+      );
+      const porEmail = new Map(usuarios.map((u) => [u.email.toLowerCase(), u]));
+      const faltando = normalizados.filter((e) => !porEmail.has(e));
+      if (faltando.length) {
+        throw new HttpError(404, `Sem conta cadastrada para: ${faltando.join(', ')}`);
+      }
+
+      const ids = normalizados.map((e) => porEmail.get(e).id);
+      const jaInscritos = await tx.query(
+        `SELECT ep.user_id, u.email FROM event_players ep JOIN users u ON u.id = ep.user_id
+         WHERE ep.event_id = ? AND ep.user_id IN (${ids.map(() => '?').join(',')})`,
+        [req.params.id, ...ids]
+      );
+      if (jaInscritos.length) {
+        throw new HttpError(409, `Já inscrito neste torneio: ${jaInscritos.map((r) => r.email).join(', ')}`);
+      }
+
+      membros = normalizados.map((e) => {
+        const u = porEmail.get(e);
+        return { user_id: u.id, display_name: u.display_name };
+      });
+    } else {
+      membros = display_names.map((nome) => ({ user_id: null, display_name: nome }));
+    }
+
+    const clanId = uuidv4();
+    await tx.run('INSERT INTO event_clans (id, event_id, name) VALUES (?, ?, ?)', [clanId, req.params.id, name]);
+    for (const m of membros) {
+      await tx.run(
+        'INSERT INTO event_players (id, event_id, clan_id, user_id, display_name) VALUES (?, ?, ?, ?, ?)',
+        [uuidv4(), req.params.id, clanId, m.user_id, m.display_name]
+      );
+    }
+
+    await notifyUsers(
+      tx,
+      membros.map((m) => m.user_id),
+      `Você foi inscrito no clã ${name}, em ${event.name}.`
+    );
+
+    return { id: clanId, name, players: membros };
+  });
+
+  eventStream.broadcast(req.params.id);
+  res.status(201).json(criado);
+}));
+
+// Clã Fronto: desfaz a inscrição de um clã inteiro, antes do torneio começar.
+router.delete('/:id/clans/:clanId', auth, asyncHandler(async (req, res) => {
+  await db.transaction(async (tx) => {
+    const event = await ownedEvent(tx, req.params.id, req.user.id);
+    if (!isClanFormat(event)) throw new HttpError(400, 'Este torneio não é um Clã Fronto');
+    if (event.current_round > 0) {
+      throw new HttpError(400, 'O torneio já começou: o elenco está fechado');
+    }
+    const clan = await tx.get(
+      'SELECT * FROM event_clans WHERE id = ? AND event_id = ?',
+      [req.params.clanId, req.params.id]
+    );
+    if (!clan) throw new HttpError(404, 'Clã não encontrado');
+
+    await tx.run('DELETE FROM event_players WHERE clan_id = ?', [req.params.clanId]);
+    await tx.run('DELETE FROM event_clans WHERE id = ?', [req.params.clanId]);
+  });
+
+  eventStream.broadcast(req.params.id);
+  res.json({ message: 'Clã removido' });
 }));
 
 // Auth: update player deck/status
@@ -529,7 +790,8 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
 
 // Auth: remove player (owner only) — kept as a drop once they've been paired
 router.delete('/:id/players/:playerId', auth, asyncHandler(async (req, res) => {
-  await liveOwnedEvent(db, req.params.id, req.user.id);
+  const event = await liveOwnedEvent(db, req.params.id, req.user.id);
+  assertClanRosterOpen(event, 'remover jogador');
 
   const player = await db.get(
     'SELECT * FROM event_players WHERE id = ? AND event_id = ?',
@@ -572,6 +834,53 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
 
     const podSize = event.pod_size || 2;
     const roundNumber = event.current_round + 1;
+
+    if (currentRoundRow?.is_playoff && isClanFormat(event)) {
+      // Clã Fronto: cada mesa elimina um clã inteiro. Quem avança é a dupla, não o jogador.
+      const prevPairings = await tx.query(
+        'SELECT * FROM pairings WHERE round_id = ? ORDER BY table_number',
+        [currentRoundRow.id]
+      );
+      const allPlayers = await tx.query('SELECT * FROM event_players WHERE event_id = ?', [req.params.id]);
+      const playersById = new Map(allPlayers.map((p) => [p.id, p]));
+
+      const clansQueAvancam = [];
+      for (const p of prevPairings) {
+        const vencedor = clanOfResult(p, playersById);
+        if (vencedor) clansQueAvancam.push(vencedor);
+      }
+
+      if (clansQueAvancam.length <= 1) {
+        const clanCampeao = clansQueAvancam[0] ?? null;
+        // champion_id guarda o melhor colocado do clã campeão, para as telas que
+        // mostram um nome; champion_clan_id é quem de fato venceu.
+        const pastPairings = await eventPairings(tx, req.params.id);
+        const ranked = computeStandings(allPlayers, pastPairings, event);
+        const melhorDoCla = ranked.find((p) => p.clan_id === clanCampeao) ?? null;
+        await tx.run(
+          "UPDATE events SET status = 'completed', champion_id = ?, champion_clan_id = ? WHERE id = ?",
+          [melhorDoCla?.id ?? null, clanCampeao, req.params.id]
+        );
+        return {
+          status: 200,
+          body: { champion: true, event: await tx.get('SELECT * FROM events WHERE id = ?', [req.params.id]) },
+        };
+      }
+
+      const pastPairings = await eventPairings(tx, req.params.id);
+      const ranked = computeStandings(allPlayers, pastPairings, event);
+      const { roundId } = await buildClanPlayoffRound(tx, event, clansQueAvancam, roundNumber, ranked);
+      await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
+        [roundNumber, 'ongoing', req.params.id]);
+
+      return {
+        status: 201,
+        body: {
+          round: await tx.get('SELECT * FROM rounds WHERE id = ?', [roundId]),
+          pairings: await tx.query('SELECT * FROM pairings WHERE round_id = ?', [roundId]),
+        },
+      };
+    }
 
     if (currentRoundRow?.is_playoff) {
       // Advance the bracket: resolve who advances out of each pod of the current playoff round
@@ -642,10 +951,19 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
     const players = computeStandings(allPlayers, pastPairings, event).filter((p) => p.status === 'active');
     if (players.length < 2) throw new HttpError(400, 'Need at least 2 active players');
 
-    const pods = generateSwissPairings(players, podSize, event.pairing_method, pastPairings);
+    let pods;
+    if (isClanFormat(event)) {
+      // Clã Fronto: mesas de 4 clãs distintos, sem bye. As guardas do formato
+      // rodam antes, para o erro apontar o clã incompleto em vez de estourar
+      // dentro do pareador.
+      await assertClanFieldReady(tx, req.params.id);
+      pods = generateClanPairings(players, event.pairing_method, pastPairings, 200, roundNumber - 1);
+    } else {
+      pods = generateSwissPairings(players, podSize, event.pairing_method, pastPairings);
 
-    if (!event.allow_byes && pods.some((p) => !p.player2)) {
-      throw new HttpError(400, 'Número de jogadores não forma pods completos e Byes estão desativados para este evento.');
+      if (!event.allow_byes && pods.some((p) => !p.player2)) {
+        throw new HttpError(400, 'Número de jogadores não forma pods completos e Byes estão desativados para este evento.');
+      }
     }
 
     const roundId = uuidv4();
@@ -699,6 +1017,40 @@ router.post('/:id/playoffs/start', auth, asyncHandler(async (req, res) => {
           throw new HttpError(400, `Round ${event.current_round} ainda tem ${pending} resultado(s) pendente(s)`);
         }
       }
+    }
+
+    // Clã Fronto tem chaveamento próprio: os melhores clãs, dois jogadores cada,
+    // jogando em duplas. Só 2 e 4 clãs fecham até a final — cada mesa elimina um
+    // clã inteiro, então o bracket só divide por dois.
+    if (isClanFormat(event)) {
+      const totalClans = CLAN_PLAYOFF_SIZES[event.playoff_structure];
+      if (!totalClans) {
+        throw new HttpError(400, 'Clã Fronto exige playoff de 2 ou 4 clãs');
+      }
+      const allPlayers = await tx.query('SELECT * FROM event_players WHERE event_id = ?', [req.params.id]);
+      const pastPairings = await eventPairings(tx, req.params.id);
+      const ranked = computeStandings(allPlayers, pastPairings, event);
+      const clans = await eventClans(tx, req.params.id);
+      if (clans.length < totalClans) {
+        throw new HttpError(400, `O torneio tem ${clans.length} clãs; o playoff escolhido precisa de ${totalClans}`);
+      }
+      const classificados = computeClanStandings(ranked, clans).slice(0, totalClans).map((c) => c.id);
+
+      const roundNumber = event.current_round + 1;
+      const { roundId, seeded } = await buildClanPlayoffRound(tx, event, classificados, roundNumber, ranked);
+      await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
+        [roundNumber, 'ongoing', req.params.id]);
+
+      await notifyUsers(
+        tx,
+        seeded.flatMap((c) => c.players.map((p) => p.user_id)),
+        `${event.name}: seu clã se classificou para o mata-mata.`
+      );
+
+      return {
+        round: await tx.get('SELECT * FROM rounds WHERE id = ?', [roundId]),
+        pairings: await tx.query('SELECT * FROM pairings WHERE round_id = ?', [roundId]),
+      };
     }
 
     const PLAYOFF_SIZES = { top4: 4, top8: 8, top16: 16 };
@@ -759,6 +1111,15 @@ router.post('/:id/rounds/undo', auth, asyncHandler(async (req, res) => {
     const winnerKey = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
 
     const pairings = await tx.query('SELECT * FROM pairings WHERE round_id = ?', [round.id]);
+
+    // Desfazer uma rodada de duplas precisa devolver os pontos aos dois parceiros,
+    // do mesmo jeito que foram creditados.
+    const partnerTable = isClanFormat(event) && Boolean(round.is_playoff);
+    const playersById = new Map(
+      (await tx.query('SELECT id, clan_id FROM event_players WHERE event_id = ?', [req.params.id]))
+        .map((p) => [p.id, p])
+    );
+
     for (const p of pairings) {
       if (!p.result || p.result_status !== 'confirmed') continue;
       const allPlayers = [p.player1_id, p.player2_id, p.player3_id, p.player4_id].filter(Boolean);
@@ -767,9 +1128,9 @@ router.post('/:id/rounds/undo', auth, asyncHandler(async (req, res) => {
       } else if (p.result === 'bye') {
         for (const id of allPlayers) await undoWin(id);
       } else if (winnerKey[p.result]) {
-        const winnerId = p[winnerKey[p.result]];
+        const winners = winningSeatIds(p, p.result, playersById, partnerTable);
         for (const id of allPlayers) {
-          if (id === winnerId) await undoWin(id);
+          if (winners.has(id)) await undoWin(id);
           else await undoLoss(id);
         }
       }
@@ -781,7 +1142,7 @@ router.post('/:id/rounds/undo', auth, asyncHandler(async (req, res) => {
     const newRoundNumber = event.current_round - 1;
     // champion_id junto: desfazer a final reabre o evento, e um campeão gravado
     // deixaria o banner pendurado num torneio que voltou a estar em disputa.
-    await tx.run('UPDATE events SET current_round = ?, status = ?, champion_id = NULL WHERE id = ?', [
+    await tx.run('UPDATE events SET current_round = ?, status = ?, champion_id = NULL, champion_clan_id = NULL WHERE id = ?', [
       newRoundNumber,
       newRoundNumber === 0 ? 'upcoming' : 'ongoing',
       req.params.id,
@@ -904,6 +1265,14 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
     const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
     const winnerKey = { player1: pairing.player1_id, player2: pairing.player2_id, player3: pairing.player3_id, player4: pairing.player4_id };
 
+    const partnerTable = await isPartnerTable(tx, event, pairing.round_id);
+    const playersById = new Map(
+      (await tx.query(
+        `SELECT id, clan_id FROM event_players WHERE id IN (${allPlayers.map(() => '?').join(',')})`,
+        allPlayers
+      )).map((p) => [p.id, p])
+    );
+
     // Revert the previous result's effect, if any, before applying the new one
     // (prevents double-counting points when an owner corrects a result). A pending result never
     // had points applied, so there's nothing to revert in that case.
@@ -913,9 +1282,9 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
       } else if (pairing.result === 'bye') {
         for (const id of allPlayers) await undoWin(id);
       } else if (winnerKey[pairing.result] !== undefined) {
-        const prevWinnerId = winnerKey[pairing.result];
+        const prevWinners = winningSeatIds(pairing, pairing.result, playersById, partnerTable);
         for (const id of allPlayers) {
-          if (id === prevWinnerId) await undoWin(id);
+          if (prevWinners.has(id)) await undoWin(id);
           else await undoLoss(id);
         }
       }
@@ -934,9 +1303,9 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
       } else if (result === 'bye') {
         for (const id of allPlayers) await win(id);
       } else {
-        const winnerId = winnerKey[result];
+        const winners = winningSeatIds(pairing, result, playersById, partnerTable);
         for (const id of allPlayers) {
-          if (id === winnerId) await win(id);
+          if (winners.has(id)) await win(id);
           else await loss(id);
         }
       }
@@ -976,16 +1345,23 @@ router.post('/:id/pairings/:pairingId/approve', auth, asyncHandler(async (req, r
     const draw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws+1,  points=points+? WHERE id=?', [event.points_draw, id]);
 
     const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
-    const winnerKey = { player1: pairing.player1_id, player2: pairing.player2_id, player3: pairing.player3_id, player4: pairing.player4_id };
+
+    const partnerTable = await isPartnerTable(tx, event, pairing.round_id);
+    const playersById = new Map(
+      (await tx.query(
+        `SELECT id, clan_id FROM event_players WHERE id IN (${allPlayers.map(() => '?').join(',')})`,
+        allPlayers
+      )).map((p) => [p.id, p])
+    );
 
     if (pairing.result === 'draw') {
       for (const id of allPlayers) await draw(id);
     } else if (pairing.result === 'bye') {
       for (const id of allPlayers) await win(id);
     } else {
-      const winnerId = winnerKey[pairing.result];
+      const winners = winningSeatIds(pairing, pairing.result, playersById, partnerTable);
       for (const id of allPlayers) {
-        if (id === winnerId) await win(id);
+        if (winners.has(id)) await win(id);
         else await loss(id);
       }
     }

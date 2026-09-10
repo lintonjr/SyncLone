@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import * as QRCode from 'qrcode';
-import { EventService, TournamentEvent, Player, Round, Pairing } from '../../services/event';
+import { EventService, TournamentEvent, Player, Round, Pairing, ClanStanding } from '../../services/event';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
 
@@ -23,6 +23,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   event = signal<TournamentEvent | null>(null);
   loading = signal(true);
   tab = signal<'standings' | 'pairings' | 'results' | 'myround'>('standings');
+  standingsView = signal<'clans' | 'players'>('clans');
   actionLoading = signal(false);
   error = signal('');
   resultModal = signal<{ pairing: Pairing } | null>(null);
@@ -120,6 +121,93 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   });
 
   isPodMode = computed(() => (this.event()?.pod_size ?? 2) >= 3);
+
+  /* ---------- Clã Fronto ---------- */
+
+  isClanFormat = computed(() => this.event()?.tournament_format === 'clafronto');
+  clanStandings = computed<ClanStanding[]>(() => this.event()?.clan_standings ?? []);
+
+  // Nome do clã por jogador, para etiquetar as mesas e a tabela individual.
+  private clanNameByPlayer = computed(() => {
+    const nomes = new Map((this.event()?.clans ?? []).map((c) => [c.id, c.name]));
+    const porJogador = new Map<string, string>();
+    for (const p of this.event()?.players ?? []) {
+      if (p.clan_id) porJogador.set(p.id, nomes.get(p.clan_id) ?? '');
+    }
+    return porJogador;
+  });
+
+  clanOf(playerId: string | undefined | null): string {
+    return playerId ? this.clanNameByPlayer().get(playerId) ?? '' : '';
+  }
+
+  // Uma cor estável por clã, para a mesa ser lida de relance — como nas tabelas
+  // de referência do formato.
+  clanIndex(playerId: string | undefined | null): number {
+    const clans = this.event()?.clans ?? [];
+    const player = (this.event()?.players ?? []).find((p) => p.id === playerId);
+    const i = clans.findIndex((c) => c.id === player?.clan_id);
+    return i < 0 ? 0 : i % 8;
+  }
+
+  championClanName = computed(() => {
+    const ev = this.event();
+    if (!ev?.champion_clan_id) return null;
+    return ev.clans?.find((c) => c.id === ev.champion_clan_id)?.name ?? null;
+  });
+
+  clanModal = signal(false);
+  clanName = signal('');
+  clanEmails = signal(['', '', '', '']);
+  clanGuestNames = signal(['', '', '', '']);
+  clanAsGuests = signal(false);
+  clanLoading = signal(false);
+  clanError = signal('');
+
+  openClanModal() {
+    this.clanName.set('');
+    this.clanEmails.set(['', '', '', '']);
+    this.clanGuestNames.set(['', '', '', '']);
+    this.clanAsGuests.set(false);
+    this.clanError.set('');
+    this.clanModal.set(true);
+  }
+
+  setClanEmail(i: number, value: string) {
+    this.clanEmails.update((list) => list.map((v, k) => (k === i ? value : v)));
+  }
+
+  setClanGuest(i: number, value: string) {
+    this.clanGuestNames.update((list) => list.map((v, k) => (k === i ? value : v)));
+  }
+
+  submitClan() {
+    const name = this.clanName().trim();
+    if (name.length < 2) { this.clanError.set('Dê um nome ao clã'); return; }
+
+    const guests = this.clanAsGuests();
+    const valores = (guests ? this.clanGuestNames() : this.clanEmails()).map((v) => v.trim());
+    if (valores.some((v) => !v)) {
+      this.clanError.set(guests ? 'Informe os quatro nomes' : 'Informe os quatro e-mails');
+      return;
+    }
+
+    this.clanLoading.set(true);
+    this.clanError.set('');
+    const payload = guests ? { name, display_names: valores } : { name, emails: valores };
+    this.eventSvc.createClan(this.id(), payload).subscribe({
+      next: () => { this.load(); this.clanModal.set(false); this.clanLoading.set(false); },
+      error: (err) => { this.clanError.set(err.error?.error || 'Não foi possível inscrever o clã'); this.clanLoading.set(false); },
+    });
+  }
+
+  removeClan(clanId: string, nome: string) {
+    if (!confirm(`Remover o clã ${nome} e os seus quatro jogadores?`)) return;
+    this.eventSvc.deleteClan(this.id(), clanId).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(err.error?.error || 'Não foi possível remover o clã'),
+    });
+  }
 
   currentRoundPairings = computed(() => {
     const ev = this.event();

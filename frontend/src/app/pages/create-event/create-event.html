@@ -76,6 +76,20 @@
       </div>
     }
 
+    <div class="form-field">
+      <label>Formato do torneio</label>
+      <select [value]="tournamentFormat()" (change)="onTournamentFormatChange($any($event.target).value)">
+        <option value="standard">Padrão — inscrição individual</option>
+        <option value="clafronto">Clã Fronto — times de 4 jogadores</option>
+      </select>
+      @if (isClanFormat()) {
+        <span class="field-hint">
+          Jogadores entram em clãs de quatro. Cada mesa tem quatro clãs diferentes, ninguém enfrenta
+          o próprio time, e o elenco fecha na inscrição — não há saída no meio do torneio.
+        </span>
+      }
+    </div>
+
     <div class="row-3">
       <div class="form-field">
         <label>Pairing Method</label>
@@ -88,7 +102,7 @@
       </div>
       <div class="form-field">
         <label>Players per Pod</label>
-        <select [value]="podSize()" (change)="podSize.set(+$any($event.target).value)">
+        <select [value]="podSize()" (change)="podSize.set(+$any($event.target).value)" [disabled]="isClanFormat()">
           <option [value]="2">2 — 1v1 (Standard)</option>
           <option [value]="3">3 — 3-player Pod</option>
           <option [value]="4">4 — 4-player Pod (Commander)</option>
@@ -106,10 +120,17 @@
       <div class="form-field">
         <label>Playoff Structure</label>
         <select [value]="playoffStructure()" (change)="playoffStructure.set($any($event.target).value)">
-          <option value="none">No Playoffs</option>
-          <option value="top4">Top 4 Playoff</option>
-          <option value="top8">Top 8 Playoff</option>
-          <option value="top16">Top 16 Playoff</option>
+          @if (isClanFormat()) {
+            <!-- cada mesa elimina um cla inteiro, entao so 2 e 4 fecham ate a final -->
+            <option value="none">Sem mata-mata</option>
+            <option value="clan2">Final entre os 2 melhores clãs</option>
+            <option value="clan4">Mata-mata com os 4 melhores clãs</option>
+          } @else {
+            <option value="none">No Playoffs</option>
+            <option value="top4">Top 4 Playoff</option>
+            <option value="top8">Top 8 Playoff</option>
+            <option value="top16">Top 16 Playoff</option>
+          }
         </select>
       </div>
       @if (myLeagues().length) {
@@ -143,7 +164,9 @@
 
     <h3 class="optionals-title">Optionals</h3>
     <div class="checkboxes">
-      <label class="checkbox-label"><input type="checkbox" [checked]="allowByes()" (change)="allowByes.set($any($event.target).checked)" /> Allow Byes</label>
+      @if (!isClanFormat()) {
+        <label class="checkbox-label"><input type="checkbox" [checked]="allowByes()" (change)="allowByes.set($any($event.target).checked)" /> Allow Byes</label>
+      }
       <label class="checkbox-label"><input type="checkbox" [checked]="testEvent()" (change)="testEvent.set($any($event.target).checked)" /> Test Event</label>
       <label class="checkbox-label"><input type="checkbox" [checked]="collaborativeDeck()" (change)="collaborativeDeck.set($any($event.target).checked)" /> Collaborative Deck Registering</label>
       <label class="checkbox-label"><input type="checkbox" [checked]="asyncDraws()" (change)="asyncDraws.set($any($event.target).checked)" /> Player-Reported Results</label>

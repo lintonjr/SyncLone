@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, OnInit } from '@angular/core';
+import { Component, inject, signal, input, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { EventService } from '../../services/event';
@@ -32,6 +32,8 @@ export class CreateEventComponent implements OnInit {
   game = signal('');
   format = signal('');
   pairingMethod = signal('swiss');
+  tournamentFormat = signal<'standard' | 'clafronto'>('standard');
+  isClanFormat = computed(() => this.tournamentFormat() === 'clafronto');
   podSize = signal(2);
   roundMinutes = signal(50);
   pointsWin = signal(3);
@@ -84,6 +86,7 @@ export class CreateEventComponent implements OnInit {
           this.game.set(ev.game);
           this.format.set(ev.format ?? '');
           this.pairingMethod.set(ev.pairing_method);
+          this.tournamentFormat.set(ev.tournament_format ?? 'standard');
           this.podSize.set(ev.pod_size ?? 2);
           this.roundMinutes.set(ev.round_minutes ?? 50);
           this.pointsWin.set(ev.points_win ?? 3);
@@ -111,6 +114,18 @@ export class CreateEventComponent implements OnInit {
 
   formats(): string[] {
     return this.FORMATS[this.game()] ?? [];
+  }
+
+  // Clã Fronto manda na mesa (sempre 4) e no playoff (só 2 ou 4 clãs).
+  onTournamentFormatChange(f: 'standard' | 'clafronto') {
+    this.tournamentFormat.set(f);
+    if (f === 'clafronto') {
+      this.podSize.set(4);
+      this.allowByes.set(false);
+      if (!['clan2', 'clan4'].includes(this.playoffStructure())) this.playoffStructure.set('clan4');
+    } else if (['clan2', 'clan4'].includes(this.playoffStructure())) {
+      this.playoffStructure.set('none');
+    }
   }
 
   onFormatChange(f: string) {
@@ -146,7 +161,8 @@ export class CreateEventComponent implements OnInit {
     fd.append('game', this.game());
     fd.append('format', this.format());
     fd.append('pairing_method', this.pairingMethod());
-    fd.append('pod_size', String(this.podSize()));
+    fd.append('tournament_format', this.tournamentFormat());
+    fd.append('pod_size', String(this.isClanFormat() ? 4 : this.podSize()));
     fd.append('round_minutes', String(this.roundMinutes()));
     fd.append('points_win', String(this.pointsWin()));
     fd.append('points_draw', String(this.pointsDraw()));

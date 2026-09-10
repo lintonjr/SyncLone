@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS `events` (
   `date` datetime NOT NULL,
   `game` varchar(50) NOT NULL,
   `format` varchar(50) DEFAULT NULL,
+  -- 'standard' ou 'clafronto' — ver db/migrations/007_cla_fronto.sql
+  `tournament_format` varchar(30) NOT NULL DEFAULT 'standard',
   `pairing_method` varchar(50) NOT NULL DEFAULT 'swiss',
   `playoff_structure` varchar(50) NOT NULL DEFAULT 'none',
   `allow_byes` tinyint(1) NOT NULL DEFAULT '0',
@@ -57,6 +59,7 @@ CREATE TABLE IF NOT EXISTS `events` (
   `points_draw` int NOT NULL DEFAULT '1',
   `points_loss` int NOT NULL DEFAULT '0',
   `champion_id` varchar(36) DEFAULT NULL,
+  `champion_clan_id` varchar(36) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `owner_id` (`owner_id`),
   KEY `league_id` (`league_id`),
@@ -64,9 +67,22 @@ CREATE TABLE IF NOT EXISTS `events` (
   CONSTRAINT `events_league_fk` FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `event_clans` (
+  `id` varchar(36) NOT NULL,
+  `event_id` varchar(36) NOT NULL,
+  `name` varchar(60) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `event_clan_name` (`event_id`, `name`),
+  KEY `event_id` (`event_id`),
+  CONSTRAINT `event_clans_event_fk` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `event_players` (
   `id` varchar(36) NOT NULL,
   `event_id` varchar(36) NOT NULL,
+  -- só preenchido em Clã Fronto
+  `clan_id` varchar(36) DEFAULT NULL,
   `user_id` varchar(36) DEFAULT NULL,
   `display_name` varchar(100) NOT NULL,
   `deck_name` varchar(100) DEFAULT NULL,
@@ -79,8 +95,10 @@ CREATE TABLE IF NOT EXISTS `event_players` (
   PRIMARY KEY (`id`),
   KEY `event_id` (`event_id`),
   KEY `user_id` (`user_id`),
+  KEY `clan_id` (`clan_id`),
   CONSTRAINT `event_players_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`),
-  CONSTRAINT `event_players_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+  CONSTRAINT `event_players_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `event_players_clan_fk` FOREIGN KEY (`clan_id`) REFERENCES `event_clans` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `rounds` (
