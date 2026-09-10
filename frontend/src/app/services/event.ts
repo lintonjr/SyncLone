@@ -42,6 +42,7 @@ export interface TournamentEvent {
   pairings?: Pairing[];
   clans?: Clan[];
   clan_standings?: ClanStanding[];
+  rounds_total?: number;
 }
 
 export interface Clan {
@@ -81,6 +82,8 @@ export interface Player {
   // Desempates oficiais, calculados pelo servidor (MTR 2.3). Nulos quando não há
   // dado suficiente: sem adversários enfrentados, ou sem placar de games registrado.
   matches_played: number;
+  // rodadas em que o jogador teve assento — menor que o total = entrou depois
+  rounds_seated: number;
   mwp: number;
   omw: number | null;
   gwp: number | null;
@@ -93,6 +96,8 @@ export interface Round {
   round_number: number;
   status: string;
   created_at: string;
+  // null enquanto o organizador não soltar o cronômetro
+  timer_started_at: string | null;
   is_playoff: number;
   playoff_stage?: string;
 }
@@ -134,7 +139,7 @@ export class EventService {
     return this.http.get<TournamentEvent[]>(this.API, { params });
   }
 
-  exportUrl(eventId: string, type: 'standings' | 'pairings') {
+  exportUrl(eventId: string, type: 'standings' | 'pairings' | 'clans') {
     return `${this.API}/${eventId}/export?type=${type}`;
   }
 
@@ -188,6 +193,12 @@ export class EventService {
 
   startPlayoffs(eventId: string) {
     return this.http.post(`${this.API}/${eventId}/playoffs/start`, {}, { headers: this.authHeaders() });
+  }
+
+  // Solta o cronômetro da rodada — separado de criá-la, para os jogadores terem
+  // tempo de achar a mesa antes do relógio correr.
+  startRoundTimer(eventId: string, roundId: string) {
+    return this.http.post(`${this.API}/${eventId}/rounds/${roundId}/timer`, {}, { headers: this.authHeaders() });
   }
 
   undoRound(eventId: string) {

@@ -1216,3 +1216,36 @@
 
   &:focus { outline: none; border-color: var(--accent); }
 }
+
+/* Aprovação em lote: com dezenas de pedidos, um a um é inviável no balcão. */
+.pending-actions-bulk {
+  margin-bottom: 10px;
+}
+
+/* Rodada pareada com o cronômetro ainda parado: estado neutro, sem alarme. */
+.round-timer.timer-waiting {
+  background: transparent;
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.timer-start-btn {
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
+/* Quem entrou com o torneio em andamento: a pontuação dele não é comparável
+   com a de quem jogou todas as rodadas, e a tabela precisa dizer isso. */
+.late-tag {
+  margin-left: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(234, 179, 8, 0.15);
+  color: #b45309;
+  white-space: nowrap;
+}
+@media (prefers-color-scheme: dark) {
+  .late-tag { color: #fbbf24; }
+}

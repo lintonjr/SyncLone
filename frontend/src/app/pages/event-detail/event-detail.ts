@@ -105,6 +105,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   // a mesma que semeia os playoffs e alimenta a exportação. Aqui só filtramos.
   sortedStandings = computed(() => (this.event()?.players ?? []).filter((p) => p.status === 'active'));
 
+  // Jogador que sentou em menos rodadas do que o torneio teve entrou depois do
+  // começo — e comparar pontos dele com quem jogou tudo engana.
+  entrouDepois(player: Player): number {
+    const total = this.event()?.rounds_total ?? 0;
+    if (!total || player.rounds_seated === undefined) return 0;
+    return Math.max(0, total - player.rounds_seated);
+  }
+
   pendingPlayers = computed(() => (this.event()?.players ?? []).filter((p) => p.status === 'pending'));
 
   droppedPlayers = computed(() =>
@@ -120,7 +128,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }));
   });
 
-  isPodMode = computed(() => (this.event()?.pod_size ?? 2) >= 3);
+  // Clã Fronto joga sempre em mesa de 4, mesmo que `pod_size` tenha sido salvo
+  // com outro valor: sem esta segunda condição, a tela desenha a mesa de quatro
+  // como duelo e esconde os assentos 3 e 4.
+  isPodMode = computed(() =>
+    (this.event()?.pod_size ?? 2) >= 3 || this.isClanFormat()
+  );
 
   /* ---------- Clã Fronto ---------- */
 
@@ -307,7 +320,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     if (!ev || !current || ev.status === 'completed') return null;
     if (current.round.status === 'completed') return null;
 
-    const started = new Date(current.round.created_at).getTime();
+    // Rodada pareada mas sem cronômetro: é a janela para os jogadores acharem a
+    // mesa. Quem decide encerrá-la é o organizador.
+    if (!current.round.timer_started_at) {
+      return { waiting: true, over: false, warning: false, label: 'aguardando início' };
+    }
+
+    const started = new Date(current.round.timer_started_at).getTime();
     if (Number.isNaN(started)) return null;
 
     const remaining = started + (ev.round_minutes ?? 50) * 60_000 - this.now();
@@ -316,13 +335,24 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     const mm = Math.floor(abs / 60_000);
     const ss = Math.floor((abs % 60_000) / 1000);
     return {
+      waiting: false,
       over,
       warning: !over && remaining <= 5 * 60_000,
       label: `${over ? '+' : ''}${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
     };
   });
 
-  exportUrl(type: 'standings' | 'pairings') {
+  startRoundTimer() {
+    const current = this.currentRoundPairings();
+    if (!current) return;
+    this.actionLoading.set(true);
+    this.eventSvc.startRoundTimer(this.id(), current.round.id).subscribe({
+      next: () => { this.load(); this.actionLoading.set(false); },
+      error: (err) => { this.error.set(err.error?.error || 'Não foi possível iniciar o tempo'); this.actionLoading.set(false); },
+    });
+  }
+
+  exportUrl(type: 'standings' | 'pairings' | 'clans') {
     return this.eventSvc.exportUrl(this.id(), type);
   }
 
@@ -507,10 +537,42 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   approvePlayer(playerId: string) {
+    const rodada = this.event()?.current_round ?? 0;
+    if (rodada > 0) {
+      const nome = this.pendingPlayers().find((p) => p.id === playerId)?.display_name ?? 'Este jogador';
+      const ok = confirm(
+        `${nome} entra a partir da Rodada ${rodada + 1}, com 0 pontos e ${rodada} ` +
+        `${rodada === 1 ? 'rodada' : 'rodadas'} a menos que os demais. Aprovar mesmo assim?`
+      );
+      if (!ok) return;
+    }
     this.eventSvc.updatePlayer(this.id(), playerId, { status: 'active' }).subscribe({
       next: () => this.load(),
       error: (err) => this.error.set(err.error?.error || 'Failed to approve player'),
     });
+  }
+
+  // Aprovar 16 pedidos um a um é trabalho de mesa que o sistema pode poupar.
+  approveAllPending() {
+    const pendentes = this.pendingPlayers();
+    if (!pendentes.length) return;
+    const rodada = this.event()?.current_round ?? 0;
+    const aviso = rodada > 0
+      ? ` Eles entram a partir da Rodada ${rodada + 1}, com ${rodada} ${rodada === 1 ? 'rodada' : 'rodadas'} a menos.`
+      : '';
+    if (!confirm(`Aprovar ${pendentes.length} pedido(s) de inscrição?${aviso}`)) return;
+
+    this.actionLoading.set(true);
+    let restantes = pendentes.length;
+    for (const p of pendentes) {
+      this.eventSvc.updatePlayer(this.id(), p.id, { status: 'active' }).subscribe({
+        next: () => { if (--restantes === 0) { this.load(); this.actionLoading.set(false); } },
+        error: (err) => {
+          this.error.set(err.error?.error || 'Falha ao aprovar');
+          if (--restantes === 0) { this.load(); this.actionLoading.set(false); }
+        },
+      });
+    }
   }
 
   rejectPlayer(playerId: string) {

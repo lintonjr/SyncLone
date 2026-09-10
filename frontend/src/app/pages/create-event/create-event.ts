@@ -87,13 +87,13 @@ export class CreateEventComponent implements OnInit {
           this.format.set(ev.format ?? '');
           this.pairingMethod.set(ev.pairing_method);
           this.tournamentFormat.set(ev.tournament_format ?? 'standard');
-          this.podSize.set(ev.pod_size ?? 2);
+          this.podSize.set(this.isClanFormat() ? 4 : (ev.pod_size ?? 2));
           this.roundMinutes.set(ev.round_minutes ?? 50);
           this.pointsWin.set(ev.points_win ?? 3);
           this.pointsDraw.set(ev.points_draw ?? 1);
           this.pointsLoss.set(ev.points_loss ?? 0);
           this.playoffStructure.set(ev.playoff_structure);
-          this.allowByes.set(!!ev.allow_byes);
+          this.allowByes.set(this.isClanFormat() ? false : !!ev.allow_byes);
           this.testEvent.set(!!ev.test_event);
           this.collaborativeDeck.set(!!ev.collaborative_deck);
           this.asyncDraws.set(!!ev.async_draws);
@@ -168,7 +168,9 @@ export class CreateEventComponent implements OnInit {
     fd.append('points_draw', String(this.pointsDraw()));
     fd.append('points_loss', String(this.pointsLoss()));
     fd.append('playoff_structure', this.playoffStructure());
-    fd.append('allow_byes', String(this.allowByes()));
+    // Clã Fronto não tem folga: o servidor força isso, e o formulário não deve
+    // reenviar um valor herdado de um evento gravado antes da trava existir.
+    fd.append('allow_byes', String(this.isClanFormat() ? false : this.allowByes()));
     fd.append('test_event', String(this.testEvent()));
     fd.append('collaborative_deck', String(this.collaborativeDeck()));
     fd.append('async_draws', String(this.asyncDraws()));

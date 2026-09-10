@@ -34,7 +34,20 @@ function computeStandings(players, pairings, event) {
       gamesWon: 0,
       gamesPlayed: 0,
       opponents: new Set(),
+      roundsSeated: new Set(),
     });
+  }
+
+  // Em quantas rodadas distintas o jogador teve assento, independente de já haver
+  // resultado. É o que identifica quem entrou depois do torneio começar — comparar
+  // `matches` com a rodada atual não serve: com a rodada em andamento e nenhum
+  // resultado lançado, o campo inteiro apareceria como atrasado.
+  for (const pairing of pairings) {
+    if (!pairing.round_id) continue;
+    for (const col of SEATS) {
+      const id = pairing[col];
+      if (id && stats.has(id)) stats.get(id).roundsSeated.add(pairing.round_id);
+    }
   }
 
   for (const pairing of pairings) {
@@ -104,6 +117,7 @@ function computeStandings(players, pairings, event) {
     return {
       ...p,
       matches_played: s.matches,
+      rounds_seated: s.roundsSeated.size,
       mwp: matchWinPct(p.id),
       omw: average(opponents.map(matchWinPct)),
       gwp: gameWinPct(p.id),

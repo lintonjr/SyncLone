@@ -129,6 +129,9 @@
       <div class="export-bar">
         <span class="export-label">Export</span>
         <a class="export-link" [href]="exportUrl('standings')" download>⬇ Standings (CSV)</a>
+        @if (isClanFormat()) {
+          <a class="export-link" [href]="exportUrl('clans')" download>⬇ Clãs (CSV)</a>
+        }
         @if (event()!.rounds?.length) {
           <a class="export-link" [href]="exportUrl('pairings')" download>⬇ Pairings (CSV)</a>
         }
@@ -217,8 +220,41 @@
         }
 
         @if (!isClanFormat() || standingsView() === 'players') {
+
+        <!-- A fila de aprovacao fica FORA do bloco da tabela: com todo mundo
+             pendente nao existe jogador ativo, e a tabela nao renderiza. Foi
+             exatamente assim que o organizador ficava sem meio de aprovar. -->
+        @if (isOwner() && pendingPlayers().length) {
+          <div class="pending-section">
+            <h4 class="pending-title">Aguardando aprovação ({{ pendingPlayers().length }})</h4>
+            <div class="pending-actions-bulk">
+              <button class="btn btn-primary" (click)="approveAllPending()" [disabled]="actionLoading()">
+                Aprovar todos ({{ pendingPlayers().length }})
+              </button>
+            </div>
+            <div class="pending-list">
+              @for (player of pendingPlayers(); track player.id) {
+                <div class="pending-row">
+                  <span class="pending-name">{{ player.display_name }}</span>
+                  <div class="pending-actions">
+                    <button class="btn btn-primary" style="font-size:12px;padding:4px 10px" (click)="approvePlayer(player.id)">Aprovar</button>
+                    <button class="btn btn-danger" style="font-size:12px;padding:4px 10px" (click)="rejectPlayer(player.id)">Recusar</button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         @if (sortedStandings().length === 0) {
-          <p class="empty">{{ event()!.status === 'completed' ? 'No players joined this event.' : 'No players yet. Be the first to join!' }}</p>
+          <p class="empty">
+            @if (pendingPlayers().length) {
+              Ninguém aprovado ainda — há {{ pendingPlayers().length }}
+              {{ pendingPlayers().length === 1 ? 'pedido' : 'pedidos' }} de inscrição esperando o organizador.
+            } @else {
+              {{ event()!.status === 'completed' ? 'No players joined this event.' : 'No players yet. Be the first to join!' }}
+            }
+          </p>
         } @else {
           <div class="standings-table card">
             <table>
@@ -265,6 +301,12 @@
                       }
                       <span class="player-name">{{ player.display_name }}</span>
                       @if (isClanFormat()) { <span class="clan-tag">{{ clanOf(player.id) }}</span> }
+                      @if (entrouDepois(player); as faltando) {
+                        <span class="late-tag"
+                              [title]="'Entrou com o torneio em andamento e não jogou ' + faltando + ' rodada(s)'">
+                          entrou depois · −{{ faltando }}
+                        </span>
+                      }
                     </td>
                     <td class="deck-cell">
                       @if (player.deck_name) {
@@ -298,23 +340,6 @@
             </table>
           </div>
 
-          @if (isOwner() && pendingPlayers().length) {
-            <div class="pending-section">
-              <h4 class="pending-title">Pending Approval</h4>
-              <div class="pending-list">
-                @for (player of pendingPlayers(); track player.id) {
-                  <div class="pending-row">
-                    <span class="pending-name">{{ player.display_name }}</span>
-                    <div class="pending-actions">
-                      <button class="btn btn-primary" style="font-size:12px;padding:4px 10px" (click)="approvePlayer(player.id)">Approve</button>
-                      <button class="btn btn-danger" style="font-size:12px;padding:4px 10px" (click)="rejectPlayer(player.id)">Reject</button>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
           @if (droppedPlayers().length && !isClanFormat()) {
             <div class="dropped-section">
               <h4 class="dropped-title">Dropped Players</h4>
@@ -341,10 +366,17 @@
                 {{ currentRoundPairings()!.round.status !== 'completed' ? 'In Progress' : 'Completed' }}
               </span>
               @if (roundTimer(); as timer) {
-                <span class="round-timer" [class.timer-warning]="timer.warning" [class.timer-over]="timer.over"
-                      [title]="timer.over ? 'Round time is up' : 'Time left in this round'">
-                  ⏱ {{ timer.label }}{{ timer.over ? ' — Time!' : '' }}
-                </span>
+                @if (timer.waiting && isOwner()) {
+                  <button class="btn btn-primary timer-start-btn" (click)="startRoundTimer()" [disabled]="actionLoading()">
+                    ⏱ Iniciar tempo
+                  </button>
+                } @else {
+                  <span class="round-timer" [class.timer-warning]="timer.warning" [class.timer-over]="timer.over"
+                        [class.timer-waiting]="timer.waiting"
+                        [title]="timer.waiting ? 'O organizador ainda não iniciou o tempo' : (timer.over ? 'O tempo acabou' : 'Tempo restante na rodada')">
+                    ⏱ {{ timer.label }}{{ timer.over ? ' — Time!' : '' }}
+                  </span>
+                }
               }
               @if (isOwner() && event()!.status !== 'completed') {
                 <div class="round-actions">
@@ -637,7 +669,8 @@
               <span class="round-label">{{ roundLabel(myRound()!.round) }}</span>
               <span class="table-label">{{ isPodMode() ? 'Pod' : 'Table' }} {{ myRound()!.pairing.table_number }}</span>
               @if (roundTimer(); as timer) {
-                <span class="round-timer" [class.timer-warning]="timer.warning" [class.timer-over]="timer.over">
+                <span class="round-timer" [class.timer-warning]="timer.warning" [class.timer-over]="timer.over"
+                      [class.timer-waiting]="timer.waiting">
                   ⏱ {{ timer.label }}{{ timer.over ? ' — Time!' : '' }}
                 </span>
               }

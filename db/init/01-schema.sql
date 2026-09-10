@@ -107,6 +107,8 @@ CREATE TABLE IF NOT EXISTS `rounds` (
   `round_number` int NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'active',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- NULL = pareado, mas o organizador ainda não soltou o cronômetro
+  `timer_started_at` datetime DEFAULT NULL,
   `is_playoff` tinyint NOT NULL DEFAULT '0',
   `playoff_stage` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`),
