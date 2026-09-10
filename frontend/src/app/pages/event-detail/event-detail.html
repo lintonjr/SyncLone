@@ -279,6 +279,7 @@
           (drop)="dropPlayer($event)"
           (removeClanReq)="removeClan($event.id, $event.nome)"
           (editDeck)="openDeckEdit($event)"
+          (linkGuest)="vincularConvidado($event.player.id, $event.email)"
         />
       }
 

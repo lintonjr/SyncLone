@@ -1,0 +1,264 @@
+/* Área de badges do organizador. A imagem manda na leitura: cada cartão é a
+   badge primeiro, o nome depois — é assim que quem criou dez delas encontra a
+   certa de relance. */
+
+.badges-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.badges-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.badges-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.badges-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 52ch;
+}
+
+/* ── Formulário ── */
+.badge-form {
+  padding: 20px 22px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  input[type='text'] {
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+  }
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  input[type='file'] {
+    display: none;
+  }
+}
+
+.file-btn {
+  cursor: pointer;
+  font-size: 12px;
+  padding: 7px 12px;
+}
+
+.file-name {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.badge-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+
+.field-help {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── Grade ── */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.badge-card {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 12px 14px;
+  align-items: center;
+}
+
+.badge-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--surface2);
+}
+
+.badge-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.badge-name {
+  font-size: 15px;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.badge-count {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+}
+
+.badge-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn.sm {
+  font-size: 11.5px;
+  padding: 5px 10px;
+}
+
+.btn.danger {
+  color: #f87171;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.12);
+  }
+}
+
+/* ── Recebedores ── */
+.recipients {
+  grid-column: 1 / -1;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recipients-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.recipient {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recipient-name {
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Quem entregou merece saber que a pessoa escondeu — sem isso, ficaria achando
+   que a badge some sozinha do perfil. */
+.hidden-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.empty,
+.empty-sm {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.empty {
+  font-size: 14px;
+  padding: 40px 0;
+}
+
+.empty-sm {
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.detail-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.error-msg {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}

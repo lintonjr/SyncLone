@@ -75,7 +75,11 @@ export interface Player {
   id: string;
   event_id: string;
   clan_id?: string | null;
-  user_id: string;
+  // Nulo em convidados: metade das inscrições do sistema não tem conta por trás,
+  // e é essa diferença que decide se o nome vira link para o perfil.
+  user_id: string | null;
+  // Preferência do titular. Nulo em convidados, que não têm conta nem perfil.
+  profile_public?: number | null;
   display_name: string;
   deck_name?: string;
   status: string;
@@ -160,6 +164,15 @@ export class EventService {
       es.onmessage = (e) => subscriber.next(e.data === 'deleted' ? 'deleted' : 'update');
       return () => es.close();
     });
+  }
+
+  /** Organizador aponta de que conta é a inscrição de um convidado. */
+  linkGuest(eventId: string, playerId: string, email: string) {
+    return this.http.put(
+      `${this.API}/${eventId}/players/${playerId}/link`,
+      { email },
+      { headers: this.authHeaders() },
+    );
   }
 
   createEvent(formData: FormData) {

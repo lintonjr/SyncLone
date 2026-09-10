@@ -48,6 +48,7 @@ export function umJogador(over: Partial<Player> = {}): Player {
     id: 'p1',
     event_id: 'ev1',
     user_id: 'u1',
+    profile_public: 1,
     display_name: 'Jogador',
     status: 'active',
     wins: 0,

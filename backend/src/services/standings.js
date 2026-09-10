@@ -57,6 +57,9 @@ function computeStandings(players, pairings, event) {
       matchPoints: 0,
       gamesWon: 0,
       gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
       opponents: new Set(),
       swissRoundsSeated: new Set(),
     });
@@ -101,9 +104,23 @@ function computeStandings(players, pairings, event) {
     for (const id of seated) {
       const s = stats.get(id);
       s.matches += 1;
-      if (isBye) s.matchPoints += pointsWin;
-      else if (pairing.result === 'draw') s.matchPoints += pointsDraw;
-      else s.matchPoints += vencedores.has(id) ? pointsWin : pointsLoss;
+      // Cartel e pontos saem da mesma passada e das mesmas regras: bye é vitória,
+      // empate vale para todos os assentos, e na mesa de duplas os dois parceiros
+      // ganham juntos. Mantê-los separados era o que deixava um número dizer uma
+      // coisa e o outro dizer outra.
+      if (isBye) {
+        s.wins += 1;
+        s.matchPoints += pointsWin;
+      } else if (pairing.result === 'draw') {
+        s.draws += 1;
+        s.matchPoints += pointsDraw;
+      } else if (vencedores.has(id)) {
+        s.wins += 1;
+        s.matchPoints += pointsWin;
+      } else {
+        s.losses += 1;
+        s.matchPoints += pointsLoss;
+      }
 
       if (!isBye) {
         const meuLado = parceiroDe(id);
@@ -165,6 +182,9 @@ function computeStandings(players, pairings, event) {
       // mexia na pontuação do evento — e discordavam em silêncio assim que alguém
       // mexia, deixando dois jogadores com o mesmo cartel e totais diferentes.
       points: s.matchPoints,
+      wins: s.wins,
+      losses: s.losses,
+      draws: s.draws,
       matches_played: s.matches,
       swiss_rounds_seated: s.swissRoundsSeated.size,
       mwp: matchWinPct(p.id),

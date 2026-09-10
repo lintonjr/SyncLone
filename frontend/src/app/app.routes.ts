@@ -29,6 +29,12 @@ export const routes: Routes = [
     canActivate: [authGuard, organizerGuard],
   },
   {
+    // Área do organizador: criar badges e entregá-las.
+    path: 'badges',
+    loadComponent: () => import('./pages/badges/badges').then((m) => m.BadgesComponent),
+    canActivate: [authGuard, organizerGuard],
+  },
+  {
     path: 'events',
     loadComponent: () => import('./pages/my-events/my-events').then((m) => m.MyEventsComponent),
     canActivate: [authGuard],
@@ -43,6 +49,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/create-event/create-event').then((m) => m.CreateEventComponent),
     canActivate: [authGuard, organizerGuard],
+  },
+  {
+    // Público: o perfil só mostra o que já aparece na classificação de cada evento.
+    path: 'player/:id',
+    loadComponent: () =>
+      import('./pages/player-profile/player-profile').then((m) => m.PlayerProfileComponent),
   },
   {
     path: 'leagues',

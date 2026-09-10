@@ -9,6 +9,8 @@ export interface User {
   display_name: string;
   email: string;
   role: 'player' | 'organizer';
+  /** Se o histórico entre eventos pode ser reunido numa página pública. */
+  profile_public?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -16,6 +18,19 @@ export class AuthService {
   private readonly API = `${environment.apiUrl}/auth`;
   private readonly USERS_API = `${environment.apiUrl}/users`;
   currentUser = signal<User | null>(this.loadUser());
+
+  /** Reflete no usuário guardado uma mudança feita em outra tela. */
+  patchCurrentUser(campos: Partial<User>) {
+    const atual = this.currentUser();
+    if (!atual) return;
+    const novo = { ...atual, ...campos };
+    this.currentUser.set(novo);
+    try {
+      localStorage.setItem('user', JSON.stringify(novo));
+    } catch {
+      // armazenamento bloqueado: vale só nesta sessão
+    }
+  }
   token = signal<string | null>(localStorage.getItem('token'));
 
   constructor(

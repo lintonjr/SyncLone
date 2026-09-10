@@ -1,0 +1,217 @@
+@if (loading()) {
+  <div class="detail-loading"><div class="spinner"></div></div>
+} @else if (error()) {
+  <div class="profile-page">
+    <p class="empty">{{ error() }}</p>
+  </div>
+} @else if (profile(); as p) {
+  <div class="profile-page">
+    @if (ehMeuPerfilPrivado()) {
+      <p class="private-note">🔒 {{ i18n.t('profilePub.privateMine') }}</p>
+    }
+
+    <header class="profile-head">
+      <div class="avatar-lg">{{ p.user.display_name.charAt(0) }}</div>
+      <div class="profile-id">
+        <div class="name-row">
+          <h1 class="profile-name">{{ p.user.display_name }}</h1>
+          @if (badgesNaLinha().length) {
+            <span class="badge-strip">
+              @for (b of badgesNaLinha(); track b.id) {
+                <img
+                  [src]="imagemDaBadge(b.image)"
+                  class="badge-inline"
+                  [alt]="b.name"
+                  [title]="
+                    b.name + ' — ' + i18n.t('profilePub.badgeBy', { quem: b.awarded_by_name })
+                  "
+                />
+              }
+              @if (badgesAlem()) {
+                <span class="badge-more" [title]="i18n.t('profilePub.badges')">{{
+                  i18n.t('profilePub.moreBadges', { n: badgesAlem() })
+                }}</span>
+              }
+            </span>
+          }
+        </div>
+        @if (p.totals.titles) {
+          <span class="titles-badge">
+            🏆 {{ i18n.t('profilePub.titles', { n: p.totals.titles }) }}
+          </span>
+        }
+      </div>
+    </header>
+
+    @if (mostrarSecaoBadges()) {
+      <!-- Antes das métricas de propósito: a conquista é sobre a pessoa, os
+           números são sobre o desempenho. -->
+      <section class="badge-showcase">
+        <h2 class="section-h">{{ i18n.t('profilePub.badges') }}</h2>
+        <div class="badge-shelf">
+          @for (b of p.badges; track b.id) {
+            <figure class="badge-piece" [class.oculta]="!b.visible">
+              <img [src]="imagemDaBadge(b.image)" class="badge-xl" [alt]="b.name" />
+              <figcaption class="badge-caption">
+                <strong class="badge-title">{{ b.name }}</strong>
+                <span class="badge-by">{{
+                  i18n.t('profilePub.badgeBy', { quem: b.awarded_by_name })
+                }}</span>
+                @if (souEu()) {
+                  <button
+                    class="badge-toggle"
+                    (click)="alternarBadge(b.id, b.visible)"
+                    [title]="
+                      b.visible ? i18n.t('profilePub.badgeHide') : i18n.t('profilePub.badgeShow')
+                    "
+                  >
+                    {{
+                      b.visible ? i18n.t('profilePub.badgeHide') : i18n.t('profilePub.badgeShow')
+                    }}
+                  </button>
+                } @else if (!b.visible) {
+                  <span class="badge-by">{{ i18n.t('profilePub.badgeHidden') }}</span>
+                }
+              </figcaption>
+            </figure>
+          }
+        </div>
+      </section>
+    }
+
+    @if (mostrarRecortes()) {
+      <!-- Só os jogos e formatos que esta pessoa disputou. "Geral" existe sempre
+           e é a soma de todos eles. -->
+      <div class="cuts" role="tablist" [attr.aria-label]="i18n.t('profilePub.allHelpLeague')">
+        <button
+          class="cut"
+          role="tab"
+          [class.active]="recorte() === 'all'"
+          [attr.aria-selected]="recorte() === 'all'"
+          (click)="recorte.set('all')"
+        >
+          {{ i18n.t('profilePub.all') }}
+          <span class="cut-n">{{ p.totals.events }}</span>
+        </button>
+        @for (b of p.by_league; track b.key) {
+          <button
+            class="cut"
+            role="tab"
+            [class.active]="recorte() === b.key"
+            [attr.aria-selected]="recorte() === b.key"
+            [title]="b.league_id ? b.name : i18n.t('profilePub.standaloneHelp')"
+            (click)="recorte.set(b.key)"
+          >
+            {{ rotuloDoRecorte(b) }}
+            <span class="cut-n">{{ b.events }}</span>
+          </button>
+        }
+      </div>
+    }
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-n">{{ emFoco().events }}</span>
+        <span class="stat-k">{{ i18n.t('profilePub.events') }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-n">{{ aproveitamento() }}</span>
+        <span class="stat-k">{{ i18n.t('profilePub.winRate') }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-n stat-win">{{ emFoco().wins }}</span>
+        <span class="stat-k">{{ i18n.t('myRound.wins') }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-n stat-loss">{{ emFoco().losses }}</span>
+        <span class="stat-k">{{ i18n.t('myRound.losses') }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-n stat-draw">{{ emFoco().draws }}</span>
+        <span class="stat-k">{{ i18n.t('myRound.draws') }}</span>
+      </div>
+      @if (emFoco().titles) {
+        <div class="stat-card">
+          <span class="stat-n stat-title">{{ emFoco().titles }}</span>
+          <span class="stat-k">{{ i18n.t('profilePub.titlesShort') }}</span>
+        </div>
+      }
+    </div>
+
+    @if (decks().length) {
+      <section class="profile-section">
+        <h2 class="section-h">{{ i18n.t('profilePub.decks') }}</h2>
+        <div class="deck-list">
+          @for (d of decks(); track d) {
+            <span class="deck-badge-static">{{ d }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="profile-section">
+      <h2 class="section-h">{{ i18n.t('profilePub.history') }}</h2>
+
+      @if (!eventosEmFoco().length) {
+        <p class="empty">
+          {{ p.events.length ? i18n.t('profilePub.noEventsHere') : i18n.t('profilePub.noEvents') }}
+        </p>
+      } @else {
+        <div class="history-table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ i18n.t('profilePub.event') }}</th>
+                <th class="col-date">{{ i18n.t('form.date') }}</th>
+                <th class="col-pos">{{ i18n.t('common.rank') }}</th>
+                <th class="col-num">W</th>
+                <th class="col-num">L</th>
+                <th class="col-num">D</th>
+                <th class="col-pts">{{ i18n.t('common.points') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of eventosEmFoco(); track e.event_id) {
+                <tr>
+                  <td class="event-cell">
+                    <a [routerLink]="['/event', e.event_id]" class="event-link">{{ e.name }}</a>
+                    <span class="event-sub">
+                      {{ e.game }}
+                      @if (e.format) {
+                        · {{ e.format }}
+                      }
+                      @if (e.league_name) {
+                        · {{ e.league_name }}
+                      }
+                    </span>
+                  </td>
+                  <td class="col-date text-muted-sm">{{ e.date | date: 'MMM d, y' }}</td>
+                  <td class="col-pos">
+                    @if (e.dropped) {
+                      <span class="drop-tag">{{ i18n.t('profilePub.dropped') }}</span>
+                    } @else {
+                      <span class="rank-badge" [class]="medalha(e)">{{ ordinal(e.position) }}</span>
+                      <span class="field-size">/ {{ e.field_size }}</span>
+                    }
+                  </td>
+                  <td class="col-num">
+                    <span class="stat-win">{{ e.wins }}</span>
+                  </td>
+                  <td class="col-num">
+                    <span class="stat-loss">{{ e.losses }}</span>
+                  </td>
+                  <td class="col-num">
+                    <span class="stat-draw">{{ e.draws }}</span>
+                  </td>
+                  <td class="col-pts">
+                    <strong class="pts-val">{{ e.points }}</strong>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+}

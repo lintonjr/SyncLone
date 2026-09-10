@@ -1,4 +1,13 @@
 const router = require('express').Router();
+
+/** O que de um usuário pode ir para o cliente. `password_hash` nunca entra. */
+const usuarioPublico = (u) => ({
+  id: u.id,
+  display_name: u.display_name,
+  email: u.email,
+  role: u.role,
+  profile_public: u.profile_public,
+});
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
@@ -37,7 +46,9 @@ router.post('/register', credentialLimiter, validate(schemas.register), asyncHan
   const token = jwt.sign({ id, email, display_name, role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
-  res.status(201).json({ token, user: { id, display_name, email, role } });
+  // `profile_public` acompanha desde o cadastro: sem ele a tela de conta nasceria
+  // sem saber a preferência e teria de ir buscá-la só para desenhar um interruptor.
+  res.status(201).json({ token, user: { id, display_name, email, role, profile_public: 1 } });
 }));
 
 router.post('/login', credentialLimiter, validate(schemas.login), asyncHandler(async (req, res) => {
@@ -52,7 +63,7 @@ router.post('/login', credentialLimiter, validate(schemas.login), asyncHandler(a
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
-  res.json({ token, user: { id: user.id, display_name: user.display_name, email: user.email, role: user.role } });
+  res.json({ token, user: usuarioPublico(user) });
 }));
 
 router.post('/forgot-password', credentialLimiter, validate(schemas.forgotPassword), (req, res) => {

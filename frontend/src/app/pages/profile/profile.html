@@ -15,6 +15,35 @@
       <p class="role-value">{{ auth.currentUser()?.role }}</p>
     </div>
 
+    <div class="form-field visibility-field">
+      <label>{{ i18n.t('profile.visibility') }}</label>
+      <div class="visibility-row">
+        <button
+          type="button"
+          class="toggle"
+          role="switch"
+          [class.on]="perfilPublico()"
+          [attr.aria-checked]="perfilPublico()"
+          [attr.aria-label]="i18n.t('profile.visibility')"
+          [disabled]="visibilityLoading()"
+          (click)="alternarVisibilidade()"
+        >
+          <span class="knob"></span>
+        </button>
+        @if (perfilPublico()) {
+          <a [routerLink]="['/player', auth.currentUser()?.id]" class="view-mine">{{
+            i18n.t('profile.viewMine')
+          }}</a>
+        }
+      </div>
+      <p class="auth-sub visibility-help">
+        {{ perfilPublico() ? i18n.t('profile.visibilityOn') : i18n.t('profile.visibilityOff') }}
+      </p>
+      @if (visibilitySaved()) {
+        <p class="visibility-saved">{{ i18n.t('profile.visibilitySaved') }}</p>
+      }
+    </div>
+
     @if (auth.currentUser()?.role === 'player') {
       @if (error()) {
         <div class="error-msg">{{ error() }}</div>
@@ -24,7 +53,7 @@
         @if (loading()) {
           <span class="spinner-sm"></span>
         }
-        Become an Organizer
+        {{ i18n.t('profile.becomeOrganizer') }}
       </button>
     } @else {
       <div class="success-msg">{{ i18n.t('profile.isOrganizer') }}</div>

@@ -190,7 +190,25 @@
                 @if (isClanFormat()) {
                   <span class="clan-dot" [class]="'clan-c' + clanIndex(player.id)"></span>
                 }
-                <span class="player-name">{{ player.display_name }}</span>
+                @if (temPerfil(player)) {
+                  <a
+                    [routerLink]="['/player', player.user_id]"
+                    class="player-name player-link"
+                    [title]="i18n.t('profilePub.viewProfile', { nome: player.display_name })"
+                    >{{ player.display_name }}</a
+                  >
+                } @else {
+                  <span class="player-name">{{ player.display_name }}</span>
+                  @if (isOwner() && !player.user_id) {
+                    <button
+                      class="link-guest-btn"
+                      (click)="pedirVinculo(player)"
+                      [title]="i18n.t('standings.linkGuest')"
+                    >
+                      ⚯
+                    </button>
+                  }
+                }
                 @if (isClanFormat()) {
                   <span class="clan-tag">{{ clanOf(player.id) }}</span>
                 }

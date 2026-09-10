@@ -619,6 +619,21 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return !!(this.event()?.collaborative_deck && this.isJoined());
   }
 
+  /**
+   * Vincula a inscrição de um convidado a uma conta existente.
+   *
+   * Não muda resultado nenhum — a linha mantém o id, e as mesas continuam
+   * apontando para ela. O que muda é que a participação passa a somar entre
+   * eventos: a liga só agrega quem tem conta, e é só assim que ela aparece num
+   * perfil.
+   */
+  vincularConvidado(playerId: string, email: string) {
+    this.eventSvc.linkGuest(this.id(), playerId, email).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
+    });
+  }
+
   openDeckEdit(player: Player) {
     this.deckNameInput.set(player.deck_name ?? '');
     this.editDeckModal.set({ playerId: player.id, current: player.deck_name ?? '' });

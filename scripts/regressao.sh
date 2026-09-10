@@ -45,9 +45,9 @@ CID=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg2 $S" 
 for c in Alfa Beta Gama Delta; do body -X POST $API/events/$CID/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"$c\",\"display_names\":[\"$c 1\",\"$c 2\",\"$c 3\",\"$c 4\"]}" >/dev/null; done
 for r in 1 2 3 4; do body -X POST $API/events/$CID/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $CID; done
 body $API/events/$CID > $SP/r2.json
-python3 - <<'PY' > $SP/r2.txt
-import json, itertools, collections
-SP='/tmp/claude-1001/-home-lintonjunior-projects-CloneManaSync/166b0b75-a7d4-4653-b550-2500fc81e9be/scratchpad'
+python3 - "$SP" > $SP/r2.txt <<'PY'
+import json, itertools, collections, sys
+SP = sys.argv[1]
 d=json.load(open(SP+'/r2.json'))
 cla={p['id']:p['clan_id'] for p in d['players']}
 pares=collections.Counter(); mesmo=0
@@ -132,6 +132,104 @@ chk "B-03: swiss_rounds_total exposto" "$(jqp '"swiss_rounds_total" in d' < $SP/
 chk "B-04: CSV de clãs" "$(body "$API/events/$CID/export?type=clans" -H "Authorization: Bearer $OT" | head -1 | grep -c 'Rank,Clã')" "1"
 chk "A-01: upload não-imagem -> 400" "$(printf 'x' > $SP/x.txt; code -X POST $API/events -H "Authorization: Bearer $OT" -F "name=U $S" -F "game=Magic" -F "date=2026-10-01" -F "thumbnail=@$SP/x.txt;type=text/plain")" "400"
 chk "apagar Clã Fronto (FK dos clãs) -> 200" "$(code -X DELETE $API/events/$CID -H "Authorization: Bearer $OT")" "200"
+
+sec "9. Perfil público e vinculação de convidado"
+E6=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg6 $S" -F "game=Magic" -F "date=2026-10-01" -F "allow_byes=true" | jqp 'd["id"]')
+for n in Umbra Vega Wren; do body -X POST $API/events/$E6/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
+body -X POST $API/events/$E6/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E6
+UMBRA=$(body $API/events/$E6 | jqp '[p["id"] for p in d["players"] if p["display_name"]=="Umbra"][0]')
+chk "convidado não tem conta" "$(body $API/events/$E6 | jqp '[p["user_id"] for p in d["players"] if p["id"]=="'"$UMBRA"'"][0] is None')" "True"
+chk "vincular convidado a uma conta -> 200" "$(code -X PUT $API/events/$E6/players/$UMBRA/link -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$PJ\"}")" "200"
+chk "vincular de novo -> 409" "$(code -X PUT $API/events/$E6/players/$UMBRA/link -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$PJ\"}")" "409"
+VEGA=$(body $API/events/$E6 | jqp '[p["id"] for p in d["players"] if p["display_name"]=="Vega"][0]')
+chk "mesma conta duas vezes no evento -> 409" "$(code -X PUT $API/events/$E6/players/$VEGA/link -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$PJ\"}")" "409"
+chk "quem não organiza não vincula -> 403" "$(code -X PUT $API/events/$E6/players/$VEGA/link -H "Authorization: Bearer $PT" -H 'Content-Type: application/json' -d "{\"email\":\"$PJ\"}")" "403"
+UID_P=$(body $API/events/$E6 | jqp '[p["user_id"] for p in d["players"] if p["id"]=="'"$UMBRA"'"][0]')
+body $API/users/$UID_P/profile > $SP/perfil.json
+chk "perfil público responde sem token" "$(code $API/users/$UID_P/profile)" "200"
+chk "a participação vinculada aparece no perfil" "$(jqp 'd["totals"]["events"] >= 1' < $SP/perfil.json)" "True"
+chk "perfil nunca devolve e-mail" "$(jqp '"email" in d["user"]' < $SP/perfil.json)" "False"
+chk "retrospecto do perfil e internamente coerente" "$(jqp 'd["totals"]["wins"] + d["totals"]["losses"] + d["totals"]["draws"] == d["totals"]["matches"]' < $SP/perfil.json)" "True"
+chk "perfil inexistente -> 404" "$(code $API/users/00000000-0000-0000-0000-000000000000/profile)" "404"
+
+sec "10. Métricas por liga"
+MF="mf$S@t.local"; reg "Multiliga" "$MF"; MFT=$(tok "$MF")
+MFID=$(body $API/users/me -H "Authorization: Bearer $MFT" | jqp 'd["id"]')
+LA=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"Liga Alfa $S\"}" | jqp 'd["id"]')
+LB=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"Liga Beta $S\"}" | jqp 'd["id"]')
+torneio() {
+  local extra=""
+  [ -n "$3" ] && extra="-F league_id=$3"
+  local eid=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=$1 $S" -F "game=MTG" -F "format=$2" -F "date=2026-10-01" -F "allow_byes=true" $extra | jqp 'd["id"]')
+  body -X POST $API/events/$eid/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$MF\"}" >/dev/null
+  for n in R1 R2 R3; do body -X POST $API/events/$eid/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
+  body -X POST $API/events/$eid/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $eid
+}
+torneio MLa Commander500 "$LA"
+torneio MLb Modern "$LA"
+torneio MLc Standard "$LB"
+torneio MLd cEDH ""
+body $API/users/$MFID/profile > $SP/ml.json
+chk "geral soma os quatro eventos" "$(jqp 'd["totals"]["events"]' < $SP/ml.json)" "4"
+chk "tres recortes: duas ligas e os avulsos" "$(jqp 'len(d["by_league"])' < $SP/ml.json)" "3"
+chk "a liga com duas etapas vem primeiro" "$(jqp 'd["by_league"][0]["events"]' < $SP/ml.json)" "2"
+chk "avulsos por ultimo" "$(jqp 'd["by_league"][-1]["league_id"] is None' < $SP/ml.json)" "True"
+chk "avulsos sem nome: quem rotula e a tela" "$(jqp 'd["by_league"][-1]["name"] is None' < $SP/ml.json)" "True"
+chk "os recortes somam o geral" "$(jqp 'sum(b["events"] for b in d["by_league"]) == d["totals"]["events"]' < $SP/ml.json)" "True"
+chk "e o cartel tambem" "$(jqp 'sum(b["wins"] for b in d["by_league"]) == d["totals"]["wins"]' < $SP/ml.json)" "True"
+chk "nenhum recorte vazio" "$(jqp 'all(b["events"] > 0 for b in d["by_league"])' < $SP/ml.json)" "True"
+chk "o campo leagues saiu da resposta" "$(jqp '"leagues" in d' < $SP/ml.json)" "False"
+chk "quem joga uma liga so tem um recorte" "$(body $API/users/$UID_P/profile | jqp 'len(d["by_league"])')" "1"
+
+sec "11. Badges"
+python3 -c "
+import base64,sys
+sys.stdout.buffer.write(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='))" > $SP/badge.png
+printf 'x' > $SP/naoimg.txt
+head -c 600000 /dev/urandom > $SP/grande.png
+BP="bgp$S@t.local"; reg "Premiado" "$BP"; BPT=$(tok "$BP")
+BPID=$(body $API/users/me -H "Authorization: Bearer $BPT" | jqp 'd["id"]')
+chk "criar badge -> 201" "$(code -X POST $API/badges -H "Authorization: Bearer $OT" -F "name=Campeao $S" -F "image=@$SP/badge.png;type=image/png")" "201"
+BID=$(body $API/badges -H "Authorization: Bearer $OT" | jqp 'd[0]["id"]')
+chk "nome repetido do mesmo dono -> 409" "$(code -X POST $API/badges -H "Authorization: Bearer $OT" -F "name=Campeao $S" -F "image=@$SP/badge.png;type=image/png")" "409"
+chk "sem imagem -> 400" "$(code -X POST $API/badges -H "Authorization: Bearer $OT" -F "name=Sem $S")" "400"
+chk "arquivo nao-imagem -> 400" "$(code -X POST $API/badges -H "Authorization: Bearer $OT" -F "name=Ruim $S" -F "image=@$SP/naoimg.txt;type=text/plain")" "400"
+chk "imagem acima de 512 KB -> 400" "$(code -X POST $API/badges -H "Authorization: Bearer $OT" -F "name=Grande $S" -F "image=@$SP/grande.png;type=image/png")" "400"
+chk "jogador comum nao cria badge -> 403" "$(code -X POST $API/badges -H "Authorization: Bearer $PT" -F "name=X $S" -F "image=@$SP/badge.png;type=image/png")" "403"
+chk "entregar -> 201" "$(code -X POST $API/badges/$BID/award -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$BP\"}")" "201"
+chk "a mesma badge duas vezes para a mesma pessoa -> 409" "$(code -X POST $API/badges/$BID/award -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$BP\"}")" "409"
+BP2="bgq$S@t.local"; reg "Premiado 2" "$BP2"
+chk "a mesma badge para outro jogador -> 201" "$(code -X POST $API/badges/$BID/award -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$BP2\"}")" "201"
+OT2=$(mkorg "bgo$S@t.local" "Outro Org")
+chk "so quem criou entrega -> 403" "$(code -X POST $API/badges/$BID/award -H "Authorization: Bearer $OT2" -H 'Content-Type: application/json' -d "{\"email\":\"$BP\"}")" "403"
+chk "so quem criou apaga -> 403" "$(code -X DELETE $API/badges/$BID -H "Authorization: Bearer $OT2")" "403"
+chk "apagar badge ja entregue -> 409" "$(code -X DELETE $API/badges/$BID -H "Authorization: Bearer $OT")" "409"
+chk "a badge aparece no perfil" "$(body $API/users/$BPID/profile | jqp 'len(d["badges"])')" "1"
+UB=$(body $API/users/me/badges -H "Authorization: Bearer $BPT" | jqp 'd[0]["id"]')
+chk "o jogador esconde" "$(body -X PUT $API/users/me/badges/$UB -H "Authorization: Bearer $BPT" -H 'Content-Type: application/json' -d '{"visible":false}' | jqp 'd["visible"]')" "0"
+chk "sumiu para o visitante" "$(body $API/users/$BPID/profile | jqp 'len(d["badges"])')" "0"
+chk "o titular continua vendo, marcada" "$(body $API/users/$BPID/profile -H "Authorization: Bearer $BPT" | jqp '[b["visible"] for b in d["badges"]]')" "[0]"
+chk "quem entregou nao muda a visibilidade alheia -> 404" "$(code -X PUT $API/users/me/badges/$UB -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"visible":true}')" "404"
+chk "revogar -> 200" "$(code -X DELETE $API/badges/$BID/award/$BPID -H "Authorization: Bearer $OT")" "200"
+ANTES_ARQ=$(docker compose exec -T backend ls /app/uploads 2>/dev/null | wc -l)
+ECAPA=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Capa $S" -F "game=Magic" -F "date=2026-10-01" -F "thumbnail=@$SP/badge.png;type=image/png" | jqp 'd["id"]')
+body -X DELETE $API/events/$ECAPA -H "Authorization: Bearer $OT" >/dev/null; sleep 1
+chk "apagar evento nao deixa a capa no disco" "$(docker compose exec -T backend ls /app/uploads 2>/dev/null | wc -l)" "$ANTES_ARQ"
+
+chk "sumiu ate para o titular" "$(body $API/users/$BPID/profile -H "Authorization: Bearer $BPT" | jqp 'len(d["badges"])')" "0"
+
+sec "12. Visibilidade do perfil é escolha do jogador"
+PM="privreg$S@t.local"; reg "Reservado" "$PM"; PMT=$(tok "$PM")
+PMID=$(body $API/users/me -H "Authorization: Bearer $PMT" | jqp 'd["id"]')
+chk "nasce público" "$(body $API/users/me -H "Authorization: Bearer $PMT" | jqp 'd["profile_public"]')" "1"
+chk "fechar o perfil" "$(body -X PUT $API/users/me/profile-visibility -H "Authorization: Bearer $PMT" -H 'Content-Type: application/json' -d '{"profile_public":false}' | jqp 'd["profile_public"]')" "0"
+chk "anônimo recebe 403, não 404" "$(code $API/users/$PMID/profile)" "403"
+chk "e o motivo é traduzível" "$(body $API/users/$PMID/profile | jqp 'd["code"]')" "api.profilePrivate"
+chk "o próprio titular continua vendo" "$(code $API/users/$PMID/profile -H "Authorization: Bearer $PMT")" "200"
+chk "outra pessoa logada não vê" "$(code $API/users/$PMID/profile -H "Authorization: Bearer $PT")" "403"
+chk "token inválido não quebra a rota pública" "$(code $API/users/$PMID/profile -H "Authorization: Bearer lixo.invalido")" "403"
+chk "sem login não muda preferência alheia" "$(code -X PUT $API/users/me/profile-visibility -H 'Content-Type: application/json' -d '{"profile_public":false}')" "401"
+chk "reabrir volta a responder" "$(body -X PUT $API/users/me/profile-visibility -H "Authorization: Bearer $PMT" -H 'Content-Type: application/json' -d '{"profile_public":true}' >/dev/null; code $API/users/$PMID/profile)" "200"
 
 printf '\n\033[1mRESULTADO: %d ok / %d falhas\033[0m\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

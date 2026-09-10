@@ -1,6 +1,7 @@
 import { Component, computed, input, output, signal, inject } from '@angular/core';
 import { I18nService } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { TournamentEvent, Player, ClanStanding } from '../../services/event';
 
 /**
@@ -15,7 +16,7 @@ import { TournamentEvent, Player, ClanStanding } from '../../services/event';
  */
 @Component({
   selector: 'app-event-standings',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './event-standings.html',
   styleUrl: './event-standings.scss',
 })
@@ -33,6 +34,8 @@ export class EventStandingsComponent {
   drop = output<string>();
   removeClanReq = output<{ id: string; nome: string }>();
   editDeck = output<Player>();
+  /** O organizador aponta de que conta é a inscrição de um convidado. */
+  linkGuest = output<{ player: Player; email: string }>();
 
   /** Qual tabela está à frente no Clã Fronto. Estado só desta aba. */
   view = signal<'clans' | 'players'>('clans');
@@ -101,6 +104,25 @@ export class EventStandingsComponent {
 
   canEditDeck(player: Player): boolean {
     return this.podeEditarDeck()(player);
+  }
+
+  /**
+   * O nome vira link quando há uma página para abrir: a pessoa tem conta e não
+   * fechou o próprio perfil. Linkar para algo que responde 403 seria pior que
+   * não linkar — e mostrar o cadeado de quem fechou não é da conta de ninguém.
+   */
+  temPerfil(player: Player): boolean {
+    return !!player.user_id && (player.profile_public ?? 1) === 1;
+  }
+
+  /**
+   * Metade do histórico do sistema está em convidados sem conta, e nada além do
+   * nome os identifica — por isso quem vincula é o organizador, que sabe quem é
+   * quem, e por isso é um prompt e não uma busca automática.
+   */
+  pedirVinculo(player: Player) {
+    const email = prompt(this.i18n.t('standings.linkPrompt', { nome: player.display_name }));
+    if (email?.trim()) this.linkGuest.emit({ player, email: email.trim() });
   }
 
   openDeckEdit(player: Player) {

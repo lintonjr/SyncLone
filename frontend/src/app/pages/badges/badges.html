@@ -1,0 +1,109 @@
+<div class="badges-page">
+  <header class="badges-head">
+    <div>
+      <h1 class="badges-title">{{ i18n.t('badges.title') }}</h1>
+      <p class="badges-sub">{{ i18n.t('badges.subtitle') }}</p>
+    </div>
+    <button class="btn btn-primary" (click)="abrirCriacao()">{{ i18n.t('badges.new') }}</button>
+  </header>
+
+  @if (error()) {
+    <div class="error-msg">{{ error() }}</div>
+  }
+
+  @if (formOpen()) {
+    <div class="badge-form card">
+      <div class="form-field">
+        <label for="badge-nome">{{ i18n.t('badges.name') }}</label>
+        <input
+          id="badge-nome"
+          type="text"
+          maxlength="60"
+          [value]="nome()"
+          (input)="nome.set($any($event.target).value)"
+          [placeholder]="i18n.t('badges.namePlaceholder')"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="badge-img">{{ i18n.t('badges.image') }}</label>
+        <div class="file-row">
+          @if (previewUrl()) {
+            <img [src]="previewUrl()" class="badge-preview" [alt]="nome()" />
+          }
+          <label class="btn btn-ghost file-btn" for="badge-img">{{
+            i18n.t('badges.chooseImage')
+          }}</label>
+          <input id="badge-img" type="file" accept="image/*" (change)="escolherArquivo($event)" />
+          <span class="file-name">{{ arquivo()?.name || i18n.t('badges.noImage') }}</span>
+        </div>
+        <p class="field-help">{{ i18n.t('badges.imageHelp') }}</p>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-ghost" (click)="formOpen.set(false)">
+          {{ i18n.t('common.cancel') }}
+        </button>
+        <button class="btn btn-primary" (click)="salvar()" [disabled]="!podeSalvar() || saving()">
+          {{ editando() ? i18n.t('badges.save') : i18n.t('badges.create') }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="detail-loading"><div class="spinner"></div></div>
+  } @else if (vazio()) {
+    <p class="empty">{{ i18n.t('badges.empty') }}</p>
+  } @else {
+    <div class="badge-grid">
+      @for (b of badges(); track b.id) {
+        <div class="badge-card card">
+          <img [src]="imagemDe(b)" class="badge-img" [alt]="b.name" />
+          <div class="badge-info">
+            <strong class="badge-name">{{ b.name }}</strong>
+            <button class="badge-count" (click)="alternarRecebedores(b)">
+              {{
+                b.awarded_count
+                  ? i18n.t('badges.awardedTo', { n: b.awarded_count })
+                  : i18n.t('badges.awardedToNone')
+              }}
+            </button>
+          </div>
+          <div class="badge-actions">
+            <button class="btn btn-ghost sm" (click)="entregar(b)">
+              {{ i18n.t('badges.award') }}
+            </button>
+            <button class="btn btn-ghost sm" (click)="abrirEdicao(b)">
+              {{ i18n.t('badges.rename') }}
+            </button>
+            <button class="btn btn-ghost sm danger" (click)="apagar(b)">
+              {{ i18n.t('common.delete') }}
+            </button>
+          </div>
+
+          @if (aberta() === b.id) {
+            <div class="recipients">
+              <h4 class="recipients-title">{{ i18n.t('badges.recipients') }}</h4>
+              @if (!recebedores().length) {
+                <p class="empty-sm">{{ i18n.t('badges.awardedToNone') }}</p>
+              } @else {
+                @for (r of recebedores(); track r.id) {
+                  <div class="recipient">
+                    <span class="recipient-name">{{ r.display_name }}</span>
+                    @if (!r.visible) {
+                      <span class="hidden-tag">{{ i18n.t('badges.hiddenByPlayer') }}</span>
+                    }
+                    <button class="btn btn-ghost sm danger" (click)="revogar(b, r)">
+                      {{ i18n.t('badges.revoke') }}
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

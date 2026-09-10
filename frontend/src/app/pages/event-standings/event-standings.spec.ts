@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { EventStandingsComponent } from './event-standings';
 import { umEvento, umJogador } from '../../testing/fixtures';
 import { I18nService } from '../../i18n/i18n';
+import { provideRouter } from '@angular/router';
 
 /**
  * Testes de template da aba de classificação.
@@ -10,6 +11,14 @@ import { I18nService } from '../../i18n/i18n';
  * aprovação que ficava inalcançável e o selo de entrada tardia. Nenhum dos dois
  * era detectável por teste de serviço — eram de template puro.
  */
+/**
+ * O nome de quem tem conta virou link para o perfil, então o componente passou a
+ * depender do router — daí o provider, que antes não era necessário.
+ */
+function comRouter() {
+  TestBed.configureTestingModule({ providers: [provideRouter([])] });
+}
+
 /** Fixa o idioma: o texto vem do dicionário, e o teste não pode depender do locale da máquina. */
 function comIdiomaFixo() {
   const i18n = TestBed.inject(I18nService);
@@ -18,6 +27,7 @@ function comIdiomaFixo() {
 }
 
 function montar(over: Parameters<typeof umEvento>[0] = {}, isOwner = true) {
+  comRouter();
   comIdiomaFixo();
   const fixture = TestBed.createComponent(EventStandingsComponent);
   fixture.componentRef.setInput('ev', umEvento(over));
@@ -142,5 +152,51 @@ describe('EventStandingsComponent · playoffs não marcam entrada tardia', () =>
 
     expect(selos.length).toBe(1);
     expect(selos[0].textContent).toContain('3');
+  });
+});
+
+describe('EventStandingsComponent · perfil público é escolha do jogador', () => {
+  it('não linka o nome de quem fechou o próprio perfil', async () => {
+    // Linkar para uma página que responde 403 é pior que não linkar. E o nome
+    // continua na tabela: fechar o perfil não esconde resultado de evento.
+    const fixture = montar({
+      players: [
+        umJogador({ id: 'p1', user_id: 'u1', display_name: 'Aberta', profile_public: 1 }),
+        umJogador({ id: 'p2', user_id: 'u2', display_name: 'Fechada', profile_public: 0 }),
+      ],
+    });
+    await fixture.whenStable();
+    const html = fixture.nativeElement as HTMLElement;
+
+    const links = [...html.querySelectorAll('.player-link')].map((a) => a.textContent?.trim());
+    expect(links).toEqual(['Aberta']);
+    expect(html.textContent).toContain('Fechada');
+  });
+
+  it('conta sem preferência gravada continua sendo tratada como pública', async () => {
+    const fixture = montar({
+      players: [umJogador({ id: 'p1', user_id: 'u1', display_name: 'Antiga' })],
+    });
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.player-link')).toBeTruthy();
+  });
+
+  it('convidado não vira link e ganha o botão de vincular para o organizador', async () => {
+    const fixture = montar({
+      players: [umJogador({ id: 'p1', user_id: null, display_name: 'Convidado' })],
+    });
+    await fixture.whenStable();
+    const html = fixture.nativeElement as HTMLElement;
+
+    expect(html.querySelector('.player-link')).toBeFalsy();
+    expect(html.querySelector('.link-guest-btn')).toBeTruthy();
+  });
+
+  it('mas quem tem conta nunca oferece vincular, mesmo com perfil fechado', async () => {
+    const fixture = montar({
+      players: [umJogador({ id: 'p1', user_id: 'u1', display_name: 'Fechada', profile_public: 0 })],
+    });
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.link-guest-btn')).toBeFalsy();
   });
 });

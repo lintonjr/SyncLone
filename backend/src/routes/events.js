@@ -1,43 +1,26 @@
 const router = require('express').Router();
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
-const path = require('path');
 const db = require('../db');
 const auth = require('../middleware/auth');
 const requireOrganizer = require('../middleware/requireOrganizer');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
+const { imageUpload, publicPath, removeFile } = require('../lib/uploads');
 const {
   generateSwissPairings, seedPlayoffPods,
-  generateClanPairings, seedClanPlayoffPods, clanPairSeats,
+  generateClanPairings, seedClanPlayoffPods,
 } = require('../services/pairing');
 const { computeStandings, computeClanStandings } = require('../services/standings');
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
 const eventStream = require('../services/eventStream');
 
-// Uploaded covers are served from the same origin as the SPA, so the stored file
-// must never be something a browser will execute. The extension comes from the
-// mimetype we accepted, never from the client's filename — otherwise a file named
-// "x.html" lands on disk as .html and express.static serves it as a document.
-const IMAGE_EXTENSIONS = {
-  'image/png': '.png',
-  'image/jpeg': '.jpg',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-};
-
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, '../../uploads'),
-  filename: (_, file, cb) => cb(null, `${uuidv4()}${IMAGE_EXTENSIONS[file.mimetype]}`),
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_, file, cb) => {
-    if (IMAGE_EXTENSIONS[file.mimetype]) return cb(null, true);
-    cb(new HttpError(400, 'Cover image must be a PNG, JPEG, WebP or GIF'));
-  },
+// A capa é uma foto: 5 MB. As regras de segurança do recebimento estão em
+// lib/uploads.js, compartilhadas com quem mais receber imagem.
+const upload = imageUpload({
+  maxBytes: 5 * 1024 * 1024,
+  mensagem: 'Cover image must be a PNG, JPEG, WebP or GIF',
 });
 
 const parseBool = (v) => v === 'true' || v === true || v === 1 || v === '1';
@@ -70,9 +53,6 @@ async function insertPods(conn, eventId, roundId, pods) {
         isBye ? 'bye' : null,
       ]
     );
-    if (isBye && pod.player1) {
-      await conn.run('UPDATE event_players SET wins=wins+1 WHERE id=?', [pod.player1.id]);
-    }
   }
 }
 
@@ -224,36 +204,6 @@ function clanOfResult(pairing, playersById) {
   return seatId ? playersById.get(seatId)?.clan_id ?? null : null;
 }
 
-/**
- * Quais assentos contam como vencedores de uma mesa.
- *
- * Mesa comum: só o assento apontado por `result`. Mesa de duplas do Clã Fronto:
- * o assento apontado **e o parceiro dele** — os dois ganham, os dois adversários
- * perdem. É aqui que a diferença entre as duas naturezas de mesa vira pontuação.
- */
-function winningSeatIds(pairing, result, playersById, partnerTable) {
-  const seatOf = {
-    player1: pairing.player1_id, player2: pairing.player2_id,
-    player3: pairing.player3_id, player4: pairing.player4_id,
-  };
-  const winnerId = seatOf[result];
-  if (!winnerId) return new Set();
-  if (!partnerTable) return new Set([winnerId]);
-
-  const clan = playersById.get(winnerId)?.clan_id;
-  if (!clan) return new Set([winnerId]);
-  // Quem senta com quem é pergunta do pareador, não da rota: `clanPairSeats`
-  // agrupa os assentos por clã e é a mesma regra que monta a mesa de duplas.
-  return new Set(clanPairSeats(pairing, playersById).get(clan) ?? [winnerId]);
-}
-
-// Uma mesa é de duplas quando o evento é Clã Fronto e a rodada é de mata-mata.
-async function isPartnerTable(conn, event, roundId) {
-  if (!isClanFormat(event)) return false;
-  const round = await conn.get('SELECT is_playoff FROM rounds WHERE id = ?', [roundId]);
-  return Boolean(round?.is_playoff);
-}
-
 // Monta a fase seguinte do mata-mata a partir dos clãs que avançaram.
 async function buildClanPlayoffRound(tx, event, clanIds, roundNumber, ranked) {
   const clans = await eventClans(tx, event.id);
@@ -343,9 +293,13 @@ router.get('/:id', asyncHandler(async (req, res) => {
   );
   if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
 
-  // LEFT JOIN so guest players (user_id = NULL) also appear
+  // LEFT JOIN so guest players (user_id = NULL) also appear.
+  // `profile_public` acompanha para a tabela saber quando o nome leva a um
+  // perfil: linkar para uma página que responde 403 seria pior que não linkar.
+  // Convidados vêm com NULL, que a tela já trata como "sem perfil".
   const players = await db.query(
-    `SELECT ep.*, COALESCE(u.display_name, ep.display_name) AS display_name
+    `SELECT ep.*, COALESCE(u.display_name, ep.display_name) AS display_name,
+            u.profile_public
      FROM event_players ep LEFT JOIN users u ON u.id = ep.user_id
      WHERE ep.event_id = ? ORDER BY ep.joined_at`,
     [req.params.id]
@@ -541,7 +495,7 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(sc
   }
 
   const id = uuidv4();
-  const thumbnail = req.file ? `/uploads/${req.file.filename}` : null;
+  const thumbnail = publicPath(req.file);
   const regras = formatRules(tournament_format || 'standard');
   assertPlayoffMatchesFormat(tournament_format || 'standard', playoff_structure);
   const podSizeVal = regras.podSize(pod_size);
@@ -597,7 +551,7 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
     }
   }
 
-  const thumbnail = req.file ? `/uploads/${req.file.filename}` : event.thumbnail;
+  const thumbnail = publicPath(req.file) ?? event.thumbnail;
 
   // Trocar de formato com o torneio em andamento quebraria os pareamentos já feitos.
   const formatoEfetivo = event.current_round > 0
@@ -655,8 +609,8 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
 
 // Auth: delete event (owner only)
 router.delete('/:id', auth, asyncHandler(async (req, res) => {
-  await db.transaction(async (tx) => {
-    await ownedEvent(tx, req.params.id, req.user.id);
+  const capa = await db.transaction(async (tx) => {
+    const evento = await ownedEvent(tx, req.params.id, req.user.id);
     await tx.run('DELETE FROM pairings WHERE event_id = ?', [req.params.id]);
     await tx.run('DELETE FROM rounds WHERE event_id = ?', [req.params.id]);
     await tx.run('DELETE FROM event_players WHERE event_id = ?', [req.params.id]);
@@ -665,7 +619,12 @@ router.delete('/:id', auth, asyncHandler(async (req, res) => {
     // chave estrangeira e o evento ficava sem poder ser removido.
     await tx.run('DELETE FROM event_clans WHERE event_id = ?', [req.params.id]);
     await tx.run('DELETE FROM events WHERE id = ?', [req.params.id]);
+    return evento.thumbnail;
   });
+
+  // A capa some junto. Sem isto, cada evento apagado deixava a imagem no disco
+  // para sempre — e não havia mais nenhuma linha apontando para ela.
+  await removeFile(capa);
 
   // 'deleted' e não 'update': quem está com a tela aberta precisa sair, não
   // recarregar um evento que não existe mais.
@@ -892,6 +851,61 @@ router.delete('/:id/clans/:clanId', auth, asyncHandler(async (req, res) => {
 }));
 
 // Auth: update player deck/status
+/**
+ * Vincula uma inscrição de convidado a uma conta.
+ *
+ * Metade do histórico do sistema está preso em convidados: pessoas que o
+ * organizador inscreveu pelo nome, sem conta. Essas linhas não somam em liga
+ * nenhuma e não têm perfil onde encostar — e não há como ligá-las
+ * automaticamente, porque nada além do nome as identifica.
+ *
+ * Quem vincula é o organizador, e é ele de propósito: qualquer caminho em que o
+ * próprio jogador reivindicasse uma inscrição permitiria reivindicar a dos
+ * outros e inflar o próprio retrospecto. O organizador sabe quem é "Ana".
+ *
+ * A operação é permitida mesmo com o evento encerrado. É uma exceção deliberada,
+ * como o undo: atribuir autoria não muda resultado nenhum — a linha mantém o
+ * mesmo id, e as mesas e os resultados continuam apontando para ela. O que muda
+ * é que aquela participação passa a contar nas somas entre eventos, e por isso a
+ * ação precisa ser explícita e visível, nunca automática.
+ */
+router.put('/:id/players/:playerId/link', auth, validate(schemas.linkPlayer), asyncHandler(async (req, res) => {
+  const vinculado = await db.transaction(async (tx) => {
+    const event = await ownedEvent(tx, req.params.id, req.user.id);
+
+    const player = await tx.get(
+      'SELECT * FROM event_players WHERE id = ? AND event_id = ? FOR UPDATE',
+      [req.params.playerId, req.params.id]
+    );
+    if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
+    if (player.user_id) {
+      throw new HttpError(409, 'Esta inscrição já pertence a uma conta', 'api.playerAlreadyLinked');
+    }
+
+    const user = await tx.get('SELECT id, display_name FROM users WHERE email = ?', [req.body.email]);
+    if (!user) throw new HttpError(404, 'User not found with that email', 'api.userNotFound');
+
+    // A chave única do banco também barra isto, mas um 409 explicando é melhor
+    // que um erro de driver traduzido.
+    const jaEsta = await tx.get(
+      'SELECT id FROM event_players WHERE event_id = ? AND user_id = ?',
+      [req.params.id, user.id]
+    );
+    if (jaEsta) throw new HttpError(409, 'Esta conta já participa deste evento', 'api.accountAlreadyInEvent');
+
+    await tx.run('UPDATE event_players SET user_id = ? WHERE id = ?', [user.id, req.params.playerId]);
+    await notifyUsers(
+      tx, [user.id],
+      `${event.name}: a sua participação como "${player.display_name}" foi vinculada à sua conta.`
+    );
+
+    return await tx.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]);
+  });
+
+  eventStream.broadcast(req.params.id);
+  res.json(vinculado);
+}));
+
 router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), asyncHandler(async (req, res) => {
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
   if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
@@ -1283,37 +1297,10 @@ router.post('/:id/rounds/undo', auth, asyncHandler(async (req, res) => {
     );
     if (!round) throw new HttpError(404, 'Round not found', 'api.roundNotFound');
 
-    const undoWin  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins-1 WHERE id=?', [id]);
-    const undoLoss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses-1 WHERE id=?', [id]);
-    const undoDraw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws-1 WHERE id=?', [id]);
-    const winnerKey = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
-
-    const pairings = await tx.query('SELECT * FROM pairings WHERE round_id = ?', [round.id]);
-
-    // Desfazer uma rodada de duplas precisa devolver os pontos aos dois parceiros,
-    // do mesmo jeito que foram creditados.
-    const partnerTable = isClanFormat(event) && Boolean(round.is_playoff);
-    const playersById = new Map(
-      (await tx.query('SELECT id, clan_id FROM event_players WHERE event_id = ?', [req.params.id]))
-        .map((p) => [p.id, p])
-    );
-
-    for (const p of pairings) {
-      if (!p.result || p.result_status !== 'confirmed') continue;
-      const allPlayers = [p.player1_id, p.player2_id, p.player3_id, p.player4_id].filter(Boolean);
-      if (p.result === 'draw') {
-        for (const id of allPlayers) await undoDraw(id);
-      } else if (p.result === 'bye') {
-        for (const id of allPlayers) await undoWin(id);
-      } else if (winnerKey[p.result]) {
-        const winners = winningSeatIds(p, p.result, playersById, partnerTable);
-        for (const id of allPlayers) {
-          if (winners.has(id)) await undoWin(id);
-          else await undoLoss(id);
-        }
-      }
-    }
-
+    // Não há retrospecto a devolver: cartel e pontos são derivados das mesas
+    // confirmadas, então apagar as mesas já desfaz tudo o que elas produziram.
+    // Antes daqui saía um laço que revertia vitória por vitória — e era ele que
+    // precisava lembrar sozinho da regra das duplas do Clã Fronto.
     await tx.run('DELETE FROM pairings WHERE round_id = ?', [round.id]);
     await tx.run('DELETE FROM rounds WHERE id = ?', [round.id]);
 
@@ -1432,62 +1419,19 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
     // self-report needs the organizer's approval before it counts towards standings.
     const newStatus = isOwner ? 'confirmed' : 'pending';
 
-    const win  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins+1 WHERE id=?', [id]);
-    const loss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses+1 WHERE id=?', [id]);
-    const draw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws+1 WHERE id=?', [id]);
-    const undoWin  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins-1 WHERE id=?', [id]);
-    const undoLoss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses-1 WHERE id=?', [id]);
-    const undoDraw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws-1 WHERE id=?', [id]);
-
-    // Collect all players in this pod (non-null)
-    const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
-    const winnerKey = { player1: pairing.player1_id, player2: pairing.player2_id, player3: pairing.player3_id, player4: pairing.player4_id };
-
-    const partnerTable = await isPartnerTable(tx, event, pairing.round_id);
-    const playersById = new Map(
-      (await tx.query(
-        `SELECT id, clan_id FROM event_players WHERE id IN (${allPlayers.map(() => '?').join(',')})`,
-        allPlayers
-      )).map((p) => [p.id, p])
-    );
-
-    // Revert the previous result's effect, if any, before applying the new one
-    // (prevents double-counting points when an owner corrects a result). A pending result never
-    // had points applied, so there's nothing to revert in that case.
-    if (pairing.result && pairing.result_status === 'confirmed') {
-      if (pairing.result === 'draw') {
-        for (const id of allPlayers) await undoDraw(id);
-      } else if (pairing.result === 'bye') {
-        for (const id of allPlayers) await undoWin(id);
-      } else if (winnerKey[pairing.result] !== undefined) {
-        const prevWinners = winningSeatIds(pairing, pairing.result, playersById, partnerTable);
-        for (const id of allPlayers) {
-          if (prevWinners.has(id)) await undoWin(id);
-          else await undoLoss(id);
-        }
-      }
-    }
-
+    // Corrigir um resultado é só gravar o novo. Enquanto o retrospecto era uma
+    // coluna somada a cada lançamento, trocar o vencedor exigia desfazer o
+    // resultado anterior antes de aplicar o novo, sob pena de contar duas vezes —
+    // e esse desfazer precisava conhecer sozinho a regra das duplas do Clã
+    // Fronto. Derivado das mesas, o estado anterior simplesmente deixa de existir
+    // quando a linha muda.
+    //
     // Trocar o resultado sem informar placar zera o placar anterior: manter um
     // 2×1 antigo sob um vencedor novo produziria um GW% que nunca aconteceu.
     await tx.run(
       'UPDATE pairings SET result = ?, result_status = ?, p1_games = ?, p2_games = ? WHERE id = ?',
       [result, newStatus, hasGameScore ? p1_games : null, hasGameScore ? p2_games : null, req.params.pairingId]
     );
-
-    if (newStatus === 'confirmed') {
-      if (result === 'draw') {
-        for (const id of allPlayers) await draw(id);
-      } else if (result === 'bye') {
-        for (const id of allPlayers) await win(id);
-      } else {
-        const winners = winningSeatIds(pairing, result, playersById, partnerTable);
-        for (const id of allPlayers) {
-          if (winners.has(id)) await win(id);
-          else await loss(id);
-        }
-      }
-    }
 
     const pending = await pendingResultsCount(tx, pairing.round_id);
     await tx.run('UPDATE rounds SET status = ? WHERE id = ?',
@@ -1518,32 +1462,9 @@ router.post('/:id/pairings/:pairingId/approve', auth, asyncHandler(async (req, r
     if (!pairing.result) throw new HttpError(400, 'No result to approve');
     if (pairing.result_status === 'confirmed') throw new HttpError(400, 'Result already confirmed');
 
-    const win  = async (id) => id && await tx.run('UPDATE event_players SET wins=wins+1 WHERE id=?', [id]);
-    const loss = async (id) => id && await tx.run('UPDATE event_players SET losses=losses+1 WHERE id=?', [id]);
-    const draw = async (id) => id && await tx.run('UPDATE event_players SET draws=draws+1 WHERE id=?', [id]);
-
-    const allPlayers = [pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id].filter(Boolean);
-
-    const partnerTable = await isPartnerTable(tx, event, pairing.round_id);
-    const playersById = new Map(
-      (await tx.query(
-        `SELECT id, clan_id FROM event_players WHERE id IN (${allPlayers.map(() => '?').join(',')})`,
-        allPlayers
-      )).map((p) => [p.id, p])
-    );
-
-    if (pairing.result === 'draw') {
-      for (const id of allPlayers) await draw(id);
-    } else if (pairing.result === 'bye') {
-      for (const id of allPlayers) await win(id);
-    } else {
-      const winners = winningSeatIds(pairing, pairing.result, playersById, partnerTable);
-      for (const id of allPlayers) {
-        if (winners.has(id)) await win(id);
-        else await loss(id);
-      }
-    }
-
+    // Aprovar é mudar o status da mesa. Um resultado pendente já estava gravado e
+    // apenas não contava; confirmá-lo o coloca no cálculo, sem nenhuma escrita de
+    // retrospecto — que é derivado das mesas confirmadas.
     await tx.run("UPDATE pairings SET result_status = 'confirmed' WHERE id = ?", [req.params.pairingId]);
 
     const pending = await pendingResultsCount(tx, pairing.round_id);

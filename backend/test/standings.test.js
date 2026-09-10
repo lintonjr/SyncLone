@@ -235,3 +235,30 @@ test('quem entrou no meio do suíço continua com menos rodadas', () => {
   assert.equal(por.c.swiss_rounds_seated, 1, 'C entrou na terceira');
   assert.equal(por.d.swiss_rounds_seated, 1, 'D entrou na terceira');
 });
+
+test('cartel vem das mesas, não de um total gravado', () => {
+  // Mesma regressão do C-01, um passo depois: enquanto wins/losses/draws eram
+  // colunas somadas a cada lançamento, cada caminho de escrita — lançar,
+  // corrigir, aprovar, desfazer — precisava lembrar sozinho das regras do jogo.
+  const players = [player('a', 0), player('b', 0), player('c', 0)];
+  const pairings = [
+    match('a', 'b', 'player1'),
+    match('a', 'b', 'draw'),
+    bye('c'),
+  ];
+  const rows = computeStandings(players, pairings, EVENT);
+  const por = Object.fromEntries(rows.map((p) => [p.id, p]));
+
+  assert.deepEqual([por.a.wins, por.a.losses, por.a.draws], [1, 0, 1], 'A: uma vitória e um empate');
+  assert.deepEqual([por.b.wins, por.b.losses, por.b.draws], [0, 1, 1], 'B: uma derrota e um empate');
+  assert.deepEqual([por.c.wins, por.c.losses, por.c.draws], [1, 0, 0], 'bye conta vitória');
+});
+
+test('cartel ignora o que ainda não foi aprovado', () => {
+  const players = [player('a', 0), player('b', 0)];
+  const pendente = { ...match('a', 'b', 'player1'), result_status: 'pending' };
+  const rows = computeStandings(players, [pendente], EVENT);
+  const a = rows.find((p) => p.id === 'a');
+
+  assert.deepEqual([a.wins, a.losses, a.draws], [0, 0, 0]);
+});

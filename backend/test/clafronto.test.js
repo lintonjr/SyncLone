@@ -253,10 +253,8 @@ test('classificação de clãs: soma os pontos dos quatro membros', () => {
   // Os pontos são derivados das mesas, então o cenário precisa ser um torneio
   // possível — não uma tabela inventada. Quatro rodadas de a{i} contra b{i}:
   // Dragões levam as duas primeiras inteiras e vão perdendo espaço depois.
-  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id.toUpperCase(), wins: 0, losses: 0, draws: 0, status: 'active' });
+  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id.toUpperCase(), status: 'active' });
   const players = ['a', 'b'].flatMap((c) => [1, 2, 3, 4].map((k) => jog(`${c}${k}`, c === 'a' ? 'A' : 'B')));
-  const porId = Object.fromEntries(players.map((p) => [p.id, p]));
-
   const duelo = (p1, p2, vencedor) => ({
     player1_id: p1, player2_id: p2, player3_id: null, player4_id: null,
     result: vencedor, result_status: 'confirmed', p1_games: null, p2_games: null,
@@ -272,16 +270,6 @@ test('classificação de clãs: soma os pontos dos quatro membros', () => {
     r.map((quem, i) => duelo(`a${i + 1}`, `b${i + 1}`, quem === 'A' ? 'player1' : 'player2'))
   );
 
-  // wins/losses continuam sendo colunas incrementais do banco — não derivadas —
-  // então o cenário as mantém em dia com as mesas, como a rota faz.
-  for (const r of rodadas) {
-    r.forEach((quem, i) => {
-      const venceu = quem === 'A' ? `a${i + 1}` : `b${i + 1}`;
-      const perdeu = quem === 'A' ? `b${i + 1}` : `a${i + 1}`;
-      porId[venceu].wins += 1;
-      porId[perdeu].losses += 1;
-    });
-  }
 
   const ranked = computeStandings(players, pairings, EVENTO);
   const clans = computeClanStandings(ranked, [{ id: 'A', name: 'Dragões' }, { id: 'B', name: 'Corvos' }]);
@@ -408,4 +396,21 @@ test('mesa normal de 4 clãs: só o assento vencedor pontua', () => {
 
   assert.equal(por.a1.points, 3);
   assert.equal(por.b1.points + por.c1.points + por.d1.points, 0);
+});
+
+test('playoff em duplas: os dois parceiros ganham a vitória no cartel', () => {
+  // O cartel segue a mesma regra dos pontos. Quando as duas coisas eram contadas
+  // em lugares diferentes, era exatamente aqui que elas divergiam.
+  const jog = (id, clan) => ({ id, clan_id: clan, display_name: id, status: 'active' });
+  const players = [jog('a1', 'A'), jog('b1', 'B'), jog('a2', 'A'), jog('b2', 'B')];
+  const mesa = {
+    player1_id: 'a1', player2_id: 'b1', player3_id: 'a2', player4_id: 'b2',
+    result: 'player1', result_status: 'confirmed', p1_games: null, p2_games: null,
+  };
+  const por = Object.fromEntries(computeStandings(players, [mesa], EVENTO).map((p) => [p.id, p]));
+
+  assert.deepEqual([por.a1.wins, por.a1.losses], [1, 0], 'assento vencedor');
+  assert.deepEqual([por.a2.wins, por.a2.losses], [1, 0], 'companheiro de clã ganha junto');
+  assert.deepEqual([por.b1.wins, por.b1.losses], [0, 1]);
+  assert.deepEqual([por.b2.wins, por.b2.losses], [0, 1]);
 });

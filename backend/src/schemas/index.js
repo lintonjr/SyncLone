@@ -91,6 +91,34 @@ const schemas = {
     display_name: blank(z.string().trim().max(100).optional()),
   }),
 
+  // Vincular convidado a conta: só o e-mail, e ele precisa ser de uma conta que
+  // já existe — não se cria usuário por este caminho.
+  // O nome da badge é dado do organizador, não rótulo do sistema — não é
+  // traduzido e vai como veio, só aparado e limitado ao que a coluna aguenta.
+  createBadge: z.object({
+    name: z.string().trim().min(2).max(60),
+  }),
+
+  updateBadge: z.object({
+    name: blank(z.string().trim().min(2).max(60).optional()),
+  }),
+
+  awardBadge: z.object({
+    email: z.email().max(255),
+  }),
+
+  badgeVisibility: z.object({
+    visible: boolish,
+  }),
+
+  profileVisibility: z.object({
+    profile_public: boolish,
+  }),
+
+  linkPlayer: z.object({
+    email: z.email().max(255),
+  }),
+
   updatePlayer: z.object({
     deck_name: z.string().max(100).optional(),
     status: z.enum(PLAYER_STATUSES).optional(),

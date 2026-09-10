@@ -30,6 +30,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/events'));
+app.use('/api/badges', require('./routes/badges'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/leagues', require('./routes/leagues'));
