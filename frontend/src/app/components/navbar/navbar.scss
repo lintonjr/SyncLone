@@ -144,3 +144,22 @@
   .nav-links { display: none; }
   .user-name { display: none; }
 }
+
+/* Contador de não lidas no sino. */
+.notif-wrapper .icon-btn { position: relative; }
+
+.notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}

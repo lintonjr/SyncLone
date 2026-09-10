@@ -60,3 +60,21 @@
   font-size: 14px;
   padding: 24px 0;
 }
+
+/* Paginação por offset: aparece só enquanto a última página veio cheia. */
+.load-more {
+  display: block;
+  margin: 20px auto 0;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
+  &:disabled { opacity: 0.6; cursor: default; }
+}

@@ -141,3 +141,15 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# --- Projeto ---
+# Capturas de tela de desenvolvimento (Playwright MCP e screenshots avulsas na raiz):
+# artefatos de sessão, não fazem parte do produto.
+.playwright-mcp/
+/*.png
+
+# Uploads enviados em runtime — vivem em volume Docker, não no repositório.
+backend/uploads/
+
+# Resíduo do SQLite anterior à migração para MySQL.
+backend/data/

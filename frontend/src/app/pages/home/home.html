@@ -27,6 +27,11 @@
             <app-event-card [event]="event" />
           }
         </div>
+        @if (moreUpcoming()) {
+          <button class="load-more" (click)="loadMore('upcoming')" [disabled]="loadingMore() === 'upcoming'">
+            {{ loadingMore() === 'upcoming' ? 'Loading…' : 'Load more' }}
+          </button>
+        }
       }
     </section>
 
@@ -40,6 +45,11 @@
             <app-event-card [event]="event" />
           }
         </div>
+        @if (morePast()) {
+          <button class="load-more" (click)="loadMore('past')" [disabled]="loadingMore() === 'past'">
+            {{ loadingMore() === 'past' ? 'Loading…' : 'Load more' }}
+          </button>
+        }
       }
     </section>
   }

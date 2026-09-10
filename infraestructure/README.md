@@ -3,10 +3,14 @@
 Specs de provisionamento para colocar o projeto **online** em nuvem pública.
 Um documento por provedor:
 
-| Provedor      | Spec                                  |
-|---------------|---------------------------------------|
-| Google Cloud  | [`googlecloud/SPEC.md`](googlecloud/SPEC.md) |
-| AWS           | [`aws/SPEC.md`](aws/SPEC.md)           |
+| Provedor      | Spec                                  | Diagrama (draw.io)                        |
+|---------------|---------------------------------------|-------------------------------------------|
+| Google Cloud  | [`googlecloud/SPEC.md`](googlecloud/SPEC.md) | [`diagramas/gcp.drawio`](diagramas/gcp.drawio) |
+| AWS           | [`aws/SPEC.md`](aws/SPEC.md)           | [`diagramas/aws.drawio`](diagramas/aws.drawio) |
+
+Os diagramas de arquitetura de cada provedor ficam em
+[`diagramas/`](diagramas/README.md) — formato draw.io, abrem em app.diagrams.net,
+no draw.io Desktop ou na extensão Draw.io Integration do VS Code.
 
 As duas specs entregam a **mesma topologia lógica**; mudam só os serviços gerenciados.
 Este README descreve o que é comum: a arquitetura da aplicação, o que ela exige do

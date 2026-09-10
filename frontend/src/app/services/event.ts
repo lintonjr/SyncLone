@@ -25,6 +25,7 @@ export interface TournamentEvent {
   league_id?: string | null;
   league_name?: string;
   pod_size: number;
+  round_minutes: number;
   points_win: number;
   points_draw: number;
   points_loss: number;
@@ -50,6 +51,13 @@ export interface Player {
   losses: number;
   draws: number;
   points: number;
+  // Desempates oficiais, calculados pelo servidor (MTR 2.3). Nulos quando não há
+  // dado suficiente: sem adversários enfrentados, ou sem placar de games registrado.
+  matches_played: number;
+  mwp: number;
+  omw: number | null;
+  gwp: number | null;
+  ogw: number | null;
 }
 
 export interface Round {
@@ -57,6 +65,7 @@ export interface Round {
   event_id: string;
   round_number: number;
   status: string;
+  created_at: string;
   is_playoff: number;
   playoff_stage?: string;
 }
@@ -71,6 +80,8 @@ export interface Pairing {
   player4_id?: string;
   result?: string;
   result_status?: 'pending' | 'confirmed';
+  p1_games?: number | null;
+  p2_games?: number | null;
   table_number: number;
   p1_name?: string;
   p2_name?: string;
@@ -89,11 +100,15 @@ export class EventService {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  getEvents(query?: string, past?: boolean) {
-    let params = new HttpParams();
+  getEvents(query?: string, past?: boolean, offset = 0, limit = 24) {
+    let params = new HttpParams().set('offset', offset).set('limit', limit);
     if (query) params = params.set('q', query);
     if (past) params = params.set('past', 'true');
     return this.http.get<TournamentEvent[]>(this.API, { params });
+  }
+
+  exportUrl(eventId: string, type: 'standings' | 'pairings') {
+    return `${this.API}/${eventId}/export?type=${type}`;
   }
 
   getEvent(id: string) {
@@ -160,10 +175,10 @@ export class EventService {
     );
   }
 
-  submitResult(eventId: string, pairingId: string, result: string) {
+  submitResult(eventId: string, pairingId: string, result: string, games?: { p1: number; p2: number }) {
     return this.http.put(
       `${this.API}/${eventId}/pairings/${pairingId}`,
-      { result },
+      games ? { result, p1_games: games.p1, p2_games: games.p2 } : { result },
       { headers: this.authHeaders() }
     );
   }

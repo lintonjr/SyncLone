@@ -76,7 +76,7 @@
       </div>
     }
 
-    <div class="row-2">
+    <div class="row-3">
       <div class="form-field">
         <label>Pairing Method</label>
         <select [value]="pairingMethod()" (change)="pairingMethod.set($any($event.target).value)">
@@ -93,6 +93,12 @@
           <option [value]="3">3 — 3-player Pod</option>
           <option [value]="4">4 — 4-player Pod (Commander)</option>
         </select>
+      </div>
+      <div class="form-field">
+        <label>Round Length (minutes)</label>
+        <input type="number" step="5" min="5" max="240"
+               [value]="roundMinutes()" (input)="roundMinutes.set(+$any($event.target).value)" />
+        <span class="field-hint">Counts down on the event page from the moment each round starts.</span>
       </div>
     </div>
 

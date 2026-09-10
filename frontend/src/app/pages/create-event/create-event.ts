@@ -33,6 +33,7 @@ export class CreateEventComponent implements OnInit {
   format = signal('');
   pairingMethod = signal('swiss');
   podSize = signal(2);
+  roundMinutes = signal(50);
   pointsWin = signal(3);
   pointsDraw = signal(1);
   pointsLoss = signal(0);
@@ -84,6 +85,7 @@ export class CreateEventComponent implements OnInit {
           this.format.set(ev.format ?? '');
           this.pairingMethod.set(ev.pairing_method);
           this.podSize.set(ev.pod_size ?? 2);
+          this.roundMinutes.set(ev.round_minutes ?? 50);
           this.pointsWin.set(ev.points_win ?? 3);
           this.pointsDraw.set(ev.points_draw ?? 1);
           this.pointsLoss.set(ev.points_loss ?? 0);
@@ -145,6 +147,7 @@ export class CreateEventComponent implements OnInit {
     fd.append('format', this.format());
     fd.append('pairing_method', this.pairingMethod());
     fd.append('pod_size', String(this.podSize()));
+    fd.append('round_minutes', String(this.roundMinutes()));
     fd.append('points_win', String(this.pointsWin()));
     fd.append('points_draw', String(this.pointsDraw()));
     fd.append('points_loss', String(this.pointsLoss()));

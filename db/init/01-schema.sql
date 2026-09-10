@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS `events` (
   `owner_id` varchar(36) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `pod_size` int NOT NULL DEFAULT '2',
+  `round_minutes` int NOT NULL DEFAULT '50',
   `points_win` int NOT NULL DEFAULT '3',
   `points_draw` int NOT NULL DEFAULT '1',
   `points_loss` int NOT NULL DEFAULT '0',
@@ -103,6 +104,9 @@ CREATE TABLE IF NOT EXISTS `pairings` (
   `player2_id` varchar(36) DEFAULT NULL,
   `result` varchar(20) DEFAULT NULL,
   `result_status` varchar(20) NOT NULL DEFAULT 'confirmed',
+  -- games ganhos por assento numa mesa 1v1; NULL quando não registrado (só alimenta GW%/OGW%)
+  `p1_games` tinyint DEFAULT NULL,
+  `p2_games` tinyint DEFAULT NULL,
   `table_number` int DEFAULT NULL,
   `player3_id` varchar(36) DEFAULT NULL,
   `player4_id` varchar(36) DEFAULT NULL,
@@ -110,7 +114,13 @@ CREATE TABLE IF NOT EXISTS `pairings` (
   KEY `round_id` (`round_id`),
   KEY `event_id` (`event_id`),
   CONSTRAINT `pairings_ibfk_1` FOREIGN KEY (`round_id`) REFERENCES `rounds` (`id`),
-  CONSTRAINT `pairings_ibfk_2` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`)
+  CONSTRAINT `pairings_ibfk_2` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`),
+  -- A seated player can't be deleted out from under their pairing; the API drops
+  -- them (status='dropped') instead. See db/migrations/005_pairing_player_fks.sql.
+  CONSTRAINT `pairings_player1_fk` FOREIGN KEY (`player1_id`) REFERENCES `event_players` (`id`),
+  CONSTRAINT `pairings_player2_fk` FOREIGN KEY (`player2_id`) REFERENCES `event_players` (`id`),
+  CONSTRAINT `pairings_player3_fk` FOREIGN KEY (`player3_id`) REFERENCES `event_players` (`id`),
+  CONSTRAINT `pairings_player4_fk` FOREIGN KEY (`player4_id`) REFERENCES `event_players` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `notifications` (
@@ -118,7 +128,8 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   `user_id` varchar(36) NOT NULL,
   `message` text NOT NULL,
   `read` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- milissegundos: vários avisos nascem da mesma ação e precisam de ordem estável
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)

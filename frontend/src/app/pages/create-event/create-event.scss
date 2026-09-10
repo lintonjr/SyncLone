@@ -94,3 +94,12 @@
 @media (max-width: 600px) {
   .row-2, .row-3, .checkboxes { grid-template-columns: 1fr; }
 }
+
+/* Explicação curta abaixo de um campo, para o número não ficar sem contexto. */
+.field-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}

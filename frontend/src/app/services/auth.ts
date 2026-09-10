@@ -48,11 +48,18 @@ export class AuthService {
     );
   }
 
-  logout() {
+  // Descarta a sessão sem tirar o usuário de onde ele está. É o que a expiração
+  // de um token precisa fazer numa página pública: você volta a ser visitante,
+  // não é jogado para o login no meio do que estava fazendo.
+  clearSession() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     this.currentUser.set(null);
     this.token.set(null);
+  }
+
+  logout() {
+    this.clearSession();
     this.router.navigate(['/login']);
   }
 

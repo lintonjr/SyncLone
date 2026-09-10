@@ -42,6 +42,12 @@ export class NotificationService {
     );
   }
 
+  // Logout: a caixa do próximo usuário não pode herdar a contagem do anterior.
+  reset() {
+    this.notifications.set([]);
+    this.unreadCount.set(0);
+  }
+
   markAllRead() {
     return this.http.put(`${this.API}/read-all`, {}, { headers: this.authHeaders() }).pipe(
       tap(() => {

@@ -1,0 +1,223 @@
+<mxfile host="app.diagrams.net" agent="Claude Code" type="device" version="24.7.7">
+  <diagram id="manasync-gcp" name="GCP — ManaSync Clone">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="ManaSync Clone — Infraestrutura Google Cloud · região southamerica-east1 (São Paulo)&lt;br&gt;&lt;font style=&quot;font-size: 12px; font-weight: normal;&quot;&gt;Cloud Run (backend, 1 instância) · Cloud SQL MySQL 8 · Global External Application LB · Cloud Storage + CDN para a SPA — detalhes em infraestructure/googlecloud/SPEC.md&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#1A73E8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="8" width="1200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grpCloud" value="Google Cloud" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#F8FBFF;strokeColor=#4285F4;strokeWidth=2;verticalAlign=top;align=left;spacingLeft=14;spacingTop=6;fontSize=14;fontStyle=1;fontColor=#4285F4;" vertex="1" parent="1">
+          <mxGeometry x="60" y="170" width="1580" height="1100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grpProject" value="Project manasync-clone-prod" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5F6368;dashed=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=4;fontSize=12;fontColor=#5F6368;" vertex="1" parent="1">
+          <mxGeometry x="90" y="215" width="1520" height="1035" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grpRegion" value="Região southamerica-east1" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#1A73E8;dashed=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=4;fontSize=12;fontColor=#1A73E8;" vertex="1" parent="1">
+          <mxGeometry x="120" y="400" width="1460" height="820" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grpManaged" value="Serviços gerenciados (fora da VPC)" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#F1F3F4;strokeColor=#9AA0A6;dashed=1;verticalAlign=top;align=center;spacingTop=4;fontSize=11;fontColor=#5F6368;" vertex="1" parent="1">
+          <mxGeometry x="150" y="450" width="200" height="720" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grpRun" value="Cloud Run (serverless — sem cluster para gerir)" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#4285F4;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;fontSize=12;fontColor=#1A73E8;" vertex="1" parent="1">
+          <mxGeometry x="400" y="450" width="1150" height="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grpVpc" value="VPC manasync-vpc — subnet manasync-subnet 10.10.0.0/24" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#F6FBF7;strokeColor=#34A853;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;fontSize=12;fontColor=#188038;" vertex="1" parent="1">
+          <mxGeometry x="400" y="720" width="1150" height="450" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grpPsa" value="Private Services Access (peering servicenetworking) — 10.20.0.0/24" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#34A853;dashed=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;fontSize=11;fontColor=#188038;" vertex="1" parent="1">
+          <mxGeometry x="440" y="945" width="1070" height="195" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user" value="Navegador&lt;br&gt;organizador / jogadores" style="sketch=0;outlineConnect=0;html=1;fontSize=11;fontColor=#202124;verticalLabelPosition=bottom;verticalAlign=top;align=center;shape=actor;fillColor=#5F6368;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="755" y="70" width="60" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ci" value="Cloud Build trigger&lt;br&gt;push em master → build · push · deploy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#5F6368;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="100" y="85" width="220" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dns" value="Cloud DNS&lt;br&gt;zona example-com" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_dns;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="200" y="265" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cert" value="Google-managed SSL cert&lt;br&gt;manasync.example.com" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#EA4335;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=key_management_service;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="390" y="265" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lb" value="Global External Application LB&lt;br&gt;IP global estático · HTTP→HTTPS 301&lt;br&gt;URL map: /api/* e /uploads/* → api · /* → web" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_load_balancing;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="746" y="265" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cdn" value="Cloud CDN&lt;br&gt;ligado só no backend service web" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_cdn;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="960" y="265" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="armor" value="Cloud Armor&lt;br&gt;rate-limit / OWASP (opcional)" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#EA4335;strokeColor=none;opacity=55;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_armor;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="265" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="iam" value="IAM · Service Accounts&lt;br&gt;sa-backend · sa-migrate · sa-cloudbuild" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#EA4335;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_iam;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="1390" y="265" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ar" value="Artifact Registry&lt;br&gt;backend:&amp;lt;sha&amp;gt; · frontend:&amp;lt;sha&amp;gt;" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=container_registry;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="211" y="490" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sec" value="Secret Manager&lt;br&gt;jwt-secret · db-password" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#EA4335;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=key_management_service;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="211" y="625" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gcsSite" value="Cloud Storage — site&lt;br&gt;SPA Angular (dist/browser)&lt;br&gt;backend bucket + CDN" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#34A853;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_storage;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="211" y="760" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gcsUp" value="Cloud Storage — uploads&lt;br&gt;imagens de capa (§7)" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#34A853;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_storage;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="211" y="905" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ops" value="Cloud Logging / Monitoring&lt;br&gt;alertas · uptime check /api/health" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=monitoring;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="211" y="1050" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="runFe" value="Service manasync-frontend&lt;br&gt;nginx + estático :80 · min 0 / max 4&lt;br&gt;variante B (alternativa ao bucket)" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;opacity=55;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_run;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="480" y="500" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="runBe" value="Service manasync-backend&lt;br&gt;1 vCPU / 512 MiB · min = max = 1 instância&lt;br&gt;Node 20 :3001 · API REST + JWT + SSE&lt;br&gt;timeout 3600 s · ingress Internal + Cloud LB" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_run;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="880" y="500" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="runJob" value="Job manasync-migrate&lt;br&gt;01-schema.sql + db/migrations/*&lt;br&gt;execução one-off por release" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_run;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="500" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn" value="Serverless VPC Access connector&lt;br&gt;manasync-connector · 10.8.0.0/28&lt;br&gt;egress private-ranges-only" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#34A853;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=virtual_private_cloud;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="880" y="770" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="router" value="Cloud Router&lt;br&gt;manasync-router" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#34A853;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_router;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="770" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nat" value="Cloud NAT&lt;br&gt;saída à internet" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#34A853;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_nat;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="1390" y="770" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sql" value="Cloud SQL for MySQL 8&lt;br&gt;db-custom-1-3840 · 20 GB SSD · single-zone&lt;br&gt;só IP privado · backups 7 d + PITR&lt;br&gt;database manasync · user manasync_app" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=cloud_sql;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="620" y="990" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="redis" value="Memorystore for Redis&lt;br&gt;pub/sub do SSE&lt;br&gt;(só se escalar &amp;gt; 1 instância)" style="sketch=0;html=1;dashed=0;whitespace=wrap;fillColor=#4284F3;strokeColor=none;opacity=55;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.gcp2.hexIcon;prIcon=memorystore;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="990" width="78" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="negApi" value="Serverless NEG → backend service &lt;b&gt;api&lt;/b&gt;&lt;br&gt;timeout 3600 s · CDN off" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#4285F4;dashed=1;fontSize=10;fontColor=#1A73E8;" vertex="1" parent="1">
+          <mxGeometry x="820" y="405" width="200" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="negWeb" value="Backend bucket / NEG → backend service &lt;b&gt;web&lt;/b&gt;&lt;br&gt;Cloud CDN on · fallback 404 → /index.html" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#34A853;dashed=1;fontSize=10;fontColor=#188038;" vertex="1" parent="1">
+          <mxGeometry x="440" y="405" width="250" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" value="resolve manasync.example.com" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#202124;endArrow=blockThin;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="user" target="dns">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e2" value="HTTPS 443" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#202124;strokeWidth=2;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="user" target="lb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" value="A / AAAA → IP global" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#4285F4;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="dns" target="lb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" value="TLS gerenciado" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#EA4335;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="cert" target="lb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" value="anexado ao backend service web" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#4285F4;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="cdn" target="lb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e6" value="policy no backend service api (opcional)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#EA4335;endArrow=blockThin;endFill=1;opacity=55;" edge="1" parent="1" source="armor" target="lb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e7" value="/api/* · /uploads/*&lt;br&gt;sem CDN · streaming (SSE)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#4285F4;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=0.72;exitY=0.99;exitDx=0;exitDy=0;" edge="1" parent="1" source="lb" target="runBe">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="919" y="380" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e8" value="/*  →  SPA no bucket&lt;br&gt;(variante A, recomendada)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#34A853;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=0.28;exitY=0.99;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="lb" target="gcsSite">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="768" y="380" /><mxPoint x="370" y="380" /><mxPoint x="370" y="730" /><mxPoint x="250" y="730" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e9" value="/*  (variante B)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#9AA0A6;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="lb" target="runFe">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="785" y="380" /><mxPoint x="519" y="380" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e10" value="egress p/ IP privado" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#188038;strokeWidth=2;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="runBe" target="conn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e11" value="MySQL 3306&lt;br&gt;DB_HOST = IP privado" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#188038;strokeWidth=2;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="conn" target="sql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e12" value="DDL: schema + migrations&lt;br&gt;(pelo mesmo connector)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#188038;endArrow=blockThin;endFill=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="runJob" target="conn">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1339" y="700" /><mxPoint x="1030" y="700" /><mxPoint x="1030" y="804" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e13" value="JWT_SECRET · DB_PASS&lt;br&gt;--set-secrets" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#EA4335;endArrow=blockThin;endFill=1;exitX=0.005;exitY=0.63;exitDx=0;exitDy=0;entryX=0.995;entryY=0.63;entryDx=0;entryDy=0;" edge="1" parent="1" source="runBe" target="sec">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="370" y="543" /><mxPoint x="370" y="668" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e14" value="objectAdmin no bucket&lt;br&gt;(ou volume gcsfuse em /app/uploads)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#34A853;endArrow=blockThin;endFill=1;exitX=0.005;exitY=0.63;exitDx=0;exitDy=0;entryX=0.995;entryY=0.63;entryDx=0;entryDy=0;" edge="1" parent="1" source="runBe" target="gcsUp">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="390" y="543" /><mxPoint x="390" y="948" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e15" value="pull da imagem (tag = SHORT_SHA)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#4285F4;endArrow=blockThin;endFill=1;exitX=0.995;exitY=0.63;exitDx=0;exitDy=0;entryX=0.005;entryY=0.63;entryDx=0;entryDy=0;" edge="1" parent="1" source="ar" target="runBe">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="345" y="533" /><mxPoint x="345" y="470" /><mxPoint x="860" y="470" /><mxPoint x="860" y="543" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e16" value="tráfego público (NAT)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#188038;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="conn" target="router">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#188038;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="router" target="nat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e18" value="pub/sub broadcast (só multi-instância)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#9AA0A6;endArrow=blockThin;endFill=1;opacity=60;" edge="1" parent="1" source="conn" target="redis">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="919" y="900" /><mxPoint x="1279" y="900" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e19" value="logs + métricas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#9AA0A6;endArrow=blockThin;endFill=1;exitX=0.005;exitY=0.63;exitDx=0;exitDy=0;entryX=0.995;entryY=0.63;entryDx=0;entryDy=0;" edge="1" parent="1" source="runBe" target="ops">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="410" y="543" /><mxPoint x="410" y="1093" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e20" value="docker push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#5F6368;endArrow=blockThin;endFill=1;" edge="1" parent="1" source="ci" target="ar">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="150" y="533" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e21" value="gsutil rsync + invalidar CDN" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;dashed=1;strokeColor=#5F6368;endArrow=blockThin;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.005;entryY=0.63;entryDx=0;entryDy=0;" edge="1" parent="1" source="ci" target="gcsSite">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="80" y="112" /><mxPoint x="80" y="803" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="notes" value="&lt;b&gt;Notas de arquitetura&lt;/b&gt;&lt;br&gt;• &lt;b&gt;min = max = 1 instância&lt;/b&gt; no Cloud Run backend: o registry de SSE (eventStream.js) é um Map em memória e os uploads do multer vão pro disco local do container. Escalar exige Memorystore (pub/sub) + Cloud Storage (uploads).&lt;br&gt;• &lt;b&gt;SSE&lt;/b&gt; (GET /api/events/:id/stream): request timeout 3600 s no serviço e no backend service &quot;api&quot;, Cloud CDN desligado nesse caminho; heartbeat &quot;: ping&quot; a cada 25 s no backend.&lt;br&gt;• &lt;b&gt;Bootstrap do banco&lt;/b&gt;: Cloud SQL não roda docker-entrypoint-initdb.d — o schema e as migrations entram pelo Cloud Run Job manasync-migrate, antes do primeiro deploy.&lt;br&gt;• &lt;b&gt;Variante A (desenhada)&lt;/b&gt;: SPA em bucket + Cloud CDN, LB roteando /api/* pro Cloud Run. &lt;b&gt;Variante B&lt;/b&gt; (tracejada): container nginx no Cloud Run atendendo /*.&lt;br&gt;• Itens em &lt;b&gt;tracejado/transparente&lt;/b&gt; são opcionais ou alternativos — não fazem parte do caminho mínimo pra subir." style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#FFF8E6;strokeColor=#F9AB00;fontSize=11;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1290" width="1580" height="150" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

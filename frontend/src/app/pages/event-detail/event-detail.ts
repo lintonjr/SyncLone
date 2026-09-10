@@ -100,12 +100,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return !!(user && ev?.players?.some((p) => p.user_id === user.id));
   });
 
-  sortedStandings = computed(() => {
-    const players = this.event()?.players ?? [];
-    return [...players]
-      .filter((p) => p.status === 'active')
-      .sort((a, b) => b.points - a.points || b.wins - a.wins);
-  });
+  // O servidor já devolve a lista na ordem oficial (pontos, OMW%, GW%, OGW%) —
+  // a mesma que semeia os playoffs e alimenta a exportação. Aqui só filtramos.
+  sortedStandings = computed(() => (this.event()?.players ?? []).filter((p) => p.status === 'active'));
 
   pendingPlayers = computed(() => (this.event()?.players ?? []).filter((p) => p.status === 'pending'));
 
@@ -138,10 +135,11 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   hasPlayoffRound = computed(() => (this.event()?.rounds ?? []).some((r) => r.is_playoff));
 
-  playoffLabel = computed(() => {
-    const ps = this.event()?.playoff_structure;
-    return ps === 'top4' ? 'Top 4' : ps === 'top16' ? 'Top 16' : 'Playoffs';
-  });
+  private readonly PLAYOFF_LABELS: Record<string, string> = {
+    top4: 'Top 4', top8: 'Top 8', top16: 'Top 16',
+  };
+
+  playoffLabel = computed(() => this.PLAYOFF_LABELS[this.event()?.playoff_structure ?? ''] ?? 'Playoffs');
 
   canStartPlayoffs = computed(() => {
     const ev = this.event();
@@ -178,33 +176,17 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return pairing ? { round: latestRound, pairing, myPlayer } : null;
   });
 
-  private mwp(player: Player): number {
-    const total = player.wins + player.losses + player.draws;
-    if (total === 0) return 1 / 3;
-    return Math.max(player.wins / total, 1 / 3);
+  private pct(v: number | null | undefined): string {
+    return v === null || v === undefined ? '—' : (v * 100).toFixed(1) + '%';
   }
 
-  private opponents(playerId: string): Player[] {
-    const ev = this.event();
-    if (!ev?.pairings || !ev?.players) return [];
-    const ids = new Set<string>();
-    for (const p of ev.pairings) {
-      const seats = [p.player1_id, p.player2_id, p.player3_id, p.player4_id].filter(Boolean) as string[];
-      if (seats.includes(playerId) && seats.length > 1)
-        seats.filter(id => id !== playerId).forEach(id => ids.add(id));
-    }
-    return ev.players!.filter(p => ids.has(p.id));
-  }
-
-  tiebreakers(player: Player): { mw: string; oap: string; ow: string } {
-    const opps = this.opponents(player.id);
-    const mw = this.mwp(player);
-    const oap = opps.length ? opps.reduce((s, o) => s + o.points, 0) / opps.length : 0;
-    const ow = opps.length ? opps.reduce((s, o) => s + this.mwp(o), 0) / opps.length : 0;
+  // MW% | OMW% | GW% | OGW%, na ordem em que desempatam (MTR 2.3).
+  tiebreakers(player: Player): { mw: string; omw: string; gw: string; ogw: string } {
     return {
-      mw: (mw * 100).toFixed(1) + '%',
-      oap: oap.toFixed(2),
-      ow: (ow * 100).toFixed(1) + '%',
+      mw: this.pct(player.mwp),
+      omw: this.pct(player.omw),
+      gw: this.pct(player.gwp),
+      ogw: this.pct(player.ogw),
     };
   }
 
@@ -225,15 +207,48 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return p.result === slot ? 'win' : 'loss';
   }
 
+  // Relógio local: o fim da rodada é derivado de round.created_at + round_minutes,
+  // então o servidor não precisa emitir nada a cada segundo — o SSE só avisa quando
+  // a rodada em si muda.
+  private now = signal(Date.now());
+  private clock?: ReturnType<typeof setInterval>;
+
+  roundTimer = computed(() => {
+    const ev = this.event();
+    const current = this.currentRoundPairings();
+    if (!ev || !current || ev.status === 'completed') return null;
+    if (current.round.status === 'completed') return null;
+
+    const started = new Date(current.round.created_at).getTime();
+    if (Number.isNaN(started)) return null;
+
+    const remaining = started + (ev.round_minutes ?? 50) * 60_000 - this.now();
+    const over = remaining <= 0;
+    const abs = Math.abs(remaining);
+    const mm = Math.floor(abs / 60_000);
+    const ss = Math.floor((abs % 60_000) / 1000);
+    return {
+      over,
+      warning: !over && remaining <= 5 * 60_000,
+      label: `${over ? '+' : ''}${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
+    };
+  });
+
+  exportUrl(type: 'standings' | 'pairings') {
+    return this.eventSvc.exportUrl(this.id(), type);
+  }
+
   private streamSub?: Subscription;
 
   ngOnInit() {
     this.load();
     this.streamSub = this.eventSvc.streamEvent(this.id()).subscribe(() => this.refresh());
+    this.clock = setInterval(() => this.now.set(Date.now()), 1000);
   }
 
   ngOnDestroy() {
     this.streamSub?.unsubscribe();
+    if (this.clock) clearInterval(this.clock);
   }
 
   load() {
@@ -302,9 +317,36 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return round.round_number === ev.current_round;
   }
 
+  // '' = não registrar. Só existe em mesa 1v1; pods não têm placar por games.
+  gameScore = signal<'' | '2-0' | '2-1'>('');
+
+  openResultModal(pairing: Pairing) {
+    const recorded = pairing.p1_games !== null && pairing.p1_games !== undefined
+      && pairing.p2_games !== null && pairing.p2_games !== undefined
+      ? (Math.min(pairing.p1_games, pairing.p2_games) === 0 ? '2-0' : '2-1')
+      : '';
+    this.gameScore.set(recorded as '' | '2-0' | '2-1');
+    this.resultModal.set({ pairing });
+  }
+
+  gameScoreLabel(p: Pairing): string | null {
+    if (p.p1_games === null || p.p1_games === undefined) return null;
+    if (p.p2_games === null || p.p2_games === undefined) return null;
+    return `${p.p1_games}×${p.p2_games}`;
+  }
+
   submitResult(pairingId: string, result: string) {
-    this.eventSvc.submitResult(this.id(), pairingId, result).subscribe({
-      next: () => { this.load(); this.resultModal.set(null); },
+    // O placar acompanha o vencedor: 2×1 significa 2 games para quem venceu.
+    const choice = this.gameScore();
+    const winnerGames = choice === '2-0' ? [2, 0] : choice === '2-1' ? [2, 1] : null;
+    const games = winnerGames && (result === 'player1' || result === 'player2')
+      ? (result === 'player1'
+          ? { p1: winnerGames[0], p2: winnerGames[1] }
+          : { p1: winnerGames[1], p2: winnerGames[0] })
+      : undefined;
+
+    this.eventSvc.submitResult(this.id(), pairingId, result, games).subscribe({
+      next: () => { this.load(); this.resultModal.set(null); this.gameScore.set(''); },
       error: (err) => this.error.set(err.error?.error || 'Failed to submit result'),
     });
   }

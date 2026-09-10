@@ -15,13 +15,13 @@ Stack: **Angular 21** (frontend) + **Node/Express** (backend) + **MySQL 8**.
 - Criação de evento com nome, descrição, local (presencial/online), data, jogo, formato, imagem de capa (com placeholder automático quando não há imagem)
 - Pontuação configurável por evento — pontos para Win / Draw / Loss definidos pelo organizador e aplicados durante todo o torneio
 - Tamanho de pod configurável (2 a 4 jogadores por mesa)
-- Encerramento manual do evento (`finish`) — evento finalizado não aceita mais `join`, botão some da UI
+- Encerramento manual do evento (`finish`) — evento finalizado vira registro fechado: não aceita mais inscrição, adição de jogador, edição de deck, nova rodada, swap nem alteração de resultado (400 em todas). A única porta de volta é o **Undo**, que continua liberado
 - **Generate Entry QR Code**: quando ativado, o organizador tem um botão **Share** na página do evento — modal com nome/organizador/data/local/nº de jogadores, QR code (gerado no cliente, sem depender de serviço externo) apontando pra `/event/:id`, e botões WhatsApp / Email / Copy URL / Open Link, no mesmo formato do manasync.io real
 
 ### Jogadores
 - Adicionar jogador manualmente (organizador) ou entrada via auto-registro (`join`)
 - **Confirm New Players**: quando ativado, novas entradas ficam com status `pending` até o organizador aprovar/rejeitar (seção "Pending Approval" na aba Standings)
-- Edição e remoção de jogador
+- Edição de jogador, e saída do evento por **drop**: quem já foi pareado em alguma rodada fica com status `dropped` — some das standings e dos pareamentos seguintes, mas o histórico (pareamentos e pontos que distribuiu) continua intacto e o nome aparece na seção "Dropped Players". Só quem nunca sentiu à mesa (inscrição rejeitada, desistência antes da 1ª rodada) é apagado de fato
 - **Collaborative Deck Registering**: quando ativado, qualquer participante pode editar o deck de qualquer outro jogador do evento (por padrão, só o dono do evento ou o próprio jogador podem)
 
 ### Rodadas e pareamento
@@ -32,10 +32,14 @@ Stack: **Angular 21** (frontend) + **Node/Express** (backend) + **MySQL 8**.
 - **Allow Byes**: se desativado, o início da rodada é bloqueado (erro 400) quando o número de jogadores não fecha pods completos
 - Edição de resultado de pod liberada enquanto a rodada não terminar (organizador, a qualquer momento antes de a rodada fechar)
 - **Player-Reported Results** (campo `async_draws`): jogador pode reportar o resultado do próprio pareamento sem depender do organizador — Vitória/Derrota/Empate em 1v1, só "I Won" (inequívoco) ou Empate em pods multiplayer. Resultado enviado pelo jogador entra como **pendente** (`result_status='pending'`) e não pontua até o organizador aprovar (botão "Approve"); enquanto pendente, a rodada não fecha nem libera início da próxima. Organizador pode aprovar ou sobrescrever o valor a qualquer momento antes da rodada terminar — resultados definidos pelo próprio organizador são sempre confirmados na hora, sem aprovação
-- Undo de rodada e swap de pareamento (organizador) — Undo só reverte pontos de resultados já confirmados
+- **Desempates oficiais** (MTR 2.3), calculados no servidor: a classificação ordena por pontos → **OMW%** (média de vitória dos adversários enfrentados) → **GW%** (games ganhos) → **OGW%**, com piso de 33% em todos os percentuais. A mesma ordem alimenta a tabela, o seeding dos playoffs e a exportação — não há mais um cálculo aproximado no cliente divergindo do servidor
+- **Placar por games** (opcional, só mesa 1v1): ao lançar o resultado o organizador pode registrar 2×0 ou 2×1. O placar não decide quem venceu — isso continua sendo o resultado da partida — apenas alimenta GW% e OGW%. Trocar o resultado sem informar placar limpa o anterior, para não sobrar um GW% que nunca aconteceu
+- **Timer de rodada**: duração configurável por evento (padrão 50 min), contada a partir do início da rodada e visível para todos na página do evento e na aba My Round; ao estourar, vira contagem positiva com aviso de "Time!"
+- **Bye rotativo**: o bye vale uma vitória inteira, então quem senta fora é decidido pela **classificação oficial**, nunca pelo método de pareamento — vai sempre para o pior colocado que **ainda não recebeu um** neste evento, e só quando todos já passaram a rotação recomeça. Empate exato de colocação (a rodada 1 inteira, por exemplo) é resolvido por sorteio uniforme, refeito a cada pareamento: desfazer e reparear uma rodada empatada pode trocar quem sai
+- Undo de rodada e swap de pareamento (organizador) — Undo só reverte pontos de resultados já confirmados. Desfazer a final também limpa o campeão gravado
 
 ### Playoffs
-- **Playoff Structure**: Top 4 / Top 16, seed pelos standings atuais do Swiss
+- **Playoff Structure**: Top 4 / Top 8 / Top 16, seed pela classificação oficial do Swiss (pontos → OMW% → GW% → OGW%, a mesma ordem exibida nas standings)
 - Bracket de eliminação simples com seeding em "cobra" (snake) para pods multiplayer
 - Botão **Start Playoffs** ao fim da última rodada suíça; **Advance Playoffs** avança a fase seguinte (mesmo endpoint de início de rodada)
 - Empate em pod de playoff avança o jogador mais bem-seedado; bye avança sozinho
@@ -51,9 +55,10 @@ Stack: **Angular 21** (frontend) + **Node/Express** (backend) + **MySQL 8**.
 - Página do evento mostra um link "🏆 Part of {liga}" quando vinculado
 
 ### Outros
-- Autenticação JWT (registro / login / esqueci a senha)
-- Notificações por usuário (lidas/não lidas)
-- Upload de imagem de evento (multer)
+- Autenticação JWT (registro / login / esqueci a senha), com limite de 10 tentativas por 15 min por IP + e-mail nos endpoints de credencial
+- **Notificações**: o sino da barra superior traz contador de não lidas e é alimentado por eventos reais — inscrição feita pelo organizador, inscrição aprovada, rodada iniciada, classificação para os playoffs, resultado registrado ou aprovado, e evento finalizado. Um resultado auto-reportado avisa o organizador de que há algo esperando aprovação. Só jogadores com conta recebem (convidados avulsos não têm caixa de entrada)
+- **Exportação em CSV**: `GET /api/events/:id/export?type=standings|pairings` — classificação com todos os desempates, ou todas as rodadas com mesa, resultado, vencedor e placar por games. Botões na página do evento; arquivo sai com BOM para o Excel não quebrar acentuação
+- Upload de imagem de evento (multer) — só PNG / JPEG / WebP / GIF, até 5 MB; o arquivo é gravado com a extensão do tipo aceito (nunca a do nome enviado) e servido com `nosniff` + `Content-Disposition: attachment`, para que um upload nunca seja interpretado como documento na origem da SPA
 - **Atualização em tempo real** da página do evento via Server-Sent Events (`GET /api/events/:id/stream`) — quando o organizador adiciona jogador, lança/aprova resultado, inicia/desfaz rodada, faz swap ou finaliza o evento, qualquer outra aba/pessoa olhando aquele evento atualiza sozinha, sem reload
 
 ## Estrutura do projeto
@@ -61,23 +66,44 @@ Stack: **Angular 21** (frontend) + **Node/Express** (backend) + **MySQL 8**.
 ```
 CloneManaSync/
 ├── backend/            # API Node/Express
-│   └── src/
-│       ├── app.js
-│       ├── db.js               # pool MySQL
-│       ├── middleware/auth.js
-│       ├── routes/
-│       │   ├── auth.js         # /api/auth
-│       │   ├── events.js       # /api/events
-│       │   └── notifications.js
-│       └── services/pairing.js # pareamento suíço + seeding de playoff
+│   ├── src/
+│   │   ├── app.js
+│   │   ├── db.js                   # pool MySQL + db.transaction()
+│   │   ├── lib/http.js             # HttpError + asyncHandler
+│   │   ├── middleware/
+│   │   │   ├── auth.js
+│   │   │   ├── requireOrganizer.js
+│   │   │   ├── validate.js         # aplica um schema zod ao body
+│   │   │   └── errorHandler.js     # único lugar que responde 500
+│   │   ├── schemas/index.js        # schemas de todas as rotas de escrita
+│   │   ├── routes/
+│   │   │   ├── auth.js             # /api/auth  (com rate limit)
+│   │   │   ├── events.js           # /api/events
+│   │   │   ├── leagues.js          # /api/leagues
+│   │   │   ├── users.js            # /api/users
+│   │   │   └── notifications.js
+│   │   └── services/
+│   │       ├── pairing.js          # pareamento suíço, byes rotativos e seeding de playoff
+│   │       ├── standings.js        # desempates oficiais (MTR 2.3)
+│   │       ├── notify.js           # gravação de notificações
+│   │       └── eventStream.js      # registry SSE
+│   └── test/                       # node --test — pareamento e desempates
 ├── frontend/           # SPA Angular
 │   └── src/app/
-│       ├── pages/{home,login,register,forgot-password,my-events,create-event,event-detail}
+│       ├── pages/{home,login,register,forgot-password,my-events,create-event,event-detail,leagues,league-detail,create-league,profile}
 │       ├── components/{event-card,navbar,notification-panel}
 │       └── services/
 ├── db/init/01-schema.sql   # schema MySQL (rodado automaticamente pelo container na 1ª subida)
+├── db/migrations/          # alterações posteriores, aplicadas em banco já existente
 ├── docker-compose.yml
 └── README.md
+```
+
+## Testes
+
+```bash
+cd backend  && npm test   # node --test — pareamento, byes, seeding de playoff e desempates
+cd frontend && npm test   # vitest via Angular CLI
 ```
 
 ## Como rodar — Docker (recomendado)
