@@ -144,12 +144,17 @@ CREATE TABLE IF NOT EXISTS `pairings` (
 CREATE TABLE IF NOT EXISTS `notifications` (
   `id` varchar(36) NOT NULL,
   `user_id` varchar(36) NOT NULL,
-  `message` text NOT NULL,
+  -- Nulo nas linhas novas: elas guardam `code` e a tela é que traduz. A coluna
+  -- fica para as antigas, escritas quando a frase era montada no servidor.
+  `message` text NULL,
+  `code` varchar(60) DEFAULT NULL,
+  `params` json DEFAULT NULL,
   `read` tinyint(1) NOT NULL DEFAULT '0',
   -- milissegundos: vários avisos nascem da mesma ação e precisam de ordem estável
   `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
+  KEY `user_recentes` (`user_id`, `created_at`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

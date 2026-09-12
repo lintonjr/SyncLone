@@ -6,7 +6,13 @@ import { tap } from 'rxjs/operators';
 export interface Notification {
   id: string;
   user_id: string;
-  message: string;
+  /**
+   * A frase pronta, como o servidor a escrevia antes. Só as linhas antigas a
+   * têm; as novas trazem `code` e quem traduz é a tela.
+   */
+  message: string | null;
+  code: string | null;
+  params: Record<string, string | number> | null;
   read: number;
   created_at: string;
 }

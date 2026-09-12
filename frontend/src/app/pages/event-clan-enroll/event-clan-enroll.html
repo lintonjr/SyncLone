@@ -1,0 +1,80 @@
+<div class="modal-overlay" (click)="fechar.emit()">
+  <div class="modal card" (click)="$event.stopPropagation()">
+    <h3>{{ i18n.t('event.enrollClanTitle') }}</h3>
+    <p class="modal-sub">
+      {{ i18n.t('clan.help') }}
+    </p>
+
+    <div class="clan-form">
+      <label class="clan-label">{{ i18n.t('clan.name') }}</label>
+      <input
+        class="clan-input"
+        type="text"
+        [placeholder]="i18n.t('clan.namePlaceholder')"
+        [value]="nome()"
+        (input)="nome.set($any($event.target).value)"
+      />
+
+      @if (isOwner()) {
+        <div class="clan-switch">
+          <button
+            class="switch-btn"
+            [class.active]="!comoConvidados()"
+            (click)="comoConvidados.set(false)"
+          >
+            {{ i18n.t('clan.registered') }}
+          </button>
+          <button
+            class="switch-btn"
+            [class.active]="comoConvidados()"
+            (click)="comoConvidados.set(true)"
+          >
+            {{ i18n.t('clan.guests') }}
+          </button>
+        </div>
+      }
+
+      @if (comoConvidados()) {
+        <label class="clan-label">{{ i18n.t('clan.fourNames') }}</label>
+        @for (nome of nomes(); track $index) {
+          <input
+            class="clan-input"
+            type="text"
+            [placeholder]="'Jogador ' + ($index + 1)"
+            [value]="nome"
+            (input)="definirNome($index, $any($event.target).value)"
+          />
+        }
+      } @else {
+        <label class="clan-label">
+          E-mails dos quatro jogadores
+          @if (!isOwner()) {
+            <span class="clan-hint">{{ i18n.t('clan.yoursAmong') }}</span>
+          }
+        </label>
+        @for (email of emails(); track $index) {
+          <input
+            class="clan-input"
+            type="email"
+            [placeholder]="'jogador' + ($index + 1) + '@email.com'"
+            [value]="email"
+            (input)="definirEmail($index, $any($event.target).value)"
+          />
+        }
+      }
+    </div>
+
+    @if (erroLocal()) {
+      <div class="error-msg">{{ erroLocal() }}</div>
+    }
+
+    <div class="modal-btns">
+      <button class="btn btn-primary" (click)="enviar()" [disabled]="carregando()">
+        {{ carregando() ? 'Inscrevendo…' : 'Inscrever clã' }}
+      </button>
+      <button class="btn btn-ghost" (click)="fechar.emit()">
+        {{ i18n.t('common.cancelPt') }}
+      </button>
+    </div>
+  </div>
+</div>

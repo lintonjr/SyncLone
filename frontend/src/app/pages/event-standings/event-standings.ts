@@ -1,5 +1,6 @@
 import { Component, computed, input, output, signal, inject } from '@angular/core';
 import { I18nService } from '../../i18n/i18n';
+import { DialogService } from '../../services/dialog';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TournamentEvent, Player, ClanStanding } from '../../services/event';
@@ -22,6 +23,7 @@ import { TournamentEvent, Player, ClanStanding } from '../../services/event';
 })
 export class EventStandingsComponent {
   i18n = inject(I18nService);
+  private dialog = inject(DialogService);
   ev = input.required<TournamentEvent>();
   isOwner = input(false);
   actionLoading = input(false);
@@ -120,9 +122,15 @@ export class EventStandingsComponent {
    * nome os identifica — por isso quem vincula é o organizador, que sabe quem é
    * quem, e por isso é um prompt e não uma busca automática.
    */
-  pedirVinculo(player: Player) {
-    const email = prompt(this.i18n.t('standings.linkPrompt', { nome: player.display_name }));
-    if (email?.trim()) this.linkGuest.emit({ player, email: email.trim() });
+  async pedirVinculo(player: Player) {
+    const email = await this.dialog.prompt({
+      titulo: this.i18n.t('dialog.linkGuest', { nome: player.display_name }),
+      mensagem: this.i18n.t('standings.linkPrompt', { nome: player.display_name }),
+      placeholder: 'jogador@exemplo.com',
+      tipo: 'email',
+      confirmar: this.i18n.t('dialog.link'),
+    });
+    if (email) this.linkGuest.emit({ player, email });
   }
 
   openDeckEdit(player: Player) {

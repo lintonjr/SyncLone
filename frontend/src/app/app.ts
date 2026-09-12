@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar';
+import { DialogComponent } from './components/dialog/dialog';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, NavbarComponent, RouterLink],
+  imports: [RouterOutlet, NavbarComponent, RouterLink, DialogComponent],
   template: `
     <app-navbar />
     <main>
@@ -17,6 +18,10 @@ import { NavbarComponent } from './components/navbar/navbar';
         <a routerLink="/privacy-policy">Privacy Policy</a>
       </div>
     </footer>
+
+    <!-- Montado uma vez e invisível até alguém perguntar algo. Fica por último
+         para ficar por cima de tudo sem depender só do z-index. -->
+    <app-dialog />
   `,
   styles: [
     `

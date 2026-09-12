@@ -181,7 +181,20 @@ chk "nenhum recorte vazio" "$(jqp 'all(b["events"] > 0 for b in d["by_league"])'
 chk "o campo leagues saiu da resposta" "$(jqp '"leagues" in d' < $SP/ml.json)" "False"
 chk "quem joga uma liga so tem um recorte" "$(body $API/users/$UID_P/profile | jqp 'len(d["by_league"])')" "1"
 
-sec "11. Badges"
+sec "11. Notificações: código e teto"
+NM="nt$S@t.local"; reg "Notificado" "$NM"; NMT=$(tok "$NM")
+NMID=$(body $API/users/me -H "Authorization: Bearer $NMT" | jqp 'd["id"]')
+ENT=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Notif $S" -F "game=MTG" -F "date=2026-10-01" -F "allow_byes=true" | jqp 'd["id"]')
+body -X POST $API/events/$ENT/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$NM\"}" >/dev/null
+for n in N1 N2 N3; do body -X POST $API/events/$ENT/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
+body -X POST $API/events/$ENT/rounds -H "Authorization: Bearer $OT" >/dev/null
+body $API/notifications -H "Authorization: Bearer $NMT" > $SP/nt.json
+chk "a notificacao guarda codigo" "$(jqp 'all(n["code"] for n in d)' < $SP/nt.json)" "True"
+chk "e nao a frase pronta" "$(jqp 'all(n["message"] is None for n in d)' < $SP/nt.json)" "True"
+chk "com os parametros para a tela montar" "$(jqp 'any(n.get("params") for n in d)' < $SP/nt.json)" "True"
+chk "o aviso de rodada traz o numero" "$(jqp '[n["params"]["rodada"] for n in d if n["code"]=="notif.roundStarted"][0]' < $SP/nt.json)" "1"
+
+sec "12. Badges"
 python3 -c "
 import base64,sys
 sys.stdout.buffer.write(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='))" > $SP/badge.png
@@ -218,7 +231,7 @@ chk "apagar evento nao deixa a capa no disco" "$(docker compose exec -T backend 
 
 chk "sumiu ate para o titular" "$(body $API/users/$BPID/profile -H "Authorization: Bearer $BPT" | jqp 'len(d["badges"])')" "0"
 
-sec "12. Visibilidade do perfil é escolha do jogador"
+sec "13. Visibilidade do perfil é escolha do jogador"
 PM="privreg$S@t.local"; reg "Reservado" "$PM"; PMT=$(tok "$PM")
 PMID=$(body $API/users/me -H "Authorization: Bearer $PMT" | jqp 'd["id"]')
 chk "nasce público" "$(body $API/users/me -H "Authorization: Bearer $PMT" | jqp 'd["profile_public"]')" "1"

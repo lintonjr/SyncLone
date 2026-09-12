@@ -7,6 +7,7 @@ const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
 const { imageUpload, publicPath, removeFile } = require('../lib/uploads');
+const { notifyUsers } = require('../services/notify');
 
 // Uma badge é um ícone exibido a 20px ao lado de um nome. O limite de 5 MB das
 // capas de evento aqui só serviria para alguém subir uma foto de câmera por
@@ -129,8 +130,7 @@ router.post('/:id/award', auth, requireOrganizer, validate(schemas.awardBadge),
     const id = uuidv4();
     await db.run('INSERT INTO user_badges (id, badge_id, user_id, awarded_by) VALUES (?, ?, ?, ?)',
       [id, req.params.id, user.id, req.user.id]);
-    await require('../services/notify').notifyUsers(db, [user.id],
-      `Você recebeu a badge "${badge.name}".`);
+    await notifyUsers(db, [user.id], 'notif.badgeAwarded', { badge: badge.name });
 
     res.status(201).json(await db.get(
       `SELECT ub.id, ub.user_id, ub.visible, ub.awarded_at, u.display_name

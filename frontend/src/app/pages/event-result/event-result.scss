@@ -1,0 +1,66 @@
+/* Estilos do lançamento de resultado. Vieram da tela de evento junto com o
+   modal — encapsulamento de componente não herda. */
+
+.game-score-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.game-score-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.game-score-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.game-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+}
+
+.game-score {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+}
+
+.current-result {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.modal-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -133,7 +133,7 @@
                 @if (event()!.qr_code_enabled) {
                   <button
                     class="btn btn-ghost icon-only"
-                    (click)="openQrModal()"
+                    (click)="qrModal.set(true)"
                     [title]="i18n.t('event.share')"
                   >
                     <svg
@@ -333,310 +333,43 @@
 
   <!-- Inscrição de clã (Clã Fronto) -->
   @if (clanModal()) {
-    <div class="modal-overlay" (click)="clanModal.set(false)">
-      <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>{{ i18n.t('event.enrollClanTitle') }}</h3>
-        <p class="modal-sub">
-          {{ i18n.t('clan.help') }}
-        </p>
-
-        <div class="clan-form">
-          <label class="clan-label">{{ i18n.t('clan.name') }}</label>
-          <input
-            class="clan-input"
-            type="text"
-            [placeholder]="i18n.t('clan.namePlaceholder')"
-            [value]="clanName()"
-            (input)="clanName.set($any($event.target).value)"
-          />
-
-          @if (isOwner()) {
-            <div class="clan-switch">
-              <button
-                class="switch-btn"
-                [class.active]="!clanAsGuests()"
-                (click)="clanAsGuests.set(false)"
-              >
-                {{ i18n.t('clan.registered') }}
-              </button>
-              <button
-                class="switch-btn"
-                [class.active]="clanAsGuests()"
-                (click)="clanAsGuests.set(true)"
-              >
-                {{ i18n.t('clan.guests') }}
-              </button>
-            </div>
-          }
-
-          @if (clanAsGuests()) {
-            <label class="clan-label">{{ i18n.t('clan.fourNames') }}</label>
-            @for (nome of clanGuestNames(); track $index) {
-              <input
-                class="clan-input"
-                type="text"
-                [placeholder]="'Jogador ' + ($index + 1)"
-                [value]="nome"
-                (input)="setClanGuest($index, $any($event.target).value)"
-              />
-            }
-          } @else {
-            <label class="clan-label">
-              E-mails dos quatro jogadores
-              @if (!isOwner()) {
-                <span class="clan-hint">{{ i18n.t('clan.yoursAmong') }}</span>
-              }
-            </label>
-            @for (email of clanEmails(); track $index) {
-              <input
-                class="clan-input"
-                type="email"
-                [placeholder]="'jogador' + ($index + 1) + '@email.com'"
-                [value]="email"
-                (input)="setClanEmail($index, $any($event.target).value)"
-              />
-            }
-          }
-        </div>
-
-        @if (clanError()) {
-          <div class="error-msg">{{ clanError() }}</div>
-        }
-
-        <div class="modal-btns">
-          <button class="btn btn-primary" (click)="submitClan()" [disabled]="clanLoading()">
-            {{ clanLoading() ? 'Inscrevendo…' : 'Inscrever clã' }}
-          </button>
-          <button class="btn btn-danger" (click)="clanModal.set(false)">
-            {{ i18n.t('common.cancelPt') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-event-clan-enroll
+      [isOwner]="isOwner()"
+      [carregando]="clanLoading()"
+      [erro]="clanError()"
+      (inscrever)="submitClan($event)"
+      (fechar)="clanModal.set(false)"
+    />
   }
 
   <!-- Result Modal -->
-  @if (resultModal()) {
-    <div class="modal-overlay" (click)="resultModal.set(null)">
-      <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>{{ resultModal()!.pairing.result ? 'Edit Result' : 'Set Result' }}</h3>
-        <p class="modal-sub">
-          {{
-            i18n.t('event.whoWon', {
-              mesa: isPodMode() ? i18n.t('pairings.pod') : i18n.t('pairings.table'),
-            })
-          }}
-        </p>
-
-        @if (!isPodMode() && resultModal()!.pairing.player2_id) {
-          <div class="game-score">
-            <span class="game-score-label">{{ i18n.t('event.gameScore') }}</span>
-            <div class="game-score-chips">
-              <button
-                class="game-chip"
-                [class.active]="gameScore() === ''"
-                (click)="gameScore.set('')"
-              >
-                {{ i18n.t('event.notRecorded') }}
-              </button>
-              <button
-                class="game-chip"
-                [class.active]="gameScore() === '2-0'"
-                (click)="gameScore.set('2-0')"
-              >
-                2×0
-              </button>
-              <button
-                class="game-chip"
-                [class.active]="gameScore() === '2-1'"
-                (click)="gameScore.set('2-1')"
-              >
-                2×1
-              </button>
-            </div>
-            <span class="game-score-hint">{{ i18n.t('event.gameScoreHelp') }}</span>
-          </div>
-        }
-
-        <div class="modal-btns">
-          @for (player of podPlayers(resultModal()!.pairing); track player.id) {
-            <button
-              class="btn btn-primary"
-              [class.current-result]="resultModal()!.pairing.result === player.slot"
-              (click)="submitResult(resultModal()!.pairing.id, player.slot)"
-            >
-              {{ player.name }} Won
-            </button>
-          }
-          <button
-            class="btn btn-ghost"
-            [class.current-result]="resultModal()!.pairing.result === 'draw'"
-            (click)="submitResult(resultModal()!.pairing.id, 'draw')"
-          >
-            {{ i18n.t('event.allDraw') }}
-          </button>
-          <button class="btn btn-danger" (click)="resultModal.set(null)">
-            {{ i18n.t('common.cancel') }}
-          </button>
-        </div>
-      </div>
-    </div>
+  @if (resultModal(); as rm) {
+    <app-event-result
+      [mesa]="rm.pairing"
+      [isPodMode]="isPodMode()"
+      (lancar)="submitResult($event.pairingId, $event.resultado, $event.placar)"
+      (fechar)="resultModal.set(null)"
+    />
   }
 
   <!-- Add Player Modal -->
   @if (addPlayerModal()) {
-    <div class="modal-overlay" (click)="addPlayerModal.set(false)">
-      <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>{{ i18n.t('event.addPlayer') }}</h3>
-        <p class="modal-sub">{{ i18n.t('event.addPlayerHelp') }}</p>
-        @if (addPlayerError()) {
-          <div class="error-msg" style="margin-bottom: 12px">{{ addPlayerError() }}</div>
-        }
-        <div class="form-field" style="margin-bottom: 12px">
-          <label>{{ i18n.t('event.emailRegistered') }}</label>
-          <input
-            type="email"
-            [placeholder]="i18n.t('event.playerEmailPlaceholder')"
-            [value]="addPlayerEmail()"
-            (input)="addPlayerEmail.set($any($event.target).value)"
-          />
-        </div>
-        <div class="form-field" style="margin-bottom: 16px">
-          <label>{{ i18n.t('event.orGuestName') }}</label>
-          <input
-            type="text"
-            [placeholder]="i18n.t('event.guestName')"
-            [value]="addPlayerName()"
-            (input)="addPlayerName.set($any($event.target).value)"
-            (keyup.enter)="submitAddPlayer()"
-          />
-        </div>
-        <div class="modal-btns">
-          <button
-            class="btn btn-primary"
-            (click)="submitAddPlayer()"
-            [disabled]="addPlayerLoading()"
-          >
-            @if (addPlayerLoading()) {
-              <span class="spinner-sm"></span>
-            }
-            Add Player
-          </button>
-          <button class="btn btn-ghost" (click)="addPlayerModal.set(false)">
-            {{ i18n.t('common.cancel') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-event-add-player
+      [erro]="addPlayerError()"
+      [carregando]="addPlayerLoading()"
+      (adicionar)="submitAddPlayer($event)"
+      (fechar)="addPlayerModal.set(false)"
+    />
   }
 
   <!-- Share Modal -->
   @if (qrModal()) {
-    <div class="modal-overlay" (click)="qrModal.set(false)">
-      <div class="modal card share-modal" (click)="$event.stopPropagation()">
-        <button class="modal-close" (click)="qrModal.set(false)" [title]="i18n.t('common.close')">
-          ✕
-        </button>
-        <h3>{{ event()!.name }}</h3>
-        <p class="modal-sub">
-          {{ event()!.game }}{{ event()!.format ? ' - ' + event()!.format : '' }}
-        </p>
-
-        <ul class="share-meta">
-          <li>🧑 Organized by {{ event()!.owner_name }}</li>
-          <li>📅 {{ event()!.date | date: 'M/d/yyyy, h:mm:ss a' }}</li>
-          <li>📍 {{ event()!.online ? 'Online' : event()!.city || 'TBD' }}</li>
-          <li>👥 {{ i18n.t('event.playersCount', { n: event()!.players?.length ?? 0 }) }}</li>
-        </ul>
-
-        <div class="qr-code-box">
-          @if (qrDataUrl()) {
-            <img [src]="qrDataUrl()" [alt]="i18n.t('event.qrTitle')" width="220" height="220" />
-          } @else {
-            <div class="spinner"></div>
-          }
-        </div>
-
-        <div class="share-actions">
-          <button class="btn btn-ghost" (click)="shareViaWhatsApp()">
-            {{ i18n.t('event.whatsapp') }}
-          </button>
-          <button class="btn btn-ghost" (click)="shareViaEmail()">
-            {{ i18n.t('event.emailShare') }}
-          </button>
-          <button class="btn btn-ghost" (click)="copyJoinLink()">
-            🔗 {{ qrCopied() ? 'Copied!' : 'Copy URL' }}
-          </button>
-          <button class="btn btn-ghost" (click)="openJoinLink()">
-            {{ i18n.t('event.openLink') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-event-share [ev]="event()!" (fechar)="qrModal.set(false)" />
   }
 
   <!-- Phantom Players Modal -->
-  @if (phantomModal()) {
-    <div class="modal-overlay" (click)="phantomModal.set(false)">
-      <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>{{ i18n.t('event.addPhantomModal') }}</h3>
-        <p class="modal-sub">{{ i18n.t('event.phantomHelp') }}</p>
-        <div class="phantom-count-row">
-          <label>{{ i18n.t('event.quantity') }}</label>
-          <input
-            type="number"
-            min="1"
-            max="100"
-            [value]="phantomCount()"
-            (input)="phantomCount.set(+$any($event.target).value)"
-            class="phantom-count-input"
-          />
-        </div>
-        <div class="modal-btns" style="margin-top: 20px">
-          <button
-            class="btn btn-primary"
-            (click)="submitPhantom()"
-            [disabled]="phantomLoading() || phantomCount() < 1"
-          >
-            @if (phantomLoading()) {
-              <span class="spinner-sm"></span>
-            }
-            OK — Adicionar {{ phantomCount() }}
-          </button>
-          <button class="btn btn-ghost" (click)="phantomModal.set(false)">
-            {{ i18n.t('common.cancelPt') }}
-          </button>
-        </div>
-      </div>
-    </div>
-  }
 
   <!-- Deck Name Modal -->
-  @if (editDeckModal()) {
-    <div class="modal-overlay" (click)="editDeckModal.set(null)">
-      <div class="modal card" (click)="$event.stopPropagation()">
-        <h3>{{ i18n.t('event.setDeckName') }}</h3>
-        <p class="modal-sub">{{ i18n.t('event.deckHelp') }}</p>
-        <div class="form-field" style="margin: 16px 0">
-          <input
-            type="text"
-            [placeholder]="i18n.t('event.deckPlaceholder')"
-            [value]="deckNameInput()"
-            (input)="deckNameInput.set($any($event.target).value)"
-            (keyup.enter)="saveDeckName()"
-          />
-        </div>
-        <div class="modal-btns">
-          <button class="btn btn-primary" (click)="saveDeckName()">
-            {{ i18n.t('common.save') }}
-          </button>
-          <button class="btn btn-ghost" (click)="editDeckModal.set(null)">
-            {{ i18n.t('common.cancel') }}
-          </button>
-        </div>
-      </div>
-    </div>
-  }
 } @else {
   <div class="detail-loading">
     <p>{{ i18n.t('event.notFound') }}</p>

@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Badge, BadgeAward, BadgeService } from '../../services/badge';
 import { I18nService, mensagemDeErro } from '../../i18n/i18n';
+import { DialogService } from '../../services/dialog';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -21,6 +22,7 @@ import { environment } from '../../../environments/environment';
 export class BadgesComponent implements OnInit {
   i18n = inject(I18nService);
   private svc = inject(BadgeService);
+  private dialog = inject(DialogService);
   private apiUrl = environment.apiUrl.replace('/api', '');
 
   badges = signal<Badge[]>([]);
@@ -116,8 +118,13 @@ export class BadgesComponent implements OnInit {
     });
   }
 
-  apagar(b: Badge) {
-    if (!confirm(this.i18n.t('badges.deleteConfirm', { nome: b.name }))) return;
+  async apagar(b: Badge) {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.deleteBadge', { nome: b.name }),
+      confirmar: this.i18n.t('dialog.delete'),
+      perigo: true,
+    });
+    if (!ok) return;
     this.svc.remove(b.id).subscribe({
       next: () => this.carregar(),
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
@@ -141,11 +148,17 @@ export class BadgesComponent implements OnInit {
     });
   }
 
-  entregar(b: Badge) {
-    const email = prompt(this.i18n.t('badges.awardPrompt', { nome: b.name }));
-    if (!email?.trim()) return;
+  async entregar(b: Badge) {
+    const email = await this.dialog.prompt({
+      titulo: this.i18n.t('dialog.awardBadge', { nome: b.name }),
+      mensagem: this.i18n.t('badges.awardPrompt', { nome: b.name }),
+      placeholder: 'jogador@exemplo.com',
+      tipo: 'email',
+      confirmar: this.i18n.t('dialog.award'),
+    });
+    if (!email) return;
     this.error.set('');
-    this.svc.award(b.id, email.trim()).subscribe({
+    this.svc.award(b.id, email).subscribe({
       next: () => {
         this.carregar();
         // Com a lista aberta, a pessoa acabou de entregar e espera ver o nome ali.
@@ -155,9 +168,14 @@ export class BadgesComponent implements OnInit {
     });
   }
 
-  revogar(b: Badge, r: BadgeAward) {
-    if (!confirm(this.i18n.t('badges.revokeConfirm', { nome: b.name, quem: r.display_name })))
-      return;
+  async revogar(b: Badge, r: BadgeAward) {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.revokeBadge', { nome: b.name }),
+      mensagem: this.i18n.t('dialog.revokeBadgeBody', { quem: r.display_name }),
+      confirmar: this.i18n.t('badges.revoke'),
+      perigo: true,
+    });
+    if (!ok) return;
     this.svc.revoke(b.id, r.user_id).subscribe({
       next: () => {
         this.recebedores.update((lista) => lista.filter((x) => x.id !== r.id));

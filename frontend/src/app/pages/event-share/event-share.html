@@ -1,0 +1,32 @@
+<div class="modal-overlay" (click)="fechar.emit()">
+  <div class="modal card share-modal" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="fechar.emit()" [title]="i18n.t('common.close')">✕</button>
+
+    <h3>{{ ev().name }}</h3>
+    <p class="modal-sub">{{ ev().game }}{{ ev().format ? ' · ' + ev().format : '' }}</p>
+
+    <ul class="share-meta">
+      <li>🧑 {{ i18n.t('share.organizedBy', { quem: ev().owner_name || '' }) }}</li>
+      <li>📅 {{ ev().date | date: 'MMM d, y · h:mm a' }}</li>
+      <li>📍 {{ ev().online ? i18n.t('common.online') : ev().city || i18n.t('common.tbd') }}</li>
+      <li>👥 {{ i18n.t('event.playersCount', { n: ev().players?.length ?? 0 }) }}</li>
+    </ul>
+
+    <div class="qr-code-box">
+      @if (qrDataUrl()) {
+        <img [src]="qrDataUrl()" [alt]="i18n.t('event.qrTitle')" width="220" height="220" />
+      } @else {
+        <div class="spinner"></div>
+      }
+    </div>
+
+    <div class="share-actions">
+      <button class="btn btn-ghost" (click)="whatsapp()">{{ i18n.t('event.whatsapp') }}</button>
+      <button class="btn btn-ghost" (click)="email()">{{ i18n.t('event.emailShare') }}</button>
+      <button class="btn btn-ghost" (click)="copiar()">
+        {{ copiado() ? i18n.t('share.copied') : i18n.t('share.copyLink') }}
+      </button>
+      <button class="btn btn-ghost" (click)="abrirLink()">{{ i18n.t('event.openLink') }}</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,46 @@
+/* Formulário de inscrição de clã. Veio da tela de evento junto com o modal —
+   estilo de componente é encapsulado e não herda. */
+
+.clan-switch {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.clan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 14px;
+  text-align: left;
+}
+
+.clan-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.clan-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.clan-input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}

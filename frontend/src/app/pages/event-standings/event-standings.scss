@@ -392,33 +392,10 @@
   color: var(--text-muted);
 }
 
-.standings-switch,
-.clan-switch {
+.standings-switch {
   display: flex;
   gap: 6px;
   margin-bottom: 14px;
-}
-
-.switch-btn {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    color: var(--text);
-    border-color: var(--accent);
-  }
-  &.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-  }
 }
 
 /* Aprovação em lote: com dezenas de pedidos, um a um é inviável no balcão. */

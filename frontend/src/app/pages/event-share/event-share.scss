@@ -1,0 +1,41 @@
+/* O convite do evento. Os estilos vieram junto da tela de evento: estilo de
+   componente Angular é encapsulado e não herda, então o que este modal usa mora
+   aqui. `.modal`, `.modal-overlay` e `.modal-close` são globais. */
+
+.share-modal {
+  max-width: 460px;
+}
+
+/* Fundo branco sempre, inclusive no tema escuro: um QR só é lido com contraste,
+   e leitor de celular não perdoa. */
+.qr-code-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+
+  img {
+    display: block;
+  }
+}
+
+.share-meta {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.share-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 16px;
+}

@@ -294,3 +294,84 @@ a {
   animation: spin 0.8s linear infinite;
   display: inline-block;
 }
+
+/* ── Sobreposição ──
+   A linguagem de modal do sistema. Vivia dentro da tela de evento, que foi onde
+   nasceu; subiu para cá quando passou a ser usada por mais de uma tela — estilo
+   de componente Angular é encapsulado e não herda, então mantê-la lá obrigaria
+   cada modal novo a copiá-la. Um card sobre um fundo escurecido, com o mesmo
+   `--surface` e `--border` do resto, e por isso acompanha o tema sozinha. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 500;
+}
+
+.modal {
+  position: relative;
+  padding: 28px;
+  min-width: 320px;
+  max-width: 420px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+}
+
+.modal-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+/* Alternador em pílula: escolhe entre duas visões da mesma coisa (clãs ou
+   jogadores, contas ou convidados). Vive aqui porque já aparece em três telas —
+   estilo de componente não herda, e uma cópia por tela é uma divergência à
+   espera de acontecer. */
+.switch-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+}

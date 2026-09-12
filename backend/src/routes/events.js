@@ -729,7 +729,7 @@ router.post('/:id/players', auth, validate(schemas.addPlayer), asyncHandler(asyn
     'INSERT INTO event_players (id, event_id, user_id, display_name) VALUES (?, ?, ?, ?)',
     [id, req.params.id, userId, name]
   );
-  if (userId) await notifyUsers(db, [userId], `Você foi inscrito em ${event.name}.`);
+  if (userId) await notifyUsers(db, [userId], 'notif.addedToEvent', { evento: event.name });
   eventStream.broadcast(req.params.id);
   res.status(201).json(await db.get('SELECT * FROM event_players WHERE id = ?', [id]));
 }));
@@ -815,11 +815,10 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
       );
     }
 
-    await notifyUsers(
-      tx,
-      membros.map((m) => m.user_id),
-      `Você foi inscrito no clã ${name}, em ${event.name}.`
-    );
+    await notifyUsers(tx, membros.map((m) => m.user_id), 'notif.addedToClan', {
+      cla: name,
+      evento: event.name,
+    });
 
     return { id: clanId, name, players: membros };
   });
@@ -894,10 +893,10 @@ router.put('/:id/players/:playerId/link', auth, validate(schemas.linkPlayer), as
     if (jaEsta) throw new HttpError(409, 'Esta conta já participa deste evento', 'api.accountAlreadyInEvent');
 
     await tx.run('UPDATE event_players SET user_id = ? WHERE id = ?', [user.id, req.params.playerId]);
-    await notifyUsers(
-      tx, [user.id],
-      `${event.name}: a sua participação como "${player.display_name}" foi vinculada à sua conta.`
-    );
+    await notifyUsers(tx, [user.id], 'notif.guestLinked', {
+      evento: event.name,
+      nome: player.display_name,
+    });
 
     return await tx.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]);
   });
@@ -938,7 +937,7 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
     req.params.playerId,
   ]);
   if (status === 'active' && player.status === 'pending' && player.user_id) {
-    await notifyUsers(db, [player.user_id], `Sua inscrição em ${event.name} foi aprovada.`);
+    await notifyUsers(db, [player.user_id], 'notif.joinApproved', { evento: event.name });
   }
   eventStream.broadcast(req.params.id);
   res.json(await db.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]));
@@ -964,7 +963,7 @@ router.delete('/:id/players/:playerId', auth, asyncHandler(async (req, res) => {
 router.post('/:id/finish', auth, asyncHandler(async (req, res) => {
   const event = await ownedEvent(db, req.params.id, req.user.id);
   await db.run("UPDATE events SET status = 'completed' WHERE id = ?", [req.params.id]);
-  await notifyUsers(db, await activeEventUserIds(db, req.params.id), `${event.name} foi finalizado — confira a classificação final.`);
+  await notifyUsers(db, await activeEventUserIds(db, req.params.id), 'notif.eventFinished', { evento: event.name });
   eventStream.broadcast(req.params.id);
   res.json(await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]));
 }));
@@ -1081,11 +1080,10 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
       await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
         [roundNumber, 'ongoing', req.params.id]);
 
-      await notifyUsers(
-        tx,
-        await activeEventUserIds(tx, req.params.id),
-        `${event.name}: ${stage} — os pareamentos já estão no ar.`
-      );
+      await notifyUsers(tx, await activeEventUserIds(tx, req.params.id), 'notif.playoffPaired', {
+        evento: event.name,
+        fase: stage,
+      });
 
       return {
         status: 201,
@@ -1130,11 +1128,10 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
     await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
       [roundNumber, 'ongoing', req.params.id]);
 
-    await notifyUsers(
-      tx,
-      await activeEventUserIds(tx, req.params.id),
-      `${event.name}: a Rodada ${roundNumber} começou — confira seu pareamento.`
-    );
+    await notifyUsers(tx, await activeEventUserIds(tx, req.params.id), 'notif.roundStarted', {
+      evento: event.name,
+      rodada: roundNumber,
+    });
 
     return {
       status: 201,
@@ -1200,7 +1197,8 @@ router.post('/:id/playoffs/start', auth, asyncHandler(async (req, res) => {
       await notifyUsers(
         tx,
         seeded.flatMap((c) => c.players.map((p) => p.user_id)),
-        `${event.name}: seu clã se classificou para o mata-mata.`
+        'notif.clanQualified',
+        { evento: event.name }
       );
 
       return {
@@ -1236,11 +1234,10 @@ router.post('/:id/playoffs/start', auth, asyncHandler(async (req, res) => {
     await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
       [roundNumber, 'ongoing', req.params.id]);
 
-    await notifyUsers(
-      tx,
-      seeds.map((p) => p.user_id),
-      `${event.name}: você se classificou para os playoffs (${stage}).`
-    );
+    await notifyUsers(tx, seeds.map((p) => p.user_id), 'notif.qualified', {
+      evento: event.name,
+      fase: stage,
+    });
 
     return {
       round: await tx.get('SELECT * FROM rounds WHERE id = ?', [roundId]),
@@ -1272,11 +1269,11 @@ router.post('/:id/rounds/:roundId/timer', auth, asyncHandler(async (req, res) =>
 
     await tx.run('UPDATE rounds SET timer_started_at = NOW() WHERE id = ?', [req.params.roundId]);
 
-    await notifyUsers(
-      tx,
-      await activeEventUserIds(tx, req.params.id),
-      `${event.name}: o tempo da ${round.is_playoff ? round.playoff_stage : `Rodada ${round.round_number}`} começou.`
-    );
+    await notifyUsers(tx, await activeEventUserIds(tx, req.params.id), 'notif.timerStarted', {
+      evento: event.name,
+      fase: round.is_playoff ? round.playoff_stage : `${round.round_number}`,
+      ehPlayoff: round.is_playoff ? 1 : 0,
+    });
 
     return await tx.get('SELECT * FROM rounds WHERE id = ?', [req.params.roundId]);
   });
@@ -1440,9 +1437,9 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
     // Quem reportou já sabe o que reportou: o aviso é para o organizador, quando
     // tem algo esperando aprovação dele.
     if (newStatus === 'pending') {
-      await notifyUsers(tx, [event.owner_id], `${event.name}: um resultado foi reportado e aguarda sua aprovação.`);
+      await notifyUsers(tx, [event.owner_id], 'notif.resultPending', { evento: event.name });
     } else {
-      await notifyUsers(tx, await pairingUserIds(tx, pairing), `${event.name}: o resultado da sua mesa foi registrado.`);
+      await notifyUsers(tx, await pairingUserIds(tx, pairing), 'notif.resultRecorded', { evento: event.name });
     }
 
     return await tx.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]);
@@ -1471,7 +1468,7 @@ router.post('/:id/pairings/:pairingId/approve', auth, asyncHandler(async (req, r
     await tx.run('UPDATE rounds SET status = ? WHERE id = ?',
       [pending === 0 ? 'completed' : 'active', pairing.round_id]);
 
-    await notifyUsers(tx, await pairingUserIds(tx, pairing), `${event.name}: o resultado da sua mesa foi aprovado.`);
+    await notifyUsers(tx, await pairingUserIds(tx, pairing), 'notif.resultApproved', { evento: event.name });
 
     return await tx.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]);
   });

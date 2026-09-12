@@ -1,0 +1,50 @@
+<div class="modal-overlay" (click)="fechar.emit()">
+  <div class="modal card" (click)="$event.stopPropagation()">
+    <h3>{{ editando() ? i18n.t('result.titleEdit') : i18n.t('result.title') }}</h3>
+    <p class="modal-sub">
+      {{
+        i18n.t('event.whoWon', {
+          mesa: isPodMode() ? i18n.t('pairings.pod') : i18n.t('pairings.table'),
+        })
+      }}
+    </p>
+
+    @if (ehDuelo()) {
+      <div class="game-score">
+        <span class="game-score-label">{{ i18n.t('event.gameScore') }}</span>
+        <div class="game-score-chips">
+          <button class="game-chip" [class.active]="placar() === ''" (click)="placar.set('')">
+            {{ i18n.t('event.notRecorded') }}
+          </button>
+          <button class="game-chip" [class.active]="placar() === '2-0'" (click)="placar.set('2-0')">
+            2×0
+          </button>
+          <button class="game-chip" [class.active]="placar() === '2-1'" (click)="placar.set('2-1')">
+            2×1
+          </button>
+        </div>
+        <span class="game-score-hint">{{ i18n.t('event.gameScoreHelp') }}</span>
+      </div>
+    }
+
+    <div class="modal-btns">
+      @for (jogador of assentos(); track jogador.id) {
+        <button
+          class="btn btn-primary"
+          [class.current-result]="mesa().result === jogador.slot"
+          (click)="escolher(jogador.slot)"
+        >
+          {{ i18n.t('result.won', { nome: jogador.name }) }}
+        </button>
+      }
+      <button
+        class="btn btn-ghost"
+        [class.current-result]="mesa().result === 'draw'"
+        (click)="escolher('draw')"
+      >
+        {{ i18n.t('event.allDraw') }}
+      </button>
+      <button class="btn btn-ghost" (click)="fechar.emit()">{{ i18n.t('common.cancel') }}</button>
+    </div>
+  </div>
+</div>

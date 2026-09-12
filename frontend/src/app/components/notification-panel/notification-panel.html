@@ -14,7 +14,7 @@
     } @else {
       @for (n of notif.notifications(); track n.id) {
         <div class="notif-item" [class.unread]="!n.read">
-          <p class="msg">{{ n.message }}</p>
+          <p class="msg">{{ texto(n) }}</p>
           <span class="time">{{ n.created_at | date: 'short' }}</span>
         </div>
       }

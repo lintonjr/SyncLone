@@ -1,0 +1,45 @@
+@if (opcoes(); as o) {
+  <div class="modal-overlay" (click)="cancelar()" role="presentation">
+    <div
+      class="modal card dialog"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-label]="o.titulo"
+      (click)="$event.stopPropagation()"
+    >
+      <h3>{{ o.titulo }}</h3>
+      @if (o.mensagem) {
+        <p class="modal-sub">{{ o.mensagem }}</p>
+      }
+
+      @if (ehPrompt()) {
+        <input
+          #campo
+          class="dialog-input"
+          [type]="o.tipo || 'text'"
+          [value]="texto()"
+          [placeholder]="o.placeholder || ''"
+          [attr.min]="o.min ?? null"
+          [attr.max]="o.max ?? null"
+          (input)="texto.set($any($event.target).value)"
+          (keydown.enter)="confirmar()"
+        />
+      }
+
+      <div class="dialog-actions">
+        <button #primeiro class="btn btn-ghost" (click)="cancelar()">
+          {{ o.cancelar || i18n.t('common.cancel') }}
+        </button>
+        <button
+          class="btn"
+          [class.btn-primary]="!o.perigo"
+          [class.btn-danger]="o.perigo"
+          [disabled]="!podeConfirmar()"
+          (click)="confirmar()"
+        >
+          {{ o.confirmar || i18n.t('dialog.confirm') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

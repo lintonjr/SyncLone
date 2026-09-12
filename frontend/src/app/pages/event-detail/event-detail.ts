@@ -1,9 +1,9 @@
 import { Component, inject, signal, input, OnInit, OnDestroy, computed } from '@angular/core';
 import { I18nService, mensagemDeErro } from '../../i18n/i18n';
+import { DialogService } from '../../services/dialog';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import * as QRCode from 'qrcode';
 import {
   EventService,
   TournamentEvent,
@@ -15,9 +15,12 @@ import {
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
 import { phantomNameGenerator } from './phantom-names';
-import { podPlayers } from './pod-view';
 import { EventStandingsComponent } from '../event-standings/event-standings';
 import { EventMyRoundComponent } from '../event-my-round/event-my-round';
+import { EventShareComponent } from '../event-share/event-share';
+import { EventAddPlayerComponent, NovoJogador } from '../event-add-player/event-add-player';
+import { EventResultComponent } from '../event-result/event-result';
+import { EventClanEnrollComponent, InscricaoDeCla } from '../event-clan-enroll/event-clan-enroll';
 import { EventPairingsComponent } from '../event-pairings/event-pairings';
 import { EventResultsComponent } from '../event-results/event-results';
 
@@ -30,6 +33,10 @@ import { EventResultsComponent } from '../event-results/event-results';
     EventPairingsComponent,
     EventResultsComponent,
     EventMyRoundComponent,
+    EventShareComponent,
+    EventAddPlayerComponent,
+    EventResultComponent,
+    EventClanEnrollComponent,
   ],
   templateUrl: './event-detail.html',
   styleUrl: './event-detail.scss',
@@ -39,6 +46,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   id = input<string>('');
   private eventSvc = inject(EventService);
   private router = inject(Router);
+  private dialog = inject(DialogService);
   auth = inject(AuthService);
   apiUrl = environment.apiUrl.replace('/api', '');
 
@@ -48,51 +56,45 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   actionLoading = signal(false);
   error = signal('');
   resultModal = signal<{ pairing: Pairing } | null>(null);
-  editDeckModal = signal<{ playerId: string; current: string } | null>(null);
-  deckNameInput = signal('');
   addPlayerModal = signal(false);
-  addPlayerEmail = signal('');
-  addPlayerName = signal('');
   addPlayerLoading = signal(false);
   addPlayerError = signal('');
 
-  phantomModal = signal(false);
-  phantomCount = signal(8);
   phantomLoading = signal(false);
 
   qrModal = signal(false);
-  qrDataUrl = signal('');
-  qrCopied = signal(false);
-  joinUrl = computed(() => `${window.location.origin}/event/${this.id()}`);
 
   private randomName = phantomNameGenerator();
 
-  openPhantomModal() {
-    this.phantomCount.set(8);
-    this.phantomModal.set(true);
-  }
+  /**
+   * Massa de teste: quantos jogadores fictícios criar. Também era só um número
+   * num modal, e também virou prompt.
+   */
+  async openPhantomModal() {
+    const quantos = await this.dialog.prompt({
+      titulo: this.i18n.t('event.addPhantomModal'),
+      mensagem: this.i18n.t('event.phantomHelp'),
+      valor: '8',
+      tipo: 'number',
+      min: 1,
+      max: 100,
+      confirmar: this.i18n.t('event.addPhantom'),
+    });
+    const n = Math.max(1, Math.min(Number(quantos) || 0, 100));
+    if (!quantos || !n) return;
 
-  submitPhantom() {
-    const n = Math.max(1, Math.min(this.phantomCount(), 100));
     this.phantomLoading.set(true);
-    const names = Array.from({ length: n }, () => this.randomName());
-    let done = 0;
-    for (const name of names) {
-      this.eventSvc.addPlayer(this.id(), { display_name: name }).subscribe({
-        next: () => {
-          if (++done === n) {
-            this.load();
-            this.phantomModal.set(false);
-            this.phantomLoading.set(false);
-          }
-        },
-        error: () => {
-          if (++done === n) {
-            this.load();
-            this.phantomModal.set(false);
-            this.phantomLoading.set(false);
-          }
-        },
+    const nomes = Array.from({ length: n }, () => this.randomName());
+    let feitos = 0;
+    const terminou = () => {
+      if (++feitos < n) return;
+      this.load();
+      this.phantomLoading.set(false);
+    };
+    for (const nome of nomes) {
+      this.eventSvc.addPlayer(this.id(), { display_name: nome }).subscribe({
+        next: terminou,
+        error: terminou,
       });
     }
   }
@@ -144,47 +146,18 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   });
 
   clanModal = signal(false);
-  clanName = signal('');
-  clanEmails = signal(['', '', '', '']);
-  clanGuestNames = signal(['', '', '', '']);
-  clanAsGuests = signal(false);
   clanLoading = signal(false);
   clanError = signal('');
 
   openClanModal() {
-    this.clanName.set('');
-    this.clanEmails.set(['', '', '', '']);
-    this.clanGuestNames.set(['', '', '', '']);
-    this.clanAsGuests.set(false);
     this.clanError.set('');
     this.clanModal.set(true);
   }
 
-  setClanEmail(i: number, value: string) {
-    this.clanEmails.update((list) => list.map((v, k) => (k === i ? value : v)));
-  }
-
-  setClanGuest(i: number, value: string) {
-    this.clanGuestNames.update((list) => list.map((v, k) => (k === i ? value : v)));
-  }
-
-  submitClan() {
-    const name = this.clanName().trim();
-    if (name.length < 2) {
-      this.clanError.set('Dê um nome ao clã');
-      return;
-    }
-
-    const guests = this.clanAsGuests();
-    const valores = (guests ? this.clanGuestNames() : this.clanEmails()).map((v) => v.trim());
-    if (valores.some((v) => !v)) {
-      this.clanError.set(guests ? 'Informe os quatro nomes' : 'Informe os quatro e-mails');
-      return;
-    }
-
+  /** Inscreve o clã que o modal montou. A validação de preenchimento é lá. */
+  submitClan(payload: InscricaoDeCla) {
     this.clanLoading.set(true);
     this.clanError.set('');
-    const payload = guests ? { name, display_names: valores } : { name, emails: valores };
     this.eventSvc.createClan(this.id(), payload).subscribe({
       next: () => {
         this.load();
@@ -198,8 +171,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeClan(clanId: string, nome: string) {
-    if (!confirm(`Remover o clã ${nome} e os seus quatro jogadores?`)) return;
+  async removeClan(clanId: string, nome: string) {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.removeClan'),
+      mensagem: this.i18n.t('dialog.removeClanBody', { nome }),
+      confirmar: this.i18n.t('dialog.remove'),
+      perigo: true,
+    });
+    if (!ok) return;
     this.eventSvc.deleteClan(this.id(), clanId).subscribe({
       next: () => this.load(),
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
@@ -410,26 +389,15 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   // '' = não registrar. Só existe em mesa 1v1; pods não têm placar por games.
-  gameScore = signal<'' | '2-0' | '2-1'>('');
 
+  /** O modal cuida do placar a partir do que a mesa já tem. */
   openResultModal(pairing: Pairing) {
-    const recorded =
-      pairing.p1_games !== null &&
-      pairing.p1_games !== undefined &&
-      pairing.p2_games !== null &&
-      pairing.p2_games !== undefined
-        ? Math.min(pairing.p1_games, pairing.p2_games) === 0
-          ? '2-0'
-          : '2-1'
-        : '';
-    this.gameScore.set(recorded as '' | '2-0' | '2-1');
     this.resultModal.set({ pairing });
   }
 
-  submitResult(pairingId: string, result: string) {
+  submitResult(pairingId: string, result: string, placar: '' | '2-0' | '2-1' = '') {
     // O placar acompanha o vencedor: 2×1 significa 2 games para quem venceu.
-    const choice = this.gameScore();
-    const winnerGames = choice === '2-0' ? [2, 0] : choice === '2-1' ? [2, 1] : null;
+    const winnerGames = placar === '2-0' ? [2, 0] : placar === '2-1' ? [2, 1] : null;
     const games =
       winnerGames && (result === 'player1' || result === 'player2')
         ? result === 'player1'
@@ -441,7 +409,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       next: () => {
         this.load();
         this.resultModal.set(null);
-        this.gameScore.set('');
       },
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
@@ -454,13 +421,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  startPlayoffs() {
-    if (
-      !confirm(
-        `Iniciar os playoffs (${this.playoffLabel()})? Os jogadores mais bem colocados na classificação atual serão selecionados para o mata-mata.`,
-      )
-    )
-      return;
+  async startPlayoffs() {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.startPlayoffs'),
+      mensagem: this.i18n.t('dialog.startPlayoffsBody', { estrutura: this.playoffLabel() }),
+      confirmar: this.i18n.t('dialog.start'),
+    });
+    if (!ok) return;
     this.actionLoading.set(true);
     this.eventSvc.startPlayoffs(this.id()).subscribe({
       next: () => {
@@ -489,14 +456,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  undoRound() {
-    const roundNum = this.event()?.current_round;
-    if (
-      !confirm(
-        `Desfazer a Rodada ${roundNum}? Todos os pareamentos e resultados desta rodada serão removidos e ela poderá ser pareada novamente. Esta ação não pode ser desfeita.`,
-      )
-    )
-      return;
+  async undoRound() {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.undoRound', { n: this.event()?.current_round ?? 0 }),
+      mensagem: this.i18n.t('dialog.undoRoundBody'),
+      confirmar: this.i18n.t('dialog.undo'),
+      perigo: true,
+    });
+    if (!ok) return;
     this.actionLoading.set(true);
     this.eventSvc.undoRound(this.id()).subscribe({
       next: () => {
@@ -545,15 +512,16 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  approvePlayer(playerId: string) {
+  async approvePlayer(playerId: string) {
     const rodada = this.event()?.current_round ?? 0;
     if (rodada > 0) {
       const nome =
         this.pendingPlayers().find((p) => p.id === playerId)?.display_name ?? 'Este jogador';
-      const ok = confirm(
-        `${nome} entra a partir da Rodada ${rodada + 1}, com 0 pontos e ${rodada} ` +
-          `${rodada === 1 ? 'rodada' : 'rodadas'} a menos que os demais. Aprovar mesmo assim?`,
-      );
+      const ok = await this.dialog.confirm({
+        titulo: this.i18n.t('dialog.approvePlayer', { nome }),
+        mensagem: this.i18n.t('dialog.lateEntryOne', { rodada: rodada + 1, n: rodada }),
+        confirmar: this.i18n.t('dialog.approve'),
+      });
       if (!ok) return;
     }
     this.eventSvc.updatePlayer(this.id(), playerId, { status: 'active' }).subscribe({
@@ -563,15 +531,22 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   // Aprovar 16 pedidos um a um é trabalho de mesa que o sistema pode poupar.
-  approveAllPending() {
+  async approveAllPending() {
     const pendentes = this.pendingPlayers();
     if (!pendentes.length) return;
     const rodada = this.event()?.current_round ?? 0;
-    const aviso =
-      rodada > 0
-        ? ` Eles entram a partir da Rodada ${rodada + 1}, com ${rodada} ${rodada === 1 ? 'rodada' : 'rodadas'} a menos.`
-        : '';
-    if (!confirm(`Aprovar ${pendentes.length} pedido(s) de inscrição?${aviso}`)) return;
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.approveAll', { n: pendentes.length }),
+      // Com o torneio em andamento, quem aprova precisa saber que está deixando
+      // gente entrar com rodadas a menos — é a diferença entre uma decisão e um
+      // clique distraído.
+      mensagem:
+        rodada > 0
+          ? this.i18n.t('dialog.lateEntryMany', { rodada: rodada + 1, n: rodada })
+          : undefined,
+      confirmar: this.i18n.t('dialog.approve'),
+    });
+    if (!ok) return;
 
     this.actionLoading.set(true);
     let restantes = pendentes.length;
@@ -594,16 +569,34 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  rejectPlayer(playerId: string) {
-    if (!confirm('Reject this join request?')) return;
+  async rejectPlayer(playerId: string) {
+    const nome =
+      this.pendingPlayers().find((p) => p.id === playerId)?.display_name ??
+      this.i18n.t('common.player');
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.rejectJoin'),
+      mensagem: this.i18n.t('dialog.rejectJoinBody', { nome }),
+      confirmar: this.i18n.t('dialog.reject'),
+      perigo: true,
+    });
+    if (!ok) return;
     this.eventSvc.removePlayer(this.id(), playerId).subscribe({
       next: () => this.load(),
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
-  dropPlayer(playerId: string) {
-    if (!confirm('Drop this player from the event?')) return;
+  async dropPlayer(playerId: string) {
+    const nome =
+      this.sortedStandings().find((p) => p.id === playerId)?.display_name ??
+      this.i18n.t('common.player');
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.dropPlayer'),
+      mensagem: this.i18n.t('dialog.dropPlayerBody', { nome }),
+      confirmar: this.i18n.t('dialog.drop'),
+      perigo: true,
+    });
+    if (!ok) return;
     this.eventSvc.removePlayer(this.id(), playerId).subscribe({
       next: () => this.load(),
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
@@ -634,40 +627,47 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  openDeckEdit(player: Player) {
-    this.deckNameInput.set(player.deck_name ?? '');
-    this.editDeckModal.set({ playerId: player.id, current: player.deck_name ?? '' });
+  /**
+   * Pedir o nome de um deck é pedir um texto — não precisa de modal próprio.
+   * Virou um prompt do sistema quando os diálogos passaram a existir, e a tela
+   * perdeu um bloco que só tinha um campo dentro.
+   */
+  async openDeckEdit(player: Player) {
+    const nome = await this.dialog.prompt({
+      titulo: this.i18n.t('event.setDeckName'),
+      mensagem: this.i18n.t('event.deckHelp'),
+      valor: player.deck_name ?? '',
+      placeholder: this.i18n.t('event.deckPlaceholder'),
+      confirmar: this.i18n.t('common.save'),
+    });
+    if (nome === null) return;
+    this.eventSvc.updatePlayer(this.id(), player.id, { deck_name: nome }).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
+    });
   }
 
-  saveDeckName() {
-    const modal = this.editDeckModal();
-    if (!modal) return;
-    this.eventSvc
-      .updatePlayer(this.id(), modal.playerId, { deck_name: this.deckNameInput() })
-      .subscribe({
-        next: () => {
-          this.load();
-          this.editDeckModal.set(null);
-        },
-        error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
-      });
-  }
-
-  finishEvent() {
-    if (
-      !confirm(
-        'Finalizar este evento? Ele será movido para Past Events e não poderá receber novas rodadas.',
-      )
-    )
-      return;
+  async finishEvent() {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.finishEvent'),
+      mensagem: this.i18n.t('dialog.finishEventBody'),
+      confirmar: this.i18n.t('dialog.finish'),
+    });
+    if (!ok) return;
     this.eventSvc.finishEvent(this.id()).subscribe({
       next: () => this.load(),
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });
   }
 
-  deleteEvent() {
-    if (!confirm('Delete this event permanently? This cannot be undone.')) return;
+  async deleteEvent() {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.deleteEvent'),
+      mensagem: this.i18n.t('dialog.deleteEventBody'),
+      confirmar: this.i18n.t('dialog.delete'),
+      perigo: true,
+    });
+    if (!ok) return;
     this.eventSvc.deleteEvent(this.id()).subscribe({
       next: () => this.router.navigate(['/events']),
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
@@ -675,69 +675,29 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   openAddPlayer() {
-    this.addPlayerEmail.set('');
-    this.addPlayerName.set('');
     this.addPlayerError.set('');
     this.addPlayerModal.set(true);
   }
 
-  openQrModal() {
-    this.qrCopied.set(false);
-    this.qrModal.set(true);
-    QRCode.toDataURL(this.joinUrl(), { width: 220, margin: 2 }).then((url) =>
-      this.qrDataUrl.set(url),
-    );
-  }
-
-  copyJoinLink() {
-    navigator.clipboard.writeText(this.joinUrl()).then(() => {
-      this.qrCopied.set(true);
-      setTimeout(() => this.qrCopied.set(false), 2000);
-    });
-  }
-
-  shareViaWhatsApp() {
-    const text = `${this.event()?.name} — ${this.joinUrl()}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  }
-
-  shareViaEmail() {
-    const subject = this.event()?.name ?? 'ManaSync Event';
-    const body = this.joinUrl();
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }
-
-  openJoinLink() {
-    window.open(this.joinUrl(), '_blank');
-  }
-
-  submitAddPlayer() {
-    const email = this.addPlayerEmail().trim();
-    const name = this.addPlayerName().trim();
-    if (!email && !name) {
-      this.addPlayerError.set('Enter an email or a display name');
-      return;
-    }
+  /**
+   * Inscreve quem o modal preencheu. A validação de "e-mail ou nome" mora lá,
+   * onde os campos estão; aqui fica só a conversa com o servidor.
+   */
+  submitAddPlayer(dados: NovoJogador) {
     this.addPlayerLoading.set(true);
     this.addPlayerError.set('');
-    this.eventSvc
-      .addPlayer(this.id(), { email: email || undefined, display_name: name || undefined })
-      .subscribe({
-        next: () => {
-          this.load();
-          this.addPlayerModal.set(false);
-          this.addPlayerLoading.set(false);
-        },
-        error: (err) => {
-          this.addPlayerError.set(mensagemDeErro(this.i18n, err));
-          this.addPlayerLoading.set(false);
-        },
-      });
+    this.eventSvc.addPlayer(this.id(), dados).subscribe({
+      next: () => {
+        this.load();
+        this.addPlayerModal.set(false);
+        this.addPlayerLoading.set(false);
+      },
+      error: (err) => {
+        this.addPlayerError.set(mensagemDeErro(this.i18n, err));
+        this.addPlayerLoading.set(false);
+      },
+    });
   }
-
-  // O modal de resultado continua no pai (é ele que guarda o rascunho do placar),
-  // e desenha os assentos da mesa com a mesma função das abas.
-  podPlayers = podPlayers;
 
   thumbnailUrl(): string {
     const t = this.event()?.thumbnail;

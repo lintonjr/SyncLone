@@ -1,0 +1,44 @@
+<div class="modal-overlay" (click)="fechar.emit()">
+  <div class="modal card" (click)="$event.stopPropagation()">
+    <h3>{{ i18n.t('event.addPlayer') }}</h3>
+    <p class="modal-sub">{{ i18n.t('event.addPlayerHelp') }}</p>
+
+    @if (erro()) {
+      <div class="error-msg">{{ erro() }}</div>
+    }
+
+    <div class="form-field">
+      <label for="ap-email">{{ i18n.t('event.emailRegistered') }}</label>
+      <input
+        id="ap-email"
+        type="email"
+        [placeholder]="i18n.t('event.playerEmailPlaceholder')"
+        [value]="email()"
+        (input)="email.set($any($event.target).value)"
+        (keyup.enter)="enviar()"
+      />
+    </div>
+
+    <div class="form-field">
+      <label for="ap-nome">{{ i18n.t('event.orGuestName') }}</label>
+      <input
+        id="ap-nome"
+        type="text"
+        [placeholder]="i18n.t('event.guestName')"
+        [value]="nome()"
+        (input)="nome.set($any($event.target).value)"
+        (keyup.enter)="enviar()"
+      />
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn btn-primary" (click)="enviar()" [disabled]="!podeEnviar() || carregando()">
+        @if (carregando()) {
+          <span class="spinner-sm"></span>
+        }
+        {{ i18n.t('event.addPlayer') }}
+      </button>
+      <button class="btn btn-ghost" (click)="fechar.emit()">{{ i18n.t('common.cancel') }}</button>
+    </div>
+  </div>
+</div>

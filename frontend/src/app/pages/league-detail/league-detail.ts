@@ -1,4 +1,5 @@
 import { Component, inject, signal, input, OnInit } from '@angular/core';
+import { DialogService } from '../../services/dialog';
 import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
@@ -13,6 +14,7 @@ import { AuthService } from '../../services/auth';
 })
 export class LeagueDetailComponent implements OnInit {
   i18n = inject(I18nService);
+  private dialog = inject(DialogService);
   id = input<string>('');
   private leagueSvc = inject(LeagueService);
   private router = inject(Router);
@@ -48,13 +50,14 @@ export class LeagueDetailComponent implements OnInit {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
 
-  deleteLeague() {
-    if (
-      !confirm(
-        'Delete this league? Linked tournaments will keep existing but stop being part of it.',
-      )
-    )
-      return;
+  async deleteLeague() {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.deleteLeague'),
+      mensagem: this.i18n.t('dialog.deleteLeagueBody'),
+      confirmar: this.i18n.t('dialog.delete'),
+      perigo: true,
+    });
+    if (!ok) return;
     this.actionLoading.set(true);
     this.leagueSvc.deleteLeague(this.id()).subscribe({
       next: () => this.router.navigate(['/leagues']),
