@@ -1,16 +1,16 @@
 <div class="modal-overlay" (click)="fechar.emit()">
   <div class="modal card" (click)="$event.stopPropagation()">
-    <h3>{{ i18n.t('event.enrollClanTitle') }}</h3>
+    <h3>{{ i18n.t(chave('title')) }}</h3>
     <p class="modal-sub">
-      {{ i18n.t('clan.help') }}
+      {{ i18n.t(chave('help')) }}
     </p>
 
     <div class="clan-form">
-      <label class="clan-label">{{ i18n.t('clan.name') }}</label>
+      <label class="clan-label">{{ i18n.t(chave('name')) }}</label>
       <input
         class="clan-input"
         type="text"
-        [placeholder]="i18n.t('clan.namePlaceholder')"
+        [placeholder]="i18n.t(chave('namePlaceholder'))"
         [value]="nome()"
         (input)="nome.set($any($event.target).value)"
       />
@@ -35,7 +35,7 @@
       }
 
       @if (comoConvidados()) {
-        <label class="clan-label">{{ i18n.t('clan.fourNames') }}</label>
+        <label class="clan-label">{{ i18n.t('clan.memberNames', { n: tamanho() }) }}</label>
         @for (nome of nomes(); track $index) {
           <input
             class="clan-input"
@@ -47,7 +47,7 @@
         }
       } @else {
         <label class="clan-label">
-          E-mails dos quatro jogadores
+          {{ i18n.t('clan.memberEmails', { n: tamanho() }) }}
           @if (!isOwner()) {
             <span class="clan-hint">{{ i18n.t('clan.yoursAmong') }}</span>
           }
@@ -70,7 +70,7 @@
 
     <div class="modal-btns">
       <button class="btn btn-primary" (click)="enviar()" [disabled]="carregando()">
-        {{ carregando() ? 'Inscrevendo…' : 'Inscrever clã' }}
+        {{ carregando() ? i18n.t('clan.enrolling') : i18n.t(chave('title')) }}
       </button>
       <button class="btn btn-ghost" (click)="fechar.emit()">
         {{ i18n.t('common.cancelPt') }}

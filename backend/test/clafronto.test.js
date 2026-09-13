@@ -249,7 +249,7 @@ const { computeStandings, computeClanStandings } = require('../src/services/stan
 
 const EVENTO = { points_win: 3, points_draw: 1, points_loss: 0 };
 
-test('classificação de clãs: soma os pontos dos quatro membros', () => {
+test('classificação de clãs: conta as mesas do clã, e em 1v1 isso é a soma dos quatro', () => {
   // Os pontos são derivados das mesas, então o cenário precisa ser um torneio
   // possível — não uma tabela inventada. Quatro rodadas de a{i} contra b{i}:
   // Dragões levam as duas primeiras inteiras e vão perdendo espaço depois.
@@ -272,7 +272,7 @@ test('classificação de clãs: soma os pontos dos quatro membros', () => {
 
 
   const ranked = computeStandings(players, pairings, EVENTO);
-  const clans = computeClanStandings(ranked, [{ id: 'A', name: 'Dragões' }, { id: 'B', name: 'Corvos' }]);
+  const clans = computeClanStandings(ranked, [{ id: 'A', name: 'Dragões' }, { id: 'B', name: 'Corvos' }], pairings, EVENTO);
 
   // 16 mesas, 16 vitórias no total: 11 dos Dragões (33 pts), 5 dos Corvos (15 pts).
   assert.equal(clans[0].name, 'Dragões');
@@ -303,7 +303,7 @@ test('classificação de clãs: empate de pontos é decidido pelo desempate agre
     mesa('c1', 'a2', 'b2', 'c3', 'player1'),
   ];
   const ranked = computeStandings(players, pairings, EVENTO);
-  const clans = computeClanStandings(ranked, [{ id: 'A', name: 'A' }, { id: 'B', name: 'B' }, { id: 'C', name: 'C' }]);
+  const clans = computeClanStandings(ranked, [{ id: 'A', name: 'A' }, { id: 'B', name: 'B' }, { id: 'C', name: 'C' }], pairings, EVENTO);
   const a = clans.find((c) => c.name === 'A');
   const b = clans.find((c) => c.name === 'B');
   assert.ok(a.omw !== null && b.omw !== null, 'os dois clãs têm OMW% calculado');
@@ -314,7 +314,7 @@ test('classificação de clãs: ordem estável quando tudo empata', () => {
   const jog = (id, clan) => ({ id, clan_id: clan, display_name: id, wins: 0, losses: 0, draws: 0, status: 'active' });
   const players = ['A', 'B'].flatMap((c) => [1, 2, 3, 4].map((k) => jog(`${c}${k}`, c)));
   const ranked = computeStandings(players, [], EVENTO);
-  const nomes = () => computeClanStandings(ranked, [{ id: 'B', name: 'Zulu' }, { id: 'A', name: 'Alfa' }]).map((c) => c.name);
+  const nomes = () => computeClanStandings(ranked, [{ id: 'B', name: 'Zulu' }, { id: 'A', name: 'Alfa' }], [], EVENTO).map((c) => c.name);
   assert.deepEqual(nomes(), ['Alfa', 'Zulu']);
   assert.deepEqual(nomes(), nomes());
 });

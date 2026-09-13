@@ -10,9 +10,9 @@ const { HttpError, asyncHandler } = require('../lib/http');
 const { imageUpload, publicPath, removeFile } = require('../lib/uploads');
 const {
   generateSwissPairings, seedPlayoffPods,
-  generateClanPairings, seedClanPlayoffPods,
+  generateClanPairings, generatePartnerPairings, seedClanPlayoffPods,
 } = require('../services/pairing');
-const { computeStandings, computeClanStandings } = require('../services/standings');
+const { computeStandings, computeClanStandings, winningSide } = require('../services/standings');
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
 const eventStream = require('../services/eventStream');
 
@@ -111,11 +111,16 @@ async function liveOwnedEvent(conn, eventId, userId) {
 // Every pairing of an event, for the standings/tiebreaker calculation.
 // `is_playoff` viaja junto com a mesa porque quem conta rodadas precisa saber
 // distinguir uma rodada que todo mundo joga de uma que só alguns jogam.
+// `ORDER BY` não é enfeite: sem ele o MySQL não promete ordem, e as médias dos
+// desempates somam as mesmas parcelas em ordens diferentes a cada consulta. Duas
+// leituras do mesmo evento caíam em bits diferentes, e o chaveamento do mata-mata
+// discordava da tabela que o organizador estava vendo.
 const eventPairings = (conn, eventId) =>
   conn.query(
     `SELECT p.*, r.is_playoff FROM pairings p
      JOIN rounds r ON r.id = p.round_id
-     WHERE p.event_id = ?`,
+     WHERE p.event_id = ?
+     ORDER BY r.round_number, p.table_number, p.id`,
     [eventId]
   );
 
@@ -123,7 +128,20 @@ const eventPairings = (conn, eventId) =>
    Clã Fronto
    --------------------------------------------------------------------------- */
 
+// Dois formatos têm times dentro do evento, e quase tudo o que vale para um vale
+// para o outro: inscrição em bloco, elenco trancado, tabela por time, campeão por
+// time. O que muda é o tamanho do time e a forma da mesa — e é só isso que estas
+// três funções precisam distinguir.
+const TEAM_SIZES = { clafronto: 4, partner: 2 };
+const teamSizeOf = (event) => TEAM_SIZES[event.tournament_format] ?? 0;
+const isTeamFormat = (event) => teamSizeOf(event) > 0;
 const isClanFormat = (event) => event.tournament_format === 'clafronto';
+const isPartnerFormat = (event) => event.tournament_format === 'partner';
+
+// O substantivo certo para cada formato, para as mensagens não falarem em "clã"
+// num torneio de duplas.
+const teamNoun = (event) => (isPartnerFormat(event) ? 'dupla' : 'clã');
+const teamNounPlural = (event) => (isPartnerFormat(event) ? 'duplas' : 'clãs');
 
 /**
  * As regras que o formato impõe sobre a configuração do evento, num lugar só.
@@ -133,16 +151,29 @@ const isClanFormat = (event) => event.tournament_format === 'clafronto';
  * sem saber de que formato ela era. Cada lacuna virou um achado.
  */
 const CLAN_PLAYOFFS = ['clan2', 'clan4'];
+const PARTNER_PLAYOFFS = ['partner2', 'partner4', 'partner8'];
 const STANDARD_PLAYOFFS = ['top4', 'top8', 'top16'];
 
 function formatRules(tournamentFormat) {
   const clan = tournamentFormat === 'clafronto';
+  const partner = tournamentFormat === 'partner';
+  const teamSize = TEAM_SIZES[tournamentFormat] ?? 0;
   return {
     clan,
-    // Clã Fronto: mesa de 4 clãs distintos, e total sempre múltiplo de 4 — folga não existe.
-    podSize: (informado) => (clan ? 4 : (parseInt(informado) || 2)),
-    allowByes: (informado) => (clan ? 0 : (parseBool(informado) ? 1 : 0)),
-    playoffs: clan ? CLAN_PLAYOFFS : STANDARD_PLAYOFFS,
+    partner,
+    teamSize,
+    // Os dois formatos de time sentam quatro à mesa: o Clã Fronto com quatro
+    // clãs distintos, o partner com duas duplas.
+    podSize: (informado) => (teamSize ? 4 : (parseInt(informado) || 2)),
+    // Clã Fronto: todo clã tem quatro e ninguém sai, então o campo é sempre
+    // múltiplo de quatro e folga não existe. Partner: com número ímpar de duplas
+    // alguém precisa folgar, e desligar o bye travaria a rodada.
+    allowByes: (informado) => {
+      if (clan) return 0;
+      if (partner) return 1;
+      return parseBool(informado) ? 1 : 0;
+    },
+    playoffs: clan ? CLAN_PLAYOFFS : partner ? PARTNER_PLAYOFFS : STANDARD_PLAYOFFS,
   };
 }
 
@@ -150,40 +181,43 @@ function formatRules(tournamentFormat) {
 // o chaveamento de um lê clãs, o do outro lê jogadores.
 function assertPlayoffMatchesFormat(tournamentFormat, playoffStructure) {
   if (!playoffStructure || playoffStructure === 'none') return;
-  const { clan, playoffs } = formatRules(tournamentFormat);
+  const { teamSize, playoffs } = formatRules(tournamentFormat);
   if (!playoffs.includes(playoffStructure)) {
     throw new HttpError(
       400,
-      clan
-        ? `Clã Fronto aceita apenas playoff de clãs (${CLAN_PLAYOFFS.join(' ou ')}); recebido "${playoffStructure}"`
-        : `Playoff de clãs só existe em Clã Fronto; use ${STANDARD_PLAYOFFS.join(', ')} ou nenhum`
+      teamSize
+        ? `Este formato aceita apenas playoff de times (${playoffs.join(' ou ')}); recebido "${playoffStructure}"`
+        : `Playoff de times só existe em Clã Fronto e Partner; use ${STANDARD_PLAYOFFS.join(', ')} ou nenhum`
     );
   }
 }
 
-const CLAN_SIZE = 4;
-const MIN_CLANS = 4;
-const CLAN_PLAYOFF_SIZES = { clan2: 2, clan4: 4 };
+// Quantos times o formato exige para a mesa fechar: o Clã Fronto precisa de
+// quatro clãs distintos por mesa; o partner, de duas duplas.
+const MIN_TEAMS = { clafronto: 4, partner: 2 };
+const PLAYOFF_TEAM_COUNTS = { clan2: 2, clan4: 4, partner2: 2, partner4: 4, partner8: 8 };
 
 const eventClans = (conn, eventId) =>
   conn.query('SELECT * FROM event_clans WHERE event_id = ? ORDER BY created_at', [eventId]);
 
-// Um Clã Fronto só pareia com pelo menos 4 clãs, todos completos. Sem isso a mesa
-// de 4 clãs distintos não existe, e o formato inteiro não fecha.
-async function assertClanFieldReady(conn, eventId) {
+// A mesa só fecha com times completos e em número suficiente: o Clã Fronto
+// precisa de quatro clãs distintos por mesa, o partner de duas duplas.
+async function assertTeamFieldReady(conn, event) {
+  const tamanho = teamSizeOf(event);
+  const minimo = MIN_TEAMS[event.tournament_format] ?? 0;
   const rows = await conn.query(
     `SELECT c.id, c.name, COUNT(p.id) AS total
      FROM event_clans c
      LEFT JOIN event_players p ON p.clan_id = c.id AND p.status = 'active'
      WHERE c.event_id = ? GROUP BY c.id, c.name`,
-    [eventId]
+    [event.id]
   );
-  if (rows.length < MIN_CLANS) {
-    throw new HttpError(400, `Clã Fronto precisa de pelo menos ${MIN_CLANS} clãs — há ${rows.length}`);
+  if (rows.length < minimo) {
+    throw new HttpError(400, `Este formato precisa de pelo menos ${minimo} ${teamNounPlural(event)} — há ${rows.length}`);
   }
-  const incompleto = rows.find((r) => Number(r.total) !== CLAN_SIZE);
+  const incompleto = rows.find((r) => Number(r.total) !== tamanho);
   if (incompleto) {
-    throw new HttpError(400, `O clã ${incompleto.name} tem ${incompleto.total} jogadores; todos precisam ter ${CLAN_SIZE}`);
+    throw new HttpError(400, `${teamNoun(event) === 'dupla' ? 'A dupla' : 'O clã'} ${incompleto.name} tem ${incompleto.total} jogadores; todos precisam ter ${tamanho}`);
   }
   return rows;
 }
@@ -204,13 +238,14 @@ function clanOfResult(pairing, playersById) {
   return seatId ? playersById.get(seatId)?.clan_id ?? null : null;
 }
 
-// Monta a fase seguinte do mata-mata a partir dos clãs que avançaram.
-async function buildClanPlayoffRound(tx, event, clanIds, roundNumber, ranked) {
+// Monta a fase seguinte do mata-mata a partir dos times que avançaram.
+async function buildClanPlayoffRound(tx, event, clanIds, roundNumber, ranked, pairings) {
   const clans = await eventClans(tx, event.id);
   const porId = new Map(clans.map((c) => [c.id, c]));
 
   // ordem: melhor colocado primeiro, para o cruzamento ser 1º contra último
-  const clanStandings = computeClanStandings(ranked, clans).filter((c) => clanIds.includes(c.id));
+  const clanStandings = computeClanStandings(ranked, clans, pairings ?? [], event)
+    .filter((c) => clanIds.includes(c.id));
   const seeded = clanStandings.map((c) => ({
     id: c.id,
     name: porId.get(c.id)?.name,
@@ -233,11 +268,13 @@ async function buildClanPlayoffRound(tx, event, clanIds, roundNumber, ranked) {
   return { roundId, stage, seeded };
 }
 
-// Clã Fronto tranca o elenco na inscrição: ninguém entra nem sai depois.
+// Os formatos de time trancam o elenco na inscrição: ninguém entra nem sai
+// depois. Num partner a razão é ainda mais dura que no Clã Fronto — uma dupla
+// que perde um integrante não tem como ocupar dois assentos numa mesa 2v2.
 function assertClanRosterOpen(event, acao) {
-  if (!isClanFormat(event)) return;
+  if (!isTeamFormat(event)) return;
   if (event.current_round > 0) {
-    throw new HttpError(400, `Clã Fronto não permite ${acao} com o torneio em andamento`);
+    throw new HttpError(400, `Este formato não permite ${acao} com o torneio em andamento`);
   }
 }
 
@@ -323,10 +360,26 @@ router.get('/:id', asyncHandler(async (req, res) => {
          LEFT JOIN event_players ep2 ON ep2.id = p.player2_id
          LEFT JOIN event_players ep3 ON ep3.id = p.player3_id
          LEFT JOIN event_players ep4 ON ep4.id = p.player4_id
-         WHERE p.event_id = ? ORDER BY p.table_number`,
+         WHERE p.event_id = ? ORDER BY r.round_number, p.table_number, p.id`,
         [req.params.id]
       )
     : [];
+
+  // Quem venceu a mesa sai do servidor, assento a assento.
+  //
+  // Numa mesa comum é o assento que `result` aponta, e o cliente daria a mesma
+  // resposta sozinho. Numa mesa de duplas são dois, e a regra que sabe disso
+  // mora em `winningSide` — a mesma que distribui os pontos. Deixar o cliente
+  // deduzir era pedir que ele reimplementasse a regra, que foi exatamente como o
+  // C-05 nasceu: o card de pareamento marcava o parceiro do vencedor como
+  // derrotado enquanto a tabela lhe dava a vitória.
+  const seatOf = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
+  const porId = new Map(players.map((p) => [p.id, p]));
+  for (const mesa of pairings) {
+    const coluna = seatOf[mesa.result];
+    const vencedores = coluna && mesa[coluna] ? winningSide(mesa, mesa[coluna], porId) : [];
+    mesa.winner_ids = vencedores;
+  }
 
   // Standings e desempates saem prontos do servidor: a mesma ordem alimenta a
   // tabela, o seeding dos playoffs e a exportação, sem cada cliente recalcular
@@ -337,9 +390,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
   // é ela que define os dois representantes de cada clã no mata-mata.
   let clans = [];
   let clanStandings = [];
-  if (isClanFormat(event)) {
+  if (isTeamFormat(event)) {
     clans = await eventClans(db, req.params.id);
-    clanStandings = computeClanStandings(ranked, clans);
+    clanStandings = computeClanStandings(ranked, clans, pairings, event);
   }
 
   res.json({
@@ -391,8 +444,8 @@ router.get('/:id/export', asyncHandler(async (req, res) => {
 
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
   if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
-  if (type === 'clans' && !isClanFormat(event)) {
-    throw new HttpError(400, 'A exportação de clãs só existe em torneios Clã Fronto', 'api.clanExportOnly');
+  if (type === 'clans' && !isTeamFormat(event)) {
+    throw new HttpError(400, 'A exportação por time só existe em torneios disputados por times', 'api.clanExportOnly');
   }
 
   const players = await db.query(
@@ -405,7 +458,7 @@ router.get('/:id/export', asyncHandler(async (req, res) => {
 
   // Em Clã Fronto o clã é a informação principal da planilha; nos outros formatos
   // a coluna não existe, para a exportação de sempre não mudar de forma.
-  const comClas = isClanFormat(event);
+  const comClas = isTeamFormat(event);
   const clans = comClas ? await eventClans(db, req.params.id) : [];
   const nomeDoCla = new Map(clans.map((c) => [c.id, c.name]));
   const claDe = (playerId) => {
@@ -417,7 +470,7 @@ router.get('/:id/export', asyncHandler(async (req, res) => {
   if (type === 'clans') {
     // A classificação principal do formato, que até agora não saía de jeito nenhum.
     rows = [['Rank', 'Clã', 'Jogadores', 'V', 'D', 'E', 'Pontos', 'MW%', 'OMW%', 'GW%', 'OGW%']];
-    computeClanStandings(ranked, clans).forEach((c, i) => {
+    computeClanStandings(ranked, clans, pairings, event).forEach((c, i) => {
       rows.push([i + 1, c.name, c.player_count, c.wins, c.losses, c.draws, c.points,
         pct(c.mwp), pct(c.omw), pct(c.gwp), pct(c.ogw)]);
     });
@@ -637,8 +690,12 @@ router.post('/:id/join', auth, asyncHandler(async (req, res) => {
   const event = await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
   if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
   if (event.status === 'completed') throw new HttpError(400, 'This event has already finished', 'api.eventFinished');
-  if (isClanFormat(event)) {
-    throw new HttpError(400, 'Neste torneio a inscrição é por clã: use a inscrição de clã, com quatro jogadores', 'api.joinByClan');
+  if (isTeamFormat(event)) {
+    throw new HttpError(
+      400,
+      `Neste torneio a inscrição é por ${teamNoun(event)}, com ${teamSizeOf(event)} jogadores de uma vez`,
+      'api.joinByClan'
+    );
   }
   const existing = await db.get(
     'SELECT id FROM event_players WHERE event_id = ? AND user_id = ?',
@@ -701,8 +758,12 @@ router.delete('/:id/join', auth, asyncHandler(async (req, res) => {
 // Auth: add player by email or guest name (owner only)
 router.post('/:id/players', auth, validate(schemas.addPlayer), asyncHandler(async (req, res) => {
   const event = await liveOwnedEvent(db, req.params.id, req.user.id);
-  if (isClanFormat(event)) {
-    throw new HttpError(400, 'Neste torneio jogadores entram em clãs de quatro, não um a um', 'api.addByClan');
+  if (isTeamFormat(event)) {
+    throw new HttpError(
+      400,
+      `Neste torneio jogadores entram em ${teamNounPlural(event)} de ${teamSizeOf(event)}, não um a um`,
+      'api.addByClan'
+    );
   }
 
   const { email, display_name } = req.body;
@@ -750,32 +811,33 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
   const criado = await db.transaction(async (tx) => {
     const event = await tx.get('SELECT * FROM events WHERE id = ?', [req.params.id]);
     if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
-    if (!isClanFormat(event)) throw new HttpError(400, 'Este torneio não é um Clã Fronto', 'api.notClanEvent');
+    if (!isTeamFormat(event)) throw new HttpError(400, 'Este torneio não é disputado por times', 'api.notClanEvent');
     assertNotFinished(event);
     if (event.current_round > 0) {
-      throw new HttpError(400, 'O torneio já começou: não é mais possível inscrever clãs', 'api.clanRosterClosed');
+      throw new HttpError(400, 'O torneio já começou: não é mais possível inscrever times', 'api.clanRosterClosed');
     }
+    const tamanhoDoTime = teamSizeOf(event);
 
     const isOwner = event.owner_id === req.user.id;
     if (display_names && !isOwner) {
-      throw new HttpError(403, 'Só o organizador pode inscrever um clã de convidados', 'api.guestClanOwnerOnly');
+      throw new HttpError(403, `Só o organizador pode inscrever ${teamNoun(event) === 'dupla' ? 'uma dupla' : 'um clã'} de convidados`, 'api.guestClanOwnerOnly');
     }
 
     const jaExiste = await tx.get(
       'SELECT id FROM event_clans WHERE event_id = ? AND name = ?',
       [req.params.id, name]
     );
-    if (jaExiste) throw new HttpError(409, `Já existe um clã chamado ${name} neste torneio`);
+    if (jaExiste) throw new HttpError(409, `Já existe ${teamNoun(event) === 'dupla' ? 'uma dupla chamada' : 'um clã chamado'} ${name} neste torneio`);
 
     // --- resolve os quatro integrantes antes de gravar ---
     let membros;
     if (emails) {
       const normalizados = emails.map((e) => e.trim().toLowerCase());
-      if (new Set(normalizados).size !== CLAN_SIZE) {
-        throw new HttpError(400, 'Os quatro e-mails precisam ser de pessoas diferentes', 'api.clanEmailsDistinct');
+      if (normalizados.length !== tamanhoDoTime || new Set(normalizados).size !== tamanhoDoTime) {
+        throw new HttpError(400, `São ${tamanhoDoTime} e-mails, de pessoas diferentes`, 'api.clanEmailsDistinct');
       }
       if (!normalizados.includes(String(req.user.email).toLowerCase())) {
-        throw new HttpError(403, 'Você precisa fazer parte do clã que está inscrevendo', 'api.mustBeInClan');
+        throw new HttpError(403, `Você precisa fazer parte d${teamNoun(event) === 'dupla' ? 'a dupla' : 'o clã'} que está inscrevendo`, 'api.mustBeInClan');
       }
 
       const usuarios = await tx.query(
@@ -803,6 +865,9 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
         return { user_id: u.id, display_name: u.display_name };
       });
     } else {
+      if (display_names.length !== tamanhoDoTime) {
+        throw new HttpError(400, `São ${tamanhoDoTime} nomes`, 'api.clanNamesCount');
+      }
       membros = display_names.map((nome) => ({ user_id: null, display_name: nome }));
     }
 
@@ -831,7 +896,7 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
 router.delete('/:id/clans/:clanId', auth, asyncHandler(async (req, res) => {
   await db.transaction(async (tx) => {
     const event = await ownedEvent(tx, req.params.id, req.user.id);
-    if (!isClanFormat(event)) throw new HttpError(400, 'Este torneio não é um Clã Fronto', 'api.notClanEvent');
+    if (!isTeamFormat(event)) throw new HttpError(400, 'Este torneio não é disputado por times', 'api.notClanEvent');
     if (event.current_round > 0) {
       throw new HttpError(400, 'O torneio já começou: o elenco está fechado');
     }
@@ -990,8 +1055,8 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
     const podSize = event.pod_size || 2;
     const roundNumber = event.current_round + 1;
 
-    if (currentRoundRow?.is_playoff && isClanFormat(event)) {
-      // Clã Fronto: cada mesa elimina um clã inteiro. Quem avança é a dupla, não o jogador.
+    if (currentRoundRow?.is_playoff && isTeamFormat(event)) {
+      // Formato de time: cada mesa elimina um time inteiro. Quem avança é a dupla, não o jogador.
       const prevPairings = await tx.query(
         'SELECT * FROM pairings WHERE round_id = ? ORDER BY table_number',
         [currentRoundRow.id]
@@ -1024,7 +1089,7 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
 
       const pastPairings = await eventPairings(tx, req.params.id);
       const ranked = computeStandings(allPlayers, pastPairings, event);
-      const { roundId } = await buildClanPlayoffRound(tx, event, clansQueAvancam, roundNumber, ranked);
+      const { roundId } = await buildClanPlayoffRound(tx, event, clansQueAvancam, roundNumber, ranked, pastPairings);
       await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
         [roundNumber, 'ongoing', req.params.id]);
 
@@ -1110,8 +1175,18 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
       // Clã Fronto: mesas de 4 clãs distintos, sem bye. As guardas do formato
       // rodam antes, para o erro apontar o clã incompleto em vez de estourar
       // dentro do pareador.
-      await assertClanFieldReady(tx, req.params.id);
+      await assertTeamFieldReady(tx, event);
       pods = generateClanPairings(players, event.pairing_method, pastPairings, 200, roundNumber - 1);
+    } else if (isPartnerFormat(event)) {
+      // Partner: o suíço de sempre, com a dupla no lugar do jogador. A ordem das
+      // duplas sai da classificação por time, que é onde a regra "3 pontos por
+      // rodada, não 6" mora — parear pela soma dos parceiros ordenaria errado.
+      await assertTeamFieldReady(tx, event);
+      const clans = await eventClans(tx, req.params.id);
+      const times = computeClanStandings(players, clans, pastPairings, event)
+        .map((t) => ({ ...t, players: t.players.filter((p) => p.status === 'active') }))
+        .filter((t) => t.players.length === 2);
+      pods = generatePartnerPairings(times, event.pairing_method, pastPairings);
     } else {
       pods = generateSwissPairings(players, podSize, event.pairing_method, pastPairings);
 
@@ -1172,25 +1247,30 @@ router.post('/:id/playoffs/start', auth, asyncHandler(async (req, res) => {
       }
     }
 
-    // Clã Fronto tem chaveamento próprio: os melhores clãs, dois jogadores cada,
-    // jogando em duplas. Só 2 e 4 clãs fecham até a final — cada mesa elimina um
-    // clã inteiro, então o bracket só divide por dois.
-    if (isClanFormat(event)) {
-      const totalClans = CLAN_PLAYOFF_SIZES[event.playoff_structure];
+    // Os formatos de time têm chaveamento próprio: os melhores times, dois
+    // jogadores cada, jogando em duplas. Cada mesa elimina um time inteiro, então
+    // o bracket só divide por dois.
+    //
+    // No partner isto é quase de graça: a mesa do mata-mata é a mesma da rodada
+    // normal, já 2v2. No Clã Fronto ela é a única em que companheiros sentam
+    // juntos, e é de lá que a mesa de duplas veio.
+    if (isTeamFormat(event)) {
+      const totalClans = PLAYOFF_TEAM_COUNTS[event.playoff_structure];
       if (!totalClans) {
-        throw new HttpError(400, 'Clã Fronto exige playoff de 2 ou 4 clãs');
+        throw new HttpError(400, `Este formato exige playoff de ${teamNounPlural(event)}`);
       }
       const allPlayers = await tx.query('SELECT * FROM event_players WHERE event_id = ?', [req.params.id]);
       const pastPairings = await eventPairings(tx, req.params.id);
       const ranked = computeStandings(allPlayers, pastPairings, event);
       const clans = await eventClans(tx, req.params.id);
       if (clans.length < totalClans) {
-        throw new HttpError(400, `O torneio tem ${clans.length} clãs; o playoff escolhido precisa de ${totalClans}`);
+        throw new HttpError(400, `O torneio tem ${clans.length} ${teamNounPlural(event)}; o playoff escolhido precisa de ${totalClans}`);
       }
-      const classificados = computeClanStandings(ranked, clans).slice(0, totalClans).map((c) => c.id);
+      const classificados = computeClanStandings(ranked, clans, pastPairings, event)
+        .slice(0, totalClans).map((c) => c.id);
 
       const roundNumber = event.current_round + 1;
-      const { roundId, seeded } = await buildClanPlayoffRound(tx, event, classificados, roundNumber, ranked);
+      const { roundId, seeded } = await buildClanPlayoffRound(tx, event, classificados, roundNumber, ranked, pastPairings);
       await tx.run('UPDATE events SET current_round = ?, status = ? WHERE id = ?',
         [roundNumber, 'ongoing', req.params.id]);
 

@@ -23,8 +23,8 @@ const dateString = z
   .refine((v) => !Number.isNaN(Date.parse(v)), 'must be a valid date');
 
 const PAIRING_METHODS = ['swiss', 'swiss-less-repetition', 'avoid-repetition', 'random'];
-const PLAYOFF_STRUCTURES = ['none', 'top4', 'top8', 'top16', 'clan2', 'clan4'];
-const TOURNAMENT_FORMATS = ['standard', 'clafronto'];
+const PLAYOFF_STRUCTURES = ['none', 'top4', 'top8', 'top16', 'clan2', 'clan4', 'partner2', 'partner4', 'partner8'];
+const TOURNAMENT_FORMATS = ['standard', 'clafronto', 'partner'];
 const EVENT_STATUSES = ['upcoming', 'ongoing', 'completed'];
 const PLAYER_STATUSES = ['active', 'pending', 'dropped'];
 const RESULTS = ['player1', 'player2', 'player3', 'player4', 'draw', 'bye'];
@@ -137,15 +137,19 @@ const schemas = {
     p2_games: int(0, 9),
   }),
 
-  // Clã Fronto: o clã entra inteiro ou não entra. Ou quatro e-mails de contas
-  // existentes (inscrição do próprio jogador), ou quatro nomes (convidados do dono).
+  // O time entra inteiro ou não entra. Ou e-mails de contas existentes (inscrição
+  // do próprio jogador), ou nomes de convidados (só o organizador).
+  //
+  // A faixa é 2 a 4 porque dois formatos usam esta rota — a dupla do partner e o
+  // clã de quatro. O tamanho **exato** é cobrado na rota, que é o único lugar
+  // onde se sabe de que formato é o evento.
   createClan: z.object({
     name: z.string().trim().min(2).max(60),
-    emails: z.array(z.email().max(255)).length(4).optional(),
-    display_names: z.array(z.string().trim().min(1).max(100)).length(4).optional(),
+    emails: z.array(z.email().max(255)).min(2).max(4).optional(),
+    display_names: z.array(z.string().trim().min(1).max(100)).min(2).max(4).optional(),
   }).refine(
     (v) => Boolean(v.emails) !== Boolean(v.display_names),
-    { message: 'Informe quatro e-mails ou quatro nomes de convidado, n\u00e3o os dois' }
+    { message: 'Informe e-mails ou nomes de convidado, n\u00e3o os dois' }
   ),
 
   createLeague: z.object({

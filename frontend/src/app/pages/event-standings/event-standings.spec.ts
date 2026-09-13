@@ -200,3 +200,59 @@ describe('EventStandingsComponent · perfil público é escolha do jogador', () 
     expect((fixture.nativeElement as HTMLElement).querySelector('.link-guest-btn')).toBeFalsy();
   });
 });
+
+/** Uma linha de classificação por time, com os desempates que a tabela lê. */
+function umTime(over: Record<string, unknown>) {
+  return {
+    id: 'A',
+    name: 'Time',
+    players: [],
+    player_count: 4,
+    points: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    mwp: null,
+    omw: null,
+    gwp: null,
+    ogw: null,
+    ...over,
+  } as unknown as NonNullable<ReturnType<typeof umEvento>['clan_standings']>[number];
+}
+
+describe('EventStandingsComponent · formatos de time', () => {
+  it('no partner, a chave da tabela fala em duplas', () => {
+    // O mesmo componente serve aos dois formatos; o que muda é o substantivo.
+    // Um `isClanFormat` esquecido aqui deixaria um torneio de duplas anunciando
+    // "Clãs" — do tipo de defeito que só a montagem do template pega.
+    const fixture = montar({
+      tournament_format: 'partner',
+      pod_size: 4,
+      clan_standings: [
+        umTime({ id: 'A', name: 'Ana & Bruno', player_count: 2, points: 3, wins: 1 }),
+      ],
+    });
+    const abas = [...fixture.nativeElement.querySelectorAll('.standings-switch .switch-btn')];
+    expect(abas.length).toBe(2);
+    expect(abas[0].textContent).toContain('Duplas');
+    expect(abas[0].textContent).not.toContain('Clãs');
+    expect(fixture.nativeElement.querySelector('thead th:nth-child(2)').textContent).toContain(
+      'Dupla',
+    );
+  });
+
+  it('no Clã Fronto a chave continua falando em clãs', () => {
+    const fixture = montar({
+      tournament_format: 'clafronto',
+      pod_size: 4,
+      clan_standings: [umTime({ id: 'A', name: 'Dragões', player_count: 4, points: 9, wins: 3 })],
+    });
+    const abas = [...fixture.nativeElement.querySelectorAll('.standings-switch .switch-btn')];
+    expect(abas[0].textContent).toContain('Clãs');
+  });
+
+  it('num torneio comum não existe chave nenhuma', () => {
+    const fixture = montar({ tournament_format: 'standard' });
+    expect(fixture.nativeElement.querySelector('.standings-switch')).toBeNull();
+  });
+});

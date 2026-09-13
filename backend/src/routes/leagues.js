@@ -6,6 +6,7 @@ const requireOrganizer = require('../middleware/requireOrganizer');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
+const { computeStandings } = require('../services/standings');
 
 const parseBool = (v) => v === 'true' || v === true || v === 1 || v === '1';
 
@@ -45,7 +46,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
   // user_id -> { user_id, display_name, points, wins, losses, draws }
   const totals = new Map();
-  const bump = (userId, displayName, points, wins, losses, draws) => {
+  const bump = (userId, displayName, { points, wins, losses, draws }) => {
     const cur = totals.get(userId) ?? { user_id: userId, display_name: displayName, points: 0, wins: 0, losses: 0, draws: 0, events_played: 0 };
     cur.points += points;
     cur.wins += wins;
@@ -60,14 +61,12 @@ router.get('/:id', asyncHandler(async (req, res) => {
   const eventIds = events.map((e) => e.id);
   const placeholders = eventIds.map(() => '?').join(',');
 
-  // Só jogadores com conta podem ser correlacionados entre eventos diferentes;
-  // convidados avulsos existem apenas dentro do próprio torneio.
+  // Todos os jogadores do evento, e não só os que têm conta: `computeStandings`
+  // precisa do elenco inteiro para saber quem enfrentou quem. Quem não tem conta
+  // é descartado só na hora de somar, porque é ali que a restrição vale — um
+  // convidado avulso não pode ser correlacionado entre torneios diferentes.
   const allPlayers = eventIds.length
-    ? await db.query(
-        `SELECT * FROM event_players
-         WHERE event_id IN (${placeholders}) AND status = 'active' AND user_id IS NOT NULL`,
-        eventIds
-      )
+    ? await db.query(`SELECT * FROM event_players WHERE event_id IN (${placeholders})`, eventIds)
     : [];
 
   // A pontuação de liga sai sempre das mesas confirmadas, nunca de um total
@@ -78,10 +77,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
   const contaPlayoff = Boolean(league.playoff_counts);
   const scoredPairings = eventIds.length
     ? await db.query(
-        `SELECT pr.* FROM pairings pr JOIN rounds r ON r.id = pr.round_id
+        `SELECT pr.*, r.is_playoff FROM pairings pr JOIN rounds r ON r.id = pr.round_id
          WHERE pr.event_id IN (${placeholders})
-           ${contaPlayoff ? '' : 'AND r.is_playoff = 0'}
-           AND pr.result IS NOT NULL AND pr.result_status = 'confirmed'`,
+           ${contaPlayoff ? '' : 'AND r.is_playoff = 0'}`,
         eventIds
       )
     : [];
@@ -97,33 +95,28 @@ router.get('/:id', asyncHandler(async (req, res) => {
     pairingsByEvent.get(pr.event_id).push(pr);
   }
 
-  const winnerKey = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
-
+  // Quem conta a pontuação é `computeStandings`, e mais ninguém.
+  //
+  // Esta rota tinha um laço próprio, escrito antes de a mesa de duplas existir:
+  // ele dava a vitória ao assento apontado por `result` e derrota a todos os
+  // outros. Numa mesa de duplas — o mata-mata do Clã Fronto, e toda rodada do
+  // partner — isso registrava o parceiro do vencedor como derrotado, e a liga
+  // discordava da classificação do próprio evento que a alimentava.
+  //
+  // Era a quarta aparição do mesmo defeito: dois lugares respondendo à mesma
+  // pergunta. Aqui a resposta passou a vir de onde ela já era certa.
   for (const ev of events) {
     const players = playersByEvent.get(ev.id) ?? [];
     if (players.length === 0) continue;
 
-    const perPlayer = new Map(); // event_players.id -> { wins, losses, draws }
-    const record = (id, w, l, d) => {
-      const c = perPlayer.get(id) ?? { wins: 0, losses: 0, draws: 0 };
-      c.wins += w; c.losses += l; c.draws += d;
-      perPlayer.set(id, c);
-    };
-    for (const pr of pairingsByEvent.get(ev.id) ?? []) {
-      const seats = [pr.player1_id, pr.player2_id, pr.player3_id, pr.player4_id].filter(Boolean);
-      if (pr.result === 'draw') {
-        for (const s of seats) record(s, 0, 0, 1);
-      } else if (pr.result === 'bye') {
-        for (const s of seats) record(s, 1, 0, 0);
-      } else if (winnerKey[pr.result]) {
-        const winnerId = pr[winnerKey[pr.result]];
-        for (const s of seats) record(s, s === winnerId ? 1 : 0, s === winnerId ? 0 : 1, 0);
-      }
-    }
-    for (const p of players) {
-      const c = perPlayer.get(p.id) ?? { wins: 0, losses: 0, draws: 0 };
-      const points = c.wins * ev.points_win + c.draws * ev.points_draw + c.losses * ev.points_loss;
-      bump(p.user_id, p.display_name, points, c.wins, c.losses, c.draws);
+    const ranked = computeStandings(players, pairingsByEvent.get(ev.id) ?? [], ev);
+    for (const p of ranked) {
+      // Convidado sem conta existe só dentro do próprio torneio: não há a quem
+      // creditar entre eventos diferentes. Quem deu drop também fica de fora —
+      // é a regra que já valia aqui, e mudá-la é decisão de produto, não efeito
+      // colateral de trocar quem faz a conta.
+      if (!p.user_id || p.status !== 'active') continue;
+      bump(p.user_id, p.display_name, p);
     }
   }
 

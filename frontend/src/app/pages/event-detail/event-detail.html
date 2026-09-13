@@ -100,16 +100,16 @@
                 } @else {
                   <span class="event-finished-badge">{{ i18n.t('event.finished') }}</span>
                 }
-                @if (isClanFormat() && event()!.current_round === 0) {
+                @if (isTeamFormat() && event()!.current_round === 0) {
                   <button
                     class="btn btn-ghost"
                     (click)="openClanModal()"
-                    [title]="i18n.t('event.enrollClanTitle')"
+                    [title]="i18n.t(chaveDeTime('enrollClanTitle'))"
                   >
-                    {{ i18n.t('event.enrollClan') }}
+                    {{ i18n.t(chaveDeTime('enrollClan')) }}
                   </button>
                 }
-                @if (!isClanFormat()) {
+                @if (!isTeamFormat()) {
                   <button
                     class="btn btn-ghost icon-only"
                     (click)="openAddPlayer()"
@@ -199,14 +199,14 @@
                 </button>
               </div>
             </div>
-          } @else if (isClanFormat()) {
+          } @else if (isTeamFormat()) {
             @if (event()!.current_round === 0 && event()!.status !== 'completed') {
               <button
                 class="btn btn-primary"
                 (click)="openClanModal()"
                 [disabled]="actionLoading()"
               >
-                {{ i18n.t('event.enrollClanTitle') }}
+                {{ i18n.t(chaveDeTime('enrollClanTitle')) }}
               </button>
             }
           } @else if (isJoined()) {
@@ -232,9 +232,9 @@
         <a class="export-link" [href]="exportUrl('standings')" download>{{
           i18n.t('event.exportStandings')
         }}</a>
-        @if (isClanFormat()) {
+        @if (isTeamFormat()) {
           <a class="export-link" [href]="exportUrl('clans')" download>{{
-            i18n.t('event.exportClans')
+            i18n.t(chaveDeTime('exportClans'))
           }}</a>
         }
         @if (event()!.rounds?.length) {
@@ -331,10 +331,11 @@
     </div>
   </div>
 
-  <!-- Inscrição de clã (Clã Fronto) -->
+  <!-- Inscrição de time: clã de quatro no Clã Fronto, dupla no partner -->
   @if (clanModal()) {
     <app-event-clan-enroll
       [isOwner]="isOwner()"
+      [tamanho]="tamanhoDoTime()"
       [carregando]="clanLoading()"
       [erro]="clanError()"
       (inscrever)="submitClan($event)"

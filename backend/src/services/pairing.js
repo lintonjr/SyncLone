@@ -1,3 +1,5 @@
+const { cmpPct } = require('../lib/percentuais');
+
 const asPod = (g) => ({
   player1: g[0] ?? null,
   player2: g[1] ?? null,
@@ -152,11 +154,14 @@ function buildByeHistory(pastPairings) {
 // fornece (testes de unidade, por exemplo), sobra a pontuação, que é o critério
 // que mais importa.
 const nz = (v) => (v === null || v === undefined ? 0 : v);
+// A mesma tolerância dos standings, e pela mesma razão: uma diferença de 1e-16
+// entre dois percentuais não é desempate, é ruído — e aqui ela decidiria quem
+// leva o bye, que vale uma vitória inteira.
 const byOfficialStanding = (a, b) =>
   b.points - a.points ||
-  nz(b.omw) - nz(a.omw) ||
-  nz(b.gwp) - nz(a.gwp) ||
-  nz(b.ogw) - nz(a.ogw);
+  cmpPct(nz(a.omw), nz(b.omw)) ||
+  cmpPct(nz(a.gwp), nz(b.gwp)) ||
+  cmpPct(nz(a.ogw), nz(b.ogw));
 
 /**
  * Pick who sits out this round, walking the standing from the bottom up: the
@@ -452,6 +457,80 @@ function generateClanPairings(players, method = 'swiss', pastPairings = [], atte
 }
 
 /**
+ * Monta as mesas de uma rodada de Partner.
+ *
+ * Aqui não há algoritmo novo: o partner é o suíço que já existe com a **dupla no
+ * lugar do jogador** e mesa de dois. Os quatro métodos configuráveis, o bye pela
+ * classificação, o sorteio honesto no empate e a anti-repetição vêm todos de
+ * `generateSwissPairings` sem uma linha nova de pareamento.
+ *
+ * O trabalho é de tradução, e são três passos:
+ *
+ *   1. Cada dupla vira uma entidade com os campos que a ordenação oficial lê
+ *      (`points`, `omw`, `gwp`, `ogw`) — vindos da classificação de times.
+ *   2. As mesas passadas são reescritas no nível da dupla. Sem isso a
+ *      anti-repetição mediria reencontros entre pessoas, e no partner as pessoas
+ *      de uma dupla se reencontram em toda rodada por definição.
+ *   3. Cada `dupla A × dupla B` é expandida em quatro assentos, com os parceiros
+ *      em 1-3 e 2-4 — a convenção que o mata-mata do Clã Fronto já usa e que
+ *      `winningSide()` já sabe ler.
+ *
+ * O bye existe, ao contrário do Clã Fronto: com número ímpar de duplas alguém
+ * folga, e a mesa fica com os dois parceiros e nenhum adversário.
+ */
+function generatePartnerPairings(teams, method = 'swiss', pastPairings = []) {
+  if (teams.length === 0) return [];
+
+  const incompleta = teams.find((t) => t.players.length !== 2);
+  if (incompleta) {
+    throw new Error(`A dupla ${incompleta.name ?? incompleta.id} não tem dois jogadores`);
+  }
+
+  // (1) a dupla como entidade de pareamento
+  const entidades = teams.map((t) => ({
+    id: t.id,
+    display_name: t.name ?? t.id,
+    points: t.points ?? 0,
+    omw: t.omw ?? null,
+    gwp: t.gwp ?? null,
+    ogw: t.ogw ?? null,
+  }));
+
+  // (2) o histórico no nível da dupla
+  const timeDoJogador = new Map();
+  for (const t of teams) for (const p of t.players) timeDoJogador.set(p.id, t.id);
+  const mesasDeTimes = pastPairings.map((mesa) => {
+    const vistos = [];
+    for (const col of ['player1_id', 'player2_id', 'player3_id', 'player4_id']) {
+      const timeId = mesa[col] ? timeDoJogador.get(mesa[col]) : null;
+      if (timeId && !vistos.includes(timeId)) vistos.push(timeId);
+    }
+    return {
+      player1_id: vistos[0] ?? null,
+      player2_id: vistos[1] ?? null,
+      player3_id: null,
+      player4_id: null,
+      result: mesa.result,
+    };
+  });
+
+  // (3) o suíço de sempre, e a expansão em assentos
+  const porId = new Map(teams.map((t) => [t.id, t]));
+  const pods = generateSwissPairings(entidades, 2, method, mesasDeTimes);
+
+  return pods.map((pod) => {
+    const [a1, a2] = porId.get(pod.player1.id).players;
+    if (!pod.player2) {
+      // Bye: a dupla inteira folga. `insertPods` reconhece a mesa pela ausência
+      // do segundo assento, e os dois parceiros levam a vitória.
+      return { player1: a1, player2: null, player3: a2, player4: null };
+    }
+    const [b1, b2] = porId.get(pod.player2.id).players;
+    return { player1: a1, player2: b1, player3: a2, player4: b2 };
+  });
+}
+
+/**
  * Monta as mesas de uma fase de playoff do Clã Fronto.
  *
  * Aqui a mesa muda de natureza: são 2 clãs, com 2 jogadores cada, jogando em
@@ -496,6 +575,7 @@ module.exports = {
   generateSwissPairings,
   seedPlayoffPods,
   generateClanPairings,
+  generatePartnerPairings,
   seedClanPlayoffPods,
   clanPairSeats,
 };

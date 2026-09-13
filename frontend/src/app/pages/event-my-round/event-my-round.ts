@@ -42,7 +42,9 @@ export class EventMyRoundComponent {
   report = output<{ pairingId: string; result: string }>();
 
   isPodMode = computed(
-    () => (this.ev()?.pod_size ?? 2) >= 3 || this.ev()?.tournament_format === 'clafronto',
+    () =>
+      (this.ev()?.pod_size ?? 2) >= 3 ||
+      ['clafronto', 'partner'].includes(this.ev()?.tournament_format ?? ''),
   );
 
   podPlayers = podPlayers;

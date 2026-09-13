@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { EventPairingsComponent } from './event-pairings';
 import { umEvento, umaMesa, umaRodada } from '../../testing/fixtures';
 import { I18nService } from '../../i18n/i18n';
+import { podPlayerResult } from '../event-detail/pod-view';
+import { Pairing } from '../../services/event';
 
 /**
  * Testes de template da aba de pareamentos.
@@ -138,5 +140,41 @@ describe('EventPairingsComponent', () => {
     expect(fixture.componentInstance.canEditResult(umaMesa({ result: 'player1' }), rodada)).toBe(
       false,
     );
+  });
+});
+
+describe('podPlayerResult · mesa de duplas', () => {
+  // O card marcava o parceiro do vencedor como derrotado enquanto a tabela lhe
+  // dava os pontos — a mesma divergência do C-05, um andar acima. Quem venceu
+  // passou a vir do servidor, que é onde a regra dos parceiros mora.
+  const mesa = {
+    id: 'm',
+    round_id: 'r',
+    event_id: 'e',
+    table_number: 1,
+    player1_id: 'eva',
+    player2_id: 'caio',
+    player3_id: 'fabio',
+    player4_id: 'dora',
+    result: 'player1',
+    winner_ids: ['eva', 'fabio'],
+  } as Pairing;
+
+  it('dá vitória ao parceiro do assento vencedor', () => {
+    expect(podPlayerResult(mesa, 'player1')).toBe('win');
+    expect(podPlayerResult(mesa, 'player3')).toBe('win');
+    expect(podPlayerResult(mesa, 'player2')).toBe('loss');
+    expect(podPlayerResult(mesa, 'player4')).toBe('loss');
+  });
+
+  it('sem winner_ids, cai na comparação por assento', () => {
+    const antiga = { ...mesa, winner_ids: undefined };
+    expect(podPlayerResult(antiga, 'player1')).toBe('win');
+    expect(podPlayerResult(antiga, 'player3')).toBe('loss');
+  });
+
+  it('empate e bye não dependem do lado vencedor', () => {
+    expect(podPlayerResult({ ...mesa, result: 'draw' }, 'player2')).toBe('draw');
+    expect(podPlayerResult({ ...mesa, result: 'bye' }, 'player3')).toBe('bye');
   });
 });

@@ -1,17 +1,19 @@
-@if (isClanFormat()) {
+@if (isTeamFormat()) {
   <div class="standings-switch">
     <button class="switch-btn" [class.active]="view() === 'clans'" (click)="view.set('clans')">
-      Clãs ({{ clanStandings().length }})
+      {{ i18n.t(isPartnerFormat() ? 'standings.pairs' : 'standings.clans') }} ({{
+        clanStandings().length
+      }})
     </button>
     <button class="switch-btn" [class.active]="view() === 'players'" (click)="view.set('players')">
-      Jogadores ({{ sortedStandings().length }})
+      {{ i18n.t('standings.playersTab') }} ({{ sortedStandings().length }})
     </button>
   </div>
 
   @if (view() === 'clans') {
     @if (clanStandings().length === 0) {
       <p class="empty">
-        {{ i18n.t('standings.noClans') }}
+        {{ i18n.t(isPartnerFormat() ? 'standings.noPairs' : 'standings.noClans') }}
       </p>
     } @else {
       <div class="standings-table card">
@@ -19,12 +21,14 @@
           <thead>
             <tr>
               <th class="col-rank">{{ i18n.t('common.rank') }}</th>
-              <th>{{ i18n.t('standings.clan') }}</th>
+              <th>{{ i18n.t(isPartnerFormat() ? 'standings.pair' : 'standings.clan') }}</th>
               <th class="col-num">V</th>
               <th class="col-num">D</th>
               <th class="col-num">E</th>
               <th class="col-pts">{{ i18n.t('common.points') }}</th>
-              <th class="col-tb">{{ i18n.t('standings.clanOmw') }}</th>
+              <th class="col-tb">
+                {{ i18n.t(isPartnerFormat() ? 'standings.pairOmw' : 'standings.clanOmw') }}
+              </th>
               @if (isOwner() && ev()!.current_round === 0) {
                 <th class="col-actions"></th>
               }
@@ -78,7 +82,7 @@
   }
 }
 
-@if (!isClanFormat() || view() === 'players') {
+@if (!isTeamFormat() || view() === 'players') {
   <!-- A fila de aprovacao fica FORA do bloco da tabela: com todo mundo
              pendente nao existe jogador ativo, e a tabela nao renderiza. Foi
              exatamente assim que o organizador ficava sem meio de aprovar. -->
@@ -187,7 +191,7 @@
                 <span class="rank-badge" [class]="'rank-' + (i + 1)">{{ ordinal(i + 1) }}</span>
               </td>
               <td class="player-cell">
-                @if (isClanFormat()) {
+                @if (isTeamFormat()) {
                   <span class="clan-dot" [class]="'clan-c' + clanIndex(player.id)"></span>
                 }
                 @if (temPerfil(player)) {
@@ -209,7 +213,7 @@
                     </button>
                   }
                 }
-                @if (isClanFormat()) {
+                @if (isTeamFormat()) {
                   <span class="clan-tag">{{ clanOf(player.id) }}</span>
                 }
                 @if (entrouDepois(player); as faltando) {
@@ -273,7 +277,7 @@
       </table>
     </div>
 
-    @if (droppedPlayers().length && !isClanFormat()) {
+    @if (droppedPlayers().length && !isTeamFormat()) {
       <div class="dropped-section">
         <h4 class="dropped-title">{{ i18n.t('standings.dropped') }}</h4>
         <div class="dropped-list">

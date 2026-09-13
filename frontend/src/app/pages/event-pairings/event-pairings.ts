@@ -47,8 +47,11 @@ export class EventPairingsComponent {
   openResult = output<Pairing>();
   approve = output<string>();
 
-  isPodMode = computed(() => (this.ev()?.pod_size ?? 2) >= 3 || this.isClanFormat());
+  isPodMode = computed(() => (this.ev()?.pod_size ?? 2) >= 3 || this.isTeamFormat());
   isClanFormat = computed(() => this.ev()?.tournament_format === 'clafronto');
+  isPartnerFormat = computed(() => this.ev()?.tournament_format === 'partner');
+  /** Clã Fronto e partner: inscrição por time, mesa de quatro, tabela por time. */
+  isTeamFormat = computed(() => this.isClanFormat() || this.isPartnerFormat());
 
   private clanNameByPlayer = computed(() => {
     const nomes = new Map((this.ev()?.clans ?? []).map((c) => [c.id, c.name]));

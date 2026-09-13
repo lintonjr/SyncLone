@@ -25,10 +25,32 @@ export function podPlayers(p: Pairing): PodSeat[] {
   return seats;
 }
 
+/**
+ * O selo de cada assento na mesa.
+ *
+ * Quem venceu vem do servidor (`winner_ids`), e não de comparar o assento com
+ * `result`: numa mesa de duplas — toda rodada de partner, o mata-mata do Clã
+ * Fronto — os dois parceiros vencem juntos, e comparar com `result` marcava um
+ * deles como derrotado enquanto a tabela lhe dava os pontos.
+ *
+ * A comparação com `result` fica de reserva para mesas antigas, gravadas antes
+ * de o servidor passar a mandar o campo.
+ */
 export function podPlayerResult(p: Pairing, slot: string): 'win' | 'loss' | 'draw' | 'bye' | null {
   if (!p.result) return null;
   if (p.result === 'bye') return 'bye';
   if (p.result === 'draw') return 'draw';
+
+  const idDoAssento = {
+    player1: p.player1_id,
+    player2: p.player2_id,
+    player3: p.player3_id,
+    player4: p.player4_id,
+  }[slot];
+
+  if (p.winner_ids?.length) {
+    return idDoAssento && p.winner_ids.includes(idDoAssento) ? 'win' : 'loss';
+  }
   return p.result === slot ? 'win' : 'loss';
 }
 

@@ -81,20 +81,62 @@ read NG NC < $SP/pf.txt
 chk "dois assentos pontuaram" "$NG" "2"
 chk "e são do mesmo clã" "$NC" "1"
 
-sec "5. C-03 · evento encerrado só reabre"
+sec "5. C-07 · a liga conta pela mesma fonte do evento"
+# Os quatro assentos da final viram contas, para aparecerem na classificação da
+# liga — convidado sem conta não é correlacionável entre eventos. Depois a
+# pergunta é uma só: liga e evento dizem o mesmo número para cada pessoa?
+#
+# Antes do C-07 não diziam. `routes/leagues.js` tinha um laço próprio, anterior à
+# mesa de duplas, que dava derrota ao parceiro do vencedor — e a liga discordava
+# do evento que a alimentava.
+LIGA=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"Liga C07 $S\",\"playoff_counts\":true}" | jqp 'd["id"]')
+body -X PUT $API/events/$CID -H "Authorization: Bearer $OT" -F "league_id=$LIGA" >/dev/null
+i=0
+ASSENTOS=$(jqp '" ".join(str(m["player%d_id" % i]) for i in (1,2,3,4) for m in [[x for x in d["pairings"] if x["round_id"]==d["rounds"][-1]["id"]][0]])' < $SP/pos.json)
+for seat in $ASSENTOS; do
+  i=$((i+1)); EM="c07-$i-$S@t.local"; reg "C07 $i" "$EM"
+  body -X PUT $API/events/$CID/players/$seat/link -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$EM\"}" >/dev/null
+done
+body $API/events/$CID > $SP/c07ev.json
+body $API/leagues/$LIGA > $SP/c07lg.json
+python3 - "$SP" > $SP/c07.txt <<'PYEOF'
+import json, sys
+SP = sys.argv[1]
+ev = json.load(open(SP + '/c07ev.json'))
+lg = json.load(open(SP + '/c07lg.json'))
+doEvento = {p['user_id']: p for p in ev['players'] if p.get('user_id')}
+daLiga = {r['user_id']: r for r in lg['standings']}
+divergem = [u for u in doEvento if doEvento[u]['points'] != daLiga.get(u, {}).get('points')]
+# a dupla que venceu a final: os dois assentos do clã vencedor
+mesa = [p for p in ev['pairings'] if p['round_id'] == ev['rounds'][-1]['id']][0]
+assentos = [mesa['player%d_id' % i] for i in (1, 2, 3, 4)]
+porId = {p['id']: p for p in ev['players']}
+claVencedor = porId[mesa[{'player1': 'player1_id', 'player2': 'player2_id',
+                          'player3': 'player3_id', 'player4': 'player4_id'}[mesa['result']]]]['clan_id']
+dupla = [porId[a] for a in assentos if porId[a]['clan_id'] == claVencedor]
+naLiga = [daLiga.get(p['user_id'], {}).get('wins') for p in dupla]
+print(len(daLiga), len(divergem), len(dupla), len(set(naLiga)))
+PYEOF
+read NL NDIV NDUP NWIN < $SP/c07.txt
+chk "os quatro assentos entram na liga" "$NL" "4"
+chk "liga e evento dizem o mesmo para cada um" "$NDIV" "0"
+chk "a dupla vencedora tem dois assentos" "$NDUP" "2"
+chk "e os dois com o mesmo número de vitórias" "$NWIN" "1"
+
+sec "6. C-03 · evento encerrado só reabre"
 E3=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg3 $S" -F "game=Magic" -F "date=2026-10-01" | jqp 'd["id"]')
 body -X POST $API/events/$E3/finish -H "Authorization: Bearer $OT" >/dev/null
 chk "renomear depois do fim -> 400" "$(code -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "name=Novo")" "400"
 chk "reabrir -> 200" "$(code -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "status=ongoing")" "200"
 
-sec "6. C-04 · SSE avisa editar e apagar"
+sec "7. C-04 · SSE avisa editar e apagar"
 (timeout 6 curl -sN "$API/events/$E3/stream" > $SP/sse.txt &); sleep 1
 body -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "name=Reg3 editado" >/dev/null; sleep 1
 chk "PUT emite update" "$(grep -c 'data: update' $SP/sse.txt)" "1"
 body -X DELETE $API/events/$E3 -H "Authorization: Bearer $OT" >/dev/null; sleep 1
 chk "DELETE emite deleted" "$(grep -c 'data: deleted' $SP/sse.txt)" "1"
 
-sec "7. Selo de entrada tardia não confunde eliminação com atraso"
+sec "8. Selo de entrada tardia não confunde eliminação com atraso"
 E5=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg5 $S" -F "game=Magic" -F "date=2026-10-01" -F "playoff_structure=top4" | jqp 'd["id"]')
 for n in A B C D E F G H; do body -X POST $API/events/$E5/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
 for r in 1 2; do body -X POST $API/events/$E5/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E5; done
@@ -105,7 +147,7 @@ chk "ninguém eliminado vira entrada tardia" "$(jqp 'len([p for p in d["players"
 body -X POST $API/events/$E5/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"display_name":"Tardio"}' >/dev/null
 chk "mas quem entra depois continua marcado" "$(body $API/events/$E5 | jqp 'len([p for p in d["players"] if p["swiss_rounds_seated"] < d["swiss_rounds_total"]])')" "1"
 
-sec "8. Regras antigas seguem de pé"
+sec "9. Regras antigas seguem de pé"
 E4=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg4 $S" -F "game=Magic" -F "date=2026-10-01" -F "allow_byes=true" -F "confirm_players=true" | jqp 'd["id"]')
 body -X POST $API/events/$E4/join -H "Authorization: Bearer $PT" > $SP/j.json
 chk "inscrição com aprovação fica pendente" "$(jqp 'd["pending"]' < $SP/j.json)" "True"
@@ -133,7 +175,7 @@ chk "B-04: CSV de clãs" "$(body "$API/events/$CID/export?type=clans" -H "Author
 chk "A-01: upload não-imagem -> 400" "$(printf 'x' > $SP/x.txt; code -X POST $API/events -H "Authorization: Bearer $OT" -F "name=U $S" -F "game=Magic" -F "date=2026-10-01" -F "thumbnail=@$SP/x.txt;type=text/plain")" "400"
 chk "apagar Clã Fronto (FK dos clãs) -> 200" "$(code -X DELETE $API/events/$CID -H "Authorization: Bearer $OT")" "200"
 
-sec "9. Perfil público e vinculação de convidado"
+sec "10. Perfil público e vinculação de convidado"
 E6=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg6 $S" -F "game=Magic" -F "date=2026-10-01" -F "allow_byes=true" | jqp 'd["id"]')
 for n in Umbra Vega Wren; do body -X POST $API/events/$E6/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
 body -X POST $API/events/$E6/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E6
@@ -152,7 +194,7 @@ chk "perfil nunca devolve e-mail" "$(jqp '"email" in d["user"]' < $SP/perfil.jso
 chk "retrospecto do perfil e internamente coerente" "$(jqp 'd["totals"]["wins"] + d["totals"]["losses"] + d["totals"]["draws"] == d["totals"]["matches"]' < $SP/perfil.json)" "True"
 chk "perfil inexistente -> 404" "$(code $API/users/00000000-0000-0000-0000-000000000000/profile)" "404"
 
-sec "10. Métricas por liga"
+sec "11. Métricas por liga"
 MF="mf$S@t.local"; reg "Multiliga" "$MF"; MFT=$(tok "$MF")
 MFID=$(body $API/users/me -H "Authorization: Bearer $MFT" | jqp 'd["id"]')
 LA=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"Liga Alfa $S\"}" | jqp 'd["id"]')
@@ -181,7 +223,7 @@ chk "nenhum recorte vazio" "$(jqp 'all(b["events"] > 0 for b in d["by_league"])'
 chk "o campo leagues saiu da resposta" "$(jqp '"leagues" in d' < $SP/ml.json)" "False"
 chk "quem joga uma liga so tem um recorte" "$(body $API/users/$UID_P/profile | jqp 'len(d["by_league"])')" "1"
 
-sec "11. Notificações: código e teto"
+sec "12. Notificações: código e teto"
 NM="nt$S@t.local"; reg "Notificado" "$NM"; NMT=$(tok "$NM")
 NMID=$(body $API/users/me -H "Authorization: Bearer $NMT" | jqp 'd["id"]')
 ENT=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Notif $S" -F "game=MTG" -F "date=2026-10-01" -F "allow_byes=true" | jqp 'd["id"]')
@@ -194,7 +236,7 @@ chk "e nao a frase pronta" "$(jqp 'all(n["message"] is None for n in d)' < $SP/n
 chk "com os parametros para a tela montar" "$(jqp 'any(n.get("params") for n in d)' < $SP/nt.json)" "True"
 chk "o aviso de rodada traz o numero" "$(jqp '[n["params"]["rodada"] for n in d if n["code"]=="notif.roundStarted"][0]' < $SP/nt.json)" "1"
 
-sec "12. Badges"
+sec "13. Badges"
 python3 -c "
 import base64,sys
 sys.stdout.buffer.write(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='))" > $SP/badge.png
@@ -231,7 +273,7 @@ chk "apagar evento nao deixa a capa no disco" "$(docker compose exec -T backend 
 
 chk "sumiu ate para o titular" "$(body $API/users/$BPID/profile -H "Authorization: Bearer $BPT" | jqp 'len(d["badges"])')" "0"
 
-sec "13. Visibilidade do perfil é escolha do jogador"
+sec "14. Visibilidade do perfil é escolha do jogador"
 PM="privreg$S@t.local"; reg "Reservado" "$PM"; PMT=$(tok "$PM")
 PMID=$(body $API/users/me -H "Authorization: Bearer $PMT" | jqp 'd["id"]')
 chk "nasce público" "$(body $API/users/me -H "Authorization: Bearer $PMT" | jqp 'd["profile_public"]')" "1"
@@ -243,6 +285,240 @@ chk "outra pessoa logada não vê" "$(code $API/users/$PMID/profile -H "Authoriz
 chk "token inválido não quebra a rota pública" "$(code $API/users/$PMID/profile -H "Authorization: Bearer lixo.invalido")" "403"
 chk "sem login não muda preferência alheia" "$(code -X PUT $API/users/me/profile-visibility -H 'Content-Type: application/json' -d '{"profile_public":false}')" "401"
 chk "reabrir volta a responder" "$(body -X PUT $API/users/me/profile-visibility -H "Authorization: Bearer $PMT" -H 'Content-Type: application/json' -d '{"profile_public":true}' >/dev/null; code $API/users/$PMID/profile)" "200"
+
+sec "15. Partner · a dupla joga junta, e a liga conta cada um"
+PLG=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"Liga Partner $S\",\"playoff_counts\":true}" | jqp 'd["id"]')
+PEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Partner $S" -F "game=Magic" -F "date=2026-10-01" -F "tournament_format=partner" -F "playoff_structure=partner2" | jqp 'd["id"]')
+body -X PUT $API/events/$PEV -H "Authorization: Bearer $OT" -F "league_id=$PLG" >/dev/null
+chk "o formato manda na mesa e no bye" "$(body $API/events/$PEV | jqp '(d["pod_size"], d["allow_byes"])')" "(4, 1)"
+
+# tres duplas de contas: numero impar, para haver bye em toda rodada
+for t in Alfa Beta Gama; do
+  E1="pa-$t-1-$S@t.local"; E2="pa-$t-2-$S@t.local"
+  reg "$t Um" "$E1"; reg "$t Dois" "$E2"
+  body -X POST $API/events/$PEV/clans -H "Authorization: Bearer $(tok "$E1")" -H 'Content-Type: application/json' \
+    -d "{\"name\":\"$t\",\"emails\":[\"$E1\",\"$E2\"]}" >/dev/null
+done
+chk "tres duplas, seis jogadores" "$(body $API/events/$PEV | jqp '(len(d["clan_standings"]), len(d["players"]))')" "(3, 6)"
+
+chk "inscricao individual recusada -> 400" "$(code -X POST $API/events/$PEV/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"display_name":"Avulso"}')" "400"
+chk "join avulso recusado -> 400" "$(code -X POST $API/events/$PEV/join -H "Authorization: Bearer $PT")" "400"
+chk "dupla com tres nomes recusada -> 400" "$(code -X POST $API/events/$PEV/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"name":"Trio","display_names":["a","b","c"]}')" "400"
+chk "quem inscreve precisa estar na dupla -> 403" "$(code -X POST $API/events/$PEV/clans -H "Authorization: Bearer $(tok "pa-Alfa-1-$S@t.local")" -H 'Content-Type: application/json' -d "{\"name\":\"Intrusa\",\"emails\":[\"pa-Beta-1-$S@t.local\",\"pa-Beta-2-$S@t.local\"]}")" "403"
+chk "playoff de outro formato recusado -> 400" "$(code -X PUT $API/events/$PEV -H "Authorization: Bearer $OT" -F "playoff_structure=top4")" "400"
+
+for r in 1 2 3; do body -X POST $API/events/$PEV/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $PEV; done
+body $API/events/$PEV > $SP/pt1.json
+python3 - "$SP" > $SP/pt1.txt <<'PYEOF'
+import json, sys, collections
+d = json.load(open(sys.argv[1] + '/pt1.json'))
+por = {p['id']: p for p in d['players']}
+mesas = [m for m in d['pairings'] if m['round_id']]
+duplasNaMesa = []
+byes = []
+for m in mesas:
+    s = [m[f'player{i}_id'] for i in (1, 2, 3, 4) if m[f'player{i}_id']]
+    times = {por[x]['clan_id'] for x in s}
+    if m['result'] == 'bye':
+        byes.append(next(iter(times)))
+        # o bye leva a dupla inteira
+        duplasNaMesa.append(len(s) == 2 and len(times) == 1)
+    else:
+        # 4 assentos, exatamente 2 duplas, 2 de cada
+        cont = collections.Counter(por[x]['clan_id'] for x in s)
+        duplasNaMesa.append(len(s) == 4 and len(cont) == 2 and set(cont.values()) == {2})
+    # parceiros nos assentos 1-3 e 2-4
+    if m['result'] != 'bye':
+        duplasNaMesa.append(por[m['player1_id']]['clan_id'] == por[m['player3_id']]['clan_id'])
+        duplasNaMesa.append(por[m['player2_id']]['clan_id'] == por[m['player4_id']]['clan_id'])
+
+iguais = all(
+    len({p['points'] for p in c['players']}) == 1 and c['points'] == c['players'][0]['points']
+    for c in d['clan_standings']
+)
+soma = sum(c['points'] for c in d['clan_standings'])
+print(all(duplasNaMesa), len(set(byes)), len(byes), iguais, soma)
+PYEOF
+read FORMA BYEDIST BYETOT IGUAIS SOMA < $SP/pt1.txt
+chk "toda mesa tem duas duplas, parceiros em 1-3 e 2-4" "$FORMA" "True"
+chk "tres rodadas impares geram tres byes" "$BYETOT" "3"
+chk "e cada dupla folgou uma vez" "$BYEDIST" "3"
+chk "cada parceiro vale o mesmo que a dupla, nunca o dobro" "$IGUAIS" "True"
+chk "3 vitorias + 3 byes x 3 pontos" "$SOMA" "18"
+
+body $API/leagues/$PLG > $SP/ptlg.json
+python3 - "$SP" > $SP/pt2.txt <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1] + '/pt1.json'))
+lg = json.load(open(sys.argv[1] + '/ptlg.json'))
+ev = {p['user_id']: p['points'] for p in d['players'] if p.get('user_id')}
+liga = {r['user_id']: r['points'] for r in lg['standings']}
+divergem = [u for u in ev if ev[u] != liga.get(u)]
+# os dois de uma mesma dupla levam o mesmo para a liga
+porDupla = [sorted(liga.get(p['user_id']) for p in c['players']) for c in d['clan_standings']]
+print(len(liga), len(divergem), all(v[0] == v[1] for v in porDupla), sum(liga.values()))
+PYEOF
+read NLIGA NDIV PARES SOMALIGA < $SP/pt2.txt
+chk "os seis jogadores entram na liga" "$NLIGA" "6"
+chk "liga e evento dizem o mesmo para cada um" "$NDIV" "0"
+chk "os dois de cada dupla levam o mesmo" "$PARES" "True"
+chk "na liga a dupla rende para os dois: 18 x 2" "$SOMALIGA" "36"
+
+body -X POST $API/events/$PEV/playoffs/start -H "Authorization: Bearer $OT" > $SP/ppo.json
+chk "playoff partner2 abre a final" "$(jqp 'd["round"]["playoff_stage"]' < $SP/ppo.json)" "Final"
+chk "e a final e uma mesa 2v2" "$(jqp 'len([1 for m in d["pairings"] if m["player4_id"]])' < $SP/ppo.json)" "1"
+fecha $PEV
+body $API/events/$PEV > $SP/pt3.json
+# O card de pareamento marcava o parceiro do vencedor como derrotado enquanto a
+# tabela lhe dava os pontos. Quem venceu passou a vir do servidor, assento a
+# assento, da mesma funcao que distribui os pontos.
+chk "toda mesa decidida devolve dois vencedores" "$(jqp 'str(sorted(len(m.get("winner_ids") or []) for m in d["pairings"] if m["result"] and m["result"]!="bye"))' < $SP/pt1.json)" "[2, 2, 2]"
+chk "e os dois de cada mesa sao da mesma dupla" "$(jqp 'str(all(len({[p for p in d["players"] if p["id"]==w][0]["clan_id"] for w in m["winner_ids"]})==1 for m in d["pairings"] if m.get("winner_ids")))' < $SP/pt1.json)" "True"
+chk "a final premia os dois parceiros juntos" "$(jqp 'str(all(len({p["points"] for p in c["players"]})==1 for c in d["clan_standings"]))' < $SP/pt3.json)" "True"
+
+
+sec "16. Partner · os brackets de 4 e 8 duplas, ate a campea"
+# partner4 e partner8 existiam no codigo e no seletor sem nunca terem sido
+# jogados ate o fim. Aqui o bracket roda etapa por etapa: cada mesa elimina uma
+# dupla, a proxima fase e montada com quem sobrou, e a ultima coroa a campea.
+BEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Bracket $S" -F "game=Magic" \
+  -F "date=2026-10-01" -F "tournament_format=partner" -F "playoff_structure=partner8" | jqp 'd["id"]')
+for i in 1 2 3 4 5 6 7 8; do
+  body -X POST $API/events/$BEV/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
+    -d "{\"name\":\"B$i\",\"display_names\":[\"B${i}a\",\"B${i}b\"]}" >/dev/null
+done
+# duas rodadas suicas com vencedor determinado pelo nome, para a classificacao
+# ser desigual e o cruzamento por seed poder ser conferido
+for r in 1 2; do
+  body -X POST $API/events/$BEV/rounds -H "Authorization: Bearer $OT" >/dev/null
+  body $API/events/$BEV | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+por={p['id']:p for p in d['players']}
+nome={c['id']:c['name'] for c in d['clan_standings']}
+for m in d['pairings']:
+    if m['result'] or not m['player2_id']: continue
+    a=nome[por[m['player1_id']]['clan_id']]; b=nome[por[m['player2_id']]['clan_id']]
+    print(m['id'], 'player1' if len(a)<len(b) or (len(a)==len(b) and a<b) else 'player2')
+" > $SP/br.txt
+  while read pid res; do body -X PUT $API/events/$BEV/pairings/$pid -H "Authorization: Bearer $OT" \
+    -H 'Content-Type: application/json' -d "{\"result\":\"$res\"}" >/dev/null; done < $SP/br.txt
+done
+
+body $API/events/$BEV > $SP/bantes.json
+body -X POST $API/events/$BEV/playoffs/start -H "Authorization: Bearer $OT" >/dev/null
+body $API/events/$BEV > $SP/bq.json
+chk "partner8 abre as quartas com 4 mesas" "$(jqp '(d["rounds"][-1]["playoff_stage"], len([m for m in d["pairings"] if m["round_id"]==d["rounds"][-1]["id"]]))' < $SP/bq.json)" "('Round of 8', 4)"
+python3 - "$SP" > $SP/bseed.txt <<'PYEOF'
+import json, sys
+SP = sys.argv[1]
+a = json.load(open(SP + '/bantes.json')); b = json.load(open(SP + '/bq.json'))
+ordem = [c['id'] for c in a['clan_standings']]
+por = {p['id']: p for p in b['players']}
+r = b['rounds'][-1]
+cruz = sorted(
+    tuple(sorted((ordem.index(por[m['player1_id']]['clan_id']) + 1,
+                  ordem.index(por[m['player2_id']]['clan_id']) + 1)))
+    for m in b['pairings'] if m['round_id'] == r['id'])
+print(str(cruz) == '[(1, 8), (2, 7), (3, 6), (4, 5)]')
+PYEOF
+chk "e cruza melhor contra pior: 1x8, 2x7, 3x6, 4x5" "$(cat $SP/bseed.txt)" "True"
+
+# joga o bracket ate o fim, conferindo a forma de cada etapa
+ETAPAS=""
+for _ in 1 2 3 4; do
+  body $API/events/$BEV > $SP/be.json
+  E=$(jqp 'd["rounds"][-1]["playoff_stage"] if d["rounds"][-1]["is_playoff"] else ""' < $SP/be.json)
+  [ -z "$E" ] && break
+  N=$(jqp 'len([m for m in d["pairings"] if m["round_id"]==d["rounds"][-1]["id"]])' < $SP/be.json)
+  FORMA=$(jqp 'str(all(len([m["player%d_id"%i] for i in (1,2,3,4) if m["player%d_id"%i]])==4 and [p for p in d["players"] if p["id"]==m["player1_id"]][0]["clan_id"]==[p for p in d["players"] if p["id"]==m["player3_id"]][0]["clan_id"] for m in d["pairings"] if m["round_id"]==d["rounds"][-1]["id"]))' < $SP/be.json)
+  ETAPAS="$ETAPAS $E/$N/$FORMA"
+  jqp '"\n".join(m["id"] for m in d["pairings"] if m["round_id"]==d["rounds"][-1]["id"] and not m["result"])' < $SP/be.json > $SP/bp.txt
+  while read pid; do [ -n "$pid" ] && body -X PUT $API/events/$BEV/pairings/$pid -H "Authorization: Bearer $OT" \
+    -H 'Content-Type: application/json' -d '{"result":"player1"}' >/dev/null; done < $SP/bp.txt
+  body -X POST $API/events/$BEV/rounds -H "Authorization: Bearer $OT" > $SP/badv.json
+  grep -q '"champion"' $SP/badv.json && break
+done
+chk "tres etapas, cada uma metade da anterior, todas 2v2" "$(echo $ETAPAS)" "Round of 8/4/True Semifinals/2/True Final/1/True"
+
+body $API/events/$BEV > $SP/bfim.json
+chk "o evento termina com uma dupla campea" "$(jqp '(d["status"], d["champion_clan_id"] is not None)' < $SP/bfim.json)" "('completed', True)"
+chk "e a invariante vale nas oito duplas ate o fim" "$(jqp 'str(all(len({p["points"] for p in c["players"]})==1 and c["points"]==c["players"][0]["points"] for c in d["clan_standings"]))' < $SP/bfim.json)" "True"
+
+# partner4: o mesmo bracket com metade do campo — semifinais e final
+P4=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Bracket4 $S" -F "game=Magic" \
+  -F "date=2026-10-01" -F "tournament_format=partner" -F "playoff_structure=partner4" | jqp 'd["id"]')
+for i in 1 2 3 4; do
+  body -X POST $API/events/$P4/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
+    -d "{\"name\":\"Q$i\",\"display_names\":[\"Q${i}a\",\"Q${i}b\"]}" >/dev/null
+done
+for r in 1 2 3; do
+  body -X POST $API/events/$P4/rounds -H "Authorization: Bearer $OT" >/dev/null
+  body $API/events/$P4 | python3 -c "
+import sys,json
+d=json.load(sys.stdin); por={p['id']:p for p in d['players']}; nome={c['id']:c['name'] for c in d['clan_standings']}
+for m in d['pairings']:
+    if m['result'] or not m['player2_id']: continue
+    print(m['id'], 'player1' if nome[por[m['player1_id']]['clan_id']] < nome[por[m['player2_id']]['clan_id']] else 'player2')
+" > $SP/p4.txt
+  while read pid res; do body -X PUT $API/events/$P4/pairings/$pid -H "Authorization: Bearer $OT" \
+    -H 'Content-Type: application/json' -d "{\"result\":\"$res\"}" >/dev/null; done < $SP/p4.txt
+done
+body $API/events/$P4 > $SP/p4a.json
+body -X POST $API/events/$P4/playoffs/start -H "Authorization: Bearer $OT" >/dev/null
+body $API/events/$P4 > $SP/p4b.json
+chk "partner4 abre as semifinais com 2 mesas" "$(jqp '(d["rounds"][-1]["playoff_stage"], len([m for m in d["pairings"] if m["round_id"]==d["rounds"][-1]["id"]]))' < $SP/p4b.json)" "('Semifinals', 2)"
+python3 - "$SP" > $SP/p4s.txt <<'PYEOF'
+import json, sys
+SP = sys.argv[1]
+a = json.load(open(SP + '/p4a.json')); b = json.load(open(SP + '/p4b.json'))
+ordem = [c['id'] for c in a['clan_standings']]
+por = {p['id']: p for p in b['players']}
+r = b['rounds'][-1]
+cruz = sorted(tuple(sorted((ordem.index(por[m['player1_id']]['clan_id']) + 1,
+                            ordem.index(por[m['player2_id']]['clan_id']) + 1)))
+              for m in b['pairings'] if m['round_id'] == r['id'])
+print(str(cruz) == '[(1, 4), (2, 3)]')
+PYEOF
+chk "e cruza 1x4 e 2x3" "$(cat $SP/p4s.txt)" "True"
+fecha $P4
+body -X POST $API/events/$P4/rounds -H "Authorization: Bearer $OT" > $SP/p4f.json
+chk "os vencedores das semis fazem a final" "$(jqp '(d["round"]["playoff_stage"], len(d["pairings"]))' < $SP/p4f.json)" "('Final', 1)"
+fecha $P4
+body -X POST $API/events/$P4/rounds -H "Authorization: Bearer $OT" >/dev/null
+chk "e a final encerra com campea" "$(body $API/events/$P4 | jqp '(d["status"], d["champion_clan_id"] is not None)')" "('completed', True)"
+
+# guardas: o playoff escolhido precisa de campo para existir
+CURTO=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Curto $S" -F "game=Magic" \
+  -F "date=2026-10-01" -F "tournament_format=partner" -F "playoff_structure=partner8" | jqp 'd["id"]')
+for i in 1 2 3; do
+  body -X POST $API/events/$CURTO/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
+    -d "{\"name\":\"K$i\",\"display_names\":[\"K${i}a\",\"K${i}b\"]}" >/dev/null
+done
+body -X POST $API/events/$CURTO/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $CURTO
+chk "partner8 com 3 duplas nao abre -> 400" "$(code -X POST $API/events/$CURTO/playoffs/start -H "Authorization: Bearer $OT")" "400"
+chk "e o erro diz quantas faltam" "$(body -X POST $API/events/$CURTO/playoffs/start -H "Authorization: Bearer $OT" | jqp 'd["error"]')" "O torneio tem 3 duplas; o playoff escolhido precisa de 8"
+
+# dupla quebrada antes do inicio: barrada na rodada, e com conserto
+QEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Quebra $S" -F "game=Magic" \
+  -F "date=2026-10-01" -F "tournament_format=partner" | jqp 'd["id"]')
+for c in XX YY; do
+  body -X POST $API/events/$QEV/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
+    -d "{\"name\":\"$c\",\"display_names\":[\"${c}a\",\"${c}b\"]}" >/dev/null
+done
+QPJ=$(body $API/events/$QEV | jqp '[p["id"] for p in d["players"] if p["display_name"]=="XXa"][0]')
+code -X DELETE $API/events/$QEV/players/$QPJ -H "Authorization: Bearer $OT" >/dev/null
+chk "dupla incompleta trava a rodada, dizendo qual" "$(body -X POST $API/events/$QEV/rounds -H "Authorization: Bearer $OT" | jqp 'd["error"]')" "A dupla XX tem 1 jogadores; todos precisam ter 2"
+QCL=$(body $API/events/$QEV | jqp '[c["id"] for c in d["clan_standings"] if c["name"]=="XX"][0]')
+chk "a dupla quebrada pode ser apagada" "$(code -X DELETE $API/events/$QEV/clans/$QCL -H "Authorization: Bearer $OT")" "200"
+body -X POST $API/events/$QEV/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"name":"XX","display_names":["XXa","XXb"]}' >/dev/null
+chk "e reinscrita, a rodada abre" "$(body -X POST $API/events/$QEV/rounds -H "Authorization: Bearer $OT" | jqp 'len(d["pairings"])')" "1"
+
+# elenco trancado depois do inicio
+chk "com o torneio em andamento, nao entra dupla nova -> 400" "$(code -X POST $API/events/$QEV/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"name":"ZZ","display_names":["ZZa","ZZb"]}')" "400"
+QP2=$(body $API/events/$QEV | jqp 'd["players"][0]["id"]')
+chk "nem sai jogador -> 400" "$(code -X DELETE $API/events/$QEV/players/$QP2 -H "Authorization: Bearer $OT")" "400"
+
 
 printf '\n\033[1mRESULTADO: %d ok / %d falhas\033[0m\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

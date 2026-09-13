@@ -11,8 +11,11 @@
  * pode mover desempate.
  */
 const { clanPairSeats } = require('./pairing');
+const { cmpPct } = require('../lib/percentuais');
 
 const FLOOR = 1 / 3;
+
+
 
 const SEATS = ['player1_id', 'player2_id', 'player3_id', 'player4_id'];
 const WINNER_COLUMN = { player1: 'player1_id', player2: 'player2_id', player3: 'player3_id', player4: 'player4_id' };
@@ -146,9 +149,14 @@ function computeStandings(players, pairings, event) {
         }
       }
     } else if (isBye) {
-      // MTR: um bye conta como 2-0 para o GW% de quem o recebeu.
-      const s = stats.get(pairing.player1_id);
-      if (s) { s.gamesWon += 2; s.gamesPlayed += 2; }
+      // MTR: um bye conta como 2-0 para o GW% de quem o recebeu. No partner quem
+      // o recebe é a dupla inteira, e a mesa traz os dois assentos — creditar só
+      // o primeiro deixaria o parceiro fora do desempate por uma folga que foi
+      // dos dois.
+      for (const id of seated) {
+        const s = stats.get(id);
+        if (s) { s.gamesWon += 2; s.gamesPlayed += 2; }
+      }
     }
   }
 
@@ -199,9 +207,9 @@ function computeStandings(players, pairings, event) {
   const or = (v, fallback) => (v === null || v === undefined ? fallback : v);
   enriched.sort((a, b) =>
     b.points - a.points ||
-    or(b.omw, 0) - or(a.omw, 0) ||
-    or(b.gwp, 0) - or(a.gwp, 0) ||
-    or(b.ogw, 0) - or(a.ogw, 0) ||
+    cmpPct(or(a.omw, 0), or(b.omw, 0)) ||
+    cmpPct(or(a.gwp, 0), or(b.gwp, 0)) ||
+    cmpPct(or(a.ogw, 0), or(b.ogw, 0)) ||
     a.display_name.localeCompare(b.display_name)
   );
 
@@ -209,33 +217,80 @@ function computeStandings(players, pairings, event) {
 }
 
 /**
- * Classificação de clãs do Clã Fronto.
+ * Classificação de times — os clãs do Clã Fronto, as duplas do partner.
  *
- * A pontuação do clã é a soma dos seus quatro jogadores — é ela que ordena a
- * tabela principal do torneio. O desempate reaproveita a ordem oficial do
- * individual, agregada pelos membros: vence quem, no conjunto, enfrentou
- * adversários mais fortes.
+ * A pontuação do time sai das **mesas do time**, e não da soma dos membros.
+ * A diferença só aparece quando dois integrantes dividem a mesma mesa:
  *
- * Recebe os jogadores já enriquecidos por `computeStandings`, para não recalcular
- * os desempates duas vezes.
+ *   - Clã Fronto, rodada normal: os quatro jogam mesas diferentes, o time
+ *     aparece em quatro mesas por rodada, e o total é o mesmo de sempre.
+ *   - Partner: os dois jogam juntos, o time aparece em uma mesa por rodada.
+ *     Somar os membros daria 6 numa rodada que vale 3.
+ *   - Mata-mata do Clã Fronto: mesma mesa de duplas, mesmo raciocínio.
+ *
+ * O individual continua sendo o que `computeStandings` diz — 3 para cada
+ * parceiro — porque é ele que alimenta a liga, onde a unidade é a pessoa. Os
+ * dois números não se contradizem: como os parceiros sempre jogam juntos, os
+ * pontos de cada um são por construção iguais aos da dupla, nunca somados a ela.
+ *
+ * Recebe os jogadores já enriquecidos por `computeStandings`, para não
+ * recalcular os desempates duas vezes, e as mesas, para contar os pontos.
  */
-function computeClanStandings(rankedPlayers, clans) {
+function computeClanStandings(rankedPlayers, clans, pairings = [], event = {}) {
+  const pointsWin = event.points_win ?? 3;
+  const pointsDraw = event.points_draw ?? 1;
+  const pointsLoss = event.points_loss ?? 0;
+
   const media = (valores) => {
     const v = valores.filter((x) => x !== null && x !== undefined);
     return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
   };
 
+  const porJogador = new Map(rankedPlayers.map((p) => [p.id, p]));
+  const acumulado = new Map(clans.map((c) => [c.id, { points: 0, wins: 0, losses: 0, draws: 0 }]));
+
+  for (const pairing of pairings) {
+    if (!pairing.result || pairing.result_status !== 'confirmed') continue;
+
+    // Os times que ocupam esta mesa, cada um com os assentos que trouxe. Numa
+    // rodada de Clã Fronto são quatro times de um assento; numa mesa de duplas
+    // são dois times de dois.
+    const times = clanPairSeats(pairing, porJogador);
+    if (times.size === 0) continue;
+
+    const vencedorId = WINNER_COLUMN[pairing.result] ? pairing[WINNER_COLUMN[pairing.result]] : null;
+    const timeVencedor = pairing.result === 'bye'
+      ? porJogador.get(pairing.player1_id)?.clan_id ?? null
+      : vencedorId ? porJogador.get(vencedorId)?.clan_id ?? null : null;
+
+    for (const timeId of times.keys()) {
+      const a = acumulado.get(timeId);
+      if (!a) continue;
+      if (pairing.result === 'draw') {
+        a.draws += 1;
+        a.points += pointsDraw;
+      } else if (timeId === timeVencedor) {
+        a.wins += 1;
+        a.points += pointsWin;
+      } else {
+        a.losses += 1;
+        a.points += pointsLoss;
+      }
+    }
+  }
+
   const linhas = clans.map((clan) => {
     const membros = rankedPlayers.filter((p) => p.clan_id === clan.id);
+    const a = acumulado.get(clan.id) ?? { points: 0, wins: 0, losses: 0, draws: 0 };
     return {
       id: clan.id,
       name: clan.name,
       players: membros,
       player_count: membros.length,
-      points: membros.reduce((sum, p) => sum + p.points, 0),
-      wins: membros.reduce((sum, p) => sum + p.wins, 0),
-      losses: membros.reduce((sum, p) => sum + p.losses, 0),
-      draws: membros.reduce((sum, p) => sum + p.draws, 0),
+      points: a.points,
+      wins: a.wins,
+      losses: a.losses,
+      draws: a.draws,
       mwp: media(membros.map((p) => p.mwp)),
       omw: media(membros.map((p) => p.omw)),
       gwp: media(membros.map((p) => p.gwp)),
@@ -246,13 +301,13 @@ function computeClanStandings(rankedPlayers, clans) {
   const or = (v, fallback) => (v === null || v === undefined ? fallback : v);
   linhas.sort((a, b) =>
     b.points - a.points ||
-    or(b.omw, 0) - or(a.omw, 0) ||
-    or(b.gwp, 0) - or(a.gwp, 0) ||
-    or(b.ogw, 0) - or(a.ogw, 0) ||
+    cmpPct(or(a.omw, 0), or(b.omw, 0)) ||
+    cmpPct(or(a.gwp, 0), or(b.gwp, 0)) ||
+    cmpPct(or(a.ogw, 0), or(b.ogw, 0)) ||
     a.name.localeCompare(b.name)
   );
 
   return linhas;
 }
 
-module.exports = { computeStandings, computeClanStandings };
+module.exports = { computeStandings, computeClanStandings, winningSide };

@@ -122,9 +122,13 @@
       >
         <option value="standard">{{ i18n.t('form.formatStandard') }}</option>
         <option value="clafronto">{{ i18n.t('form.formatClan') }}</option>
+        <option value="partner">{{ i18n.t('form.formatPartner') }}</option>
       </select>
       @if (isClanFormat()) {
         <span class="field-hint">{{ i18n.t('form.formatClanHelp') }}</span>
+      }
+      @if (isPartnerFormat()) {
+        <span class="field-hint">{{ i18n.t('form.formatPartnerHelp') }}</span>
       }
     </div>
 
@@ -143,7 +147,7 @@
         <select
           [value]="podSize()"
           (change)="podSize.set(+$any($event.target).value)"
-          [disabled]="isClanFormat()"
+          [disabled]="isTeamFormat()"
         >
           <option [value]="2">{{ i18n.t('form.pod2') }}</option>
           <option [value]="3">{{ i18n.t('form.pod3') }}</option>
@@ -176,6 +180,12 @@
             <option value="none">{{ i18n.t('form.playoffNonePt') }}</option>
             <option value="clan2">{{ i18n.t('form.playoffClan2') }}</option>
             <option value="clan4">{{ i18n.t('form.playoffClan4') }}</option>
+          } @else if (isPartnerFormat()) {
+            <!-- a mesa do mata-mata e a mesma da rodada normal: ja e 2v2 -->
+            <option value="none">{{ i18n.t('form.playoffNonePt') }}</option>
+            <option value="partner2">{{ i18n.t('form.playoffPartner2') }}</option>
+            <option value="partner4">{{ i18n.t('form.playoffPartner4') }}</option>
+            <option value="partner8">{{ i18n.t('form.playoffPartner8') }}</option>
           } @else {
             <option value="none">{{ i18n.t('form.playoffNone') }}</option>
             <option value="top4">{{ i18n.t('form.playoffTop4') }}</option>
@@ -230,7 +240,7 @@
 
     <h3 class="optionals-title">{{ i18n.t('form.optionals') }}</h3>
     <div class="checkboxes">
-      @if (!isClanFormat()) {
+      @if (!isTeamFormat()) {
         <label class="checkbox-label"
           ><input
             type="checkbox"

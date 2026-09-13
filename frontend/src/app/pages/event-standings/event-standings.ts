@@ -43,6 +43,9 @@ export class EventStandingsComponent {
   view = signal<'clans' | 'players'>('clans');
 
   isClanFormat = computed(() => this.ev()?.tournament_format === 'clafronto');
+  isPartnerFormat = computed(() => this.ev()?.tournament_format === 'partner');
+  /** Clã Fronto e partner: inscrição por time, mesa de quatro, tabela por time. */
+  isTeamFormat = computed(() => this.isClanFormat() || this.isPartnerFormat());
   clanStandings = computed<ClanStanding[]>(() => this.ev()?.clan_standings ?? []);
 
   // O servidor já devolve na ordem oficial (pontos, OMW%, GW%, OGW%); aqui só filtra.

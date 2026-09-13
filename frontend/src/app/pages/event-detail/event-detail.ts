@@ -133,11 +133,25 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   // Clã Fronto joga sempre em mesa de 4, mesmo que `pod_size` tenha sido salvo
   // com outro valor: sem esta segunda condição, a tela desenha a mesa de quatro
   // como duelo e esconde os assentos 3 e 4.
-  isPodMode = computed(() => (this.event()?.pod_size ?? 2) >= 3 || this.isClanFormat());
+  isPodMode = computed(() => (this.event()?.pod_size ?? 2) >= 3 || this.isTeamFormat());
 
   /* ---------- Clã Fronto ---------- */
 
   isClanFormat = computed(() => this.event()?.tournament_format === 'clafronto');
+  isPartnerFormat = computed(() => this.event()?.tournament_format === 'partner');
+  /** Clã Fronto e partner: inscrição por time, mesa de quatro, tabela por time. */
+  isTeamFormat = computed(() => this.isClanFormat() || this.isPartnerFormat());
+  /** Quatro no Clã Fronto, dois no partner — é o que o formulário desenha. */
+  tamanhoDoTime = computed(() => (this.isPartnerFormat() ? 2 : 4));
+
+  /**
+   * Os rótulos de time mudam de substantivo entre os dois formatos. Mesma
+   * sufixação do modal de inscrição, pela mesma razão: o layout é o mesmo, as
+   * palavras é que não.
+   */
+  chaveDeTime(base: string): string {
+    return `event.${base}${this.isPartnerFormat() ? 'Partner' : ''}`;
+  }
 
   championClanName = computed(() => {
     const ev = this.event();
@@ -201,15 +215,29 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   hasPlayoffRound = computed(() => (this.event()?.rounds ?? []).some((r) => r.is_playoff));
 
+  /**
+   * O nome da estrutura de mata-mata, para o botão e para o diálogo.
+   *
+   * É um mapa e não um encadeamento de ternários desde A-13 — e é por ser um
+   * mapa que os playoffs de time entraram sem tocar na lógica. As de clã, aliás,
+   * nunca tinham sido cadastradas: caíam no genérico "Playoffs" desde que o
+   * formato existe.
+   */
   private readonly PLAYOFF_LABELS: Record<string, string> = {
-    top4: 'Top 4',
-    top8: 'Top 8',
-    top16: 'Top 16',
+    top4: 'playoff.top4',
+    top8: 'playoff.top8',
+    top16: 'playoff.top16',
+    clan2: 'playoff.clan2',
+    clan4: 'playoff.clan4',
+    partner2: 'playoff.partner2',
+    partner4: 'playoff.partner4',
+    partner8: 'playoff.partner8',
   };
 
-  playoffLabel = computed(
-    () => this.PLAYOFF_LABELS[this.event()?.playoff_structure ?? ''] ?? 'Playoffs',
-  );
+  playoffLabel = computed(() => {
+    const chave = this.PLAYOFF_LABELS[this.event()?.playoff_structure ?? ''];
+    return chave ? this.i18n.t(chave) : 'Playoffs';
+  });
 
   canStartPlayoffs = computed(() => {
     const ev = this.event();

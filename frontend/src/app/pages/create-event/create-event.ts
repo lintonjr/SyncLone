@@ -34,8 +34,11 @@ export class CreateEventComponent implements OnInit {
   game = signal('');
   format = signal('');
   pairingMethod = signal('swiss');
-  tournamentFormat = signal<'standard' | 'clafronto'>('standard');
+  tournamentFormat = signal<'standard' | 'clafronto' | 'partner'>('standard');
   isClanFormat = computed(() => this.tournamentFormat() === 'clafronto');
+  isPartnerFormat = computed(() => this.tournamentFormat() === 'partner');
+  /** Os dois formatos em que a inscrição é por time e a mesa é sempre de quatro. */
+  isTeamFormat = computed(() => this.isClanFormat() || this.isPartnerFormat());
   podSize = signal(2);
   roundMinutes = signal(50);
   pointsWin = signal(3);
@@ -128,14 +131,28 @@ export class CreateEventComponent implements OnInit {
     return this.FORMATS[this.game()] ?? [];
   }
 
-  // Clã Fronto manda na mesa (sempre 4) e no playoff (só 2 ou 4 clãs).
-  onTournamentFormatChange(f: 'standard' | 'clafronto') {
+  /**
+   * Os formatos de time mandam na mesa e no playoff, e o servidor cobra as duas
+   * coisas. A tela ajusta antes para o organizador não descobrir isso por um 400.
+   *
+   * A diferença entre eles está no bye: no Clã Fronto o campo é sempre múltiplo
+   * de quatro e folga não existe; no partner, número ímpar de duplas obriga uma.
+   */
+  onTournamentFormatChange(f: 'standard' | 'clafronto' | 'partner') {
     this.tournamentFormat.set(f);
-    if (f === 'clafronto') {
+    const playoffsDoFormato: Record<string, string[]> = {
+      clafronto: ['clan2', 'clan4'],
+      partner: ['partner2', 'partner4', 'partner8'],
+    };
+    const permitidos = playoffsDoFormato[f];
+    if (permitidos) {
       this.podSize.set(4);
-      this.allowByes.set(false);
-      if (!['clan2', 'clan4'].includes(this.playoffStructure())) this.playoffStructure.set('clan4');
-    } else if (['clan2', 'clan4'].includes(this.playoffStructure())) {
+      this.allowByes.set(f === 'partner');
+      if (!permitidos.includes(this.playoffStructure())) this.playoffStructure.set(permitidos[0]);
+    } else if (
+      this.playoffStructure().startsWith('clan') ||
+      this.playoffStructure().startsWith('partner')
+    ) {
       this.playoffStructure.set('none');
     }
   }

@@ -16,7 +16,7 @@ export interface TournamentEvent {
   date: string;
   game: string;
   format?: string;
-  tournament_format: 'standard' | 'clafronto';
+  tournament_format: 'standard' | 'clafronto' | 'partner';
   pairing_method: string;
   playoff_structure: string;
   allow_byes: number;
@@ -127,6 +127,11 @@ export interface Pairing {
   p2_name?: string;
   p3_name?: string;
   p4_name?: string;
+  /**
+   * Quem venceu a mesa, por inscrição. Vem do servidor porque numa mesa de
+   * duplas são dois, e a regra que sabe disso é a mesma que distribui os pontos.
+   */
+  winner_ids?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
