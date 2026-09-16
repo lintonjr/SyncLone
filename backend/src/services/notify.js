@@ -57,6 +57,19 @@ async function aparar(conn, userIds) {
   }
 }
 
+/**
+ * Todos os donos da plataforma.
+ *
+ * Plural porque um admin pode promover outro: o aviso de um pedido novo vai para
+ * todos, e quem chegar primeiro decide. Lista vazia é possível — sem ADMIN_EMAIL
+ * configurado não há dono, e aí o pedido fica na fila sem avisar ninguém, que é
+ * melhor do que falhar a solicitação da pessoa por isso.
+ */
+async function adminUserIds(conn) {
+  const rows = await conn.query("SELECT id FROM users WHERE role = 'admin'");
+  return rows.map((r) => r.id);
+}
+
 // Todos os jogadores ativos de um evento que têm conta.
 async function activeEventUserIds(conn, eventId) {
   const rows = await conn.query(
@@ -77,4 +90,4 @@ async function pairingUserIds(conn, pairing) {
   return rows.map((r) => r.user_id);
 }
 
-module.exports = { notifyUsers, activeEventUserIds, pairingUserIds, TETO_POR_USUARIO };
+module.exports = { notifyUsers, activeEventUserIds, pairingUserIds, adminUserIds, TETO_POR_USUARIO };

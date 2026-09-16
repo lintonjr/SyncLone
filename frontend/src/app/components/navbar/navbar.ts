@@ -1,4 +1,4 @@
-import { Component, signal, inject, HostListener, effect } from '@angular/core';
+import { Component, computed, signal, inject, HostListener, effect } from '@angular/core';
 import { I18nService } from '../../i18n/i18n';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -20,6 +20,12 @@ export class NavbarComponent {
   notif = inject(NotificationService);
   showNotifications = signal(false);
   showUserMenu = signal(false);
+
+  /** Admin também organiza — mesma hierarquia do `requireOrganizer` do servidor. */
+  podeOrganizar = computed(() => {
+    const papel = this.auth.currentUser()?.role;
+    return papel === 'organizer' || papel === 'admin';
+  });
 
   constructor() {
     // O painel de notificações só é montado quando aberto, então quem carrega a

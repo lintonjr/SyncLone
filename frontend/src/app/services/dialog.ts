@@ -18,6 +18,16 @@ export interface PromptOptions extends ConfirmOptions {
   tipo?: 'text' | 'email' | 'number';
   min?: number;
   max?: number;
+  /**
+   * Aceita resposta vazia.
+   *
+   * O padrão é exigir texto, porque a maioria dos prompts pede um dado sem o
+   * qual a ação não existe — um nome de deck em branco não é um deck. Há o caso
+   * oposto: o motivo de uma aprovação, em que confirmar sem escrever nada é uma
+   * resposta legítima. Sem isto, o botão ficaria travado e a única saída seria
+   * cancelar, que significa outra coisa.
+   */
+  opcional?: boolean;
 }
 
 interface EstadoAberto {

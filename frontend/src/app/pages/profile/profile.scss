@@ -84,3 +84,54 @@
   font-size: 12px;
   color: #4ade80;
 }
+
+/* O desfecho de um pedido: na fila, ou recusado com o motivo de quem decidiu. */
+.request-state {
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .reason {
+    margin: 6px 0;
+    padding-left: 10px;
+    border-left: 2px solid var(--border);
+    font-style: italic;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  &.pending {
+    background: rgba(234, 179, 8, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.35);
+  }
+
+  &.rejected {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+}
+
+.request-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-link {
+  margin-top: 12px;
+  justify-content: center;
+  text-decoration: none;
+}

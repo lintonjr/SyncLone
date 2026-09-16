@@ -34,8 +34,15 @@ app.use('/api/badges', require('./routes/badges'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/leagues', require('./routes/leagues'));
+app.use('/api/admin', require('./routes/admin'));
 
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`ManaSync backend running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`ManaSync backend running on port ${PORT}`);
+  // Depois do listen, de propósito: promover o dono é manutenção de dados, não
+  // pré-requisito para atender. Se o banco ainda estiver acordando, a API sobe
+  // do mesmo jeito e a próxima subida aplica.
+  require('./lib/bootstrapAdmin')();
+});

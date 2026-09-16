@@ -1,10 +1,12 @@
 const router = require('express').Router();
-const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const auth = require('../middleware/auth');
 const optionalAuth = require('../middleware/optionalAuth');
 const { HttpError, asyncHandler } = require('../lib/http');
 const { computeStandings } = require('../services/standings');
+const { notifyUsers, adminUserIds } = require('../services/notify');
+const { podePedirParaOrganizar } = require('../lib/roles');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 
@@ -14,31 +16,69 @@ router.get('/me', auth, asyncHandler(async (req, res) => {
   res.json(user);
 }));
 
-router.post('/me/upgrade-to-organizer', auth, asyncHandler(async (req, res) => {
-  const user = await db.get('SELECT * FROM users WHERE id = ?', [req.user.id]);
+/**
+ * Pedir para organizar.
+ *
+ * Substituiu o antigo `upgrade-to-organizer`, que promovia na hora: organizar
+ * deixou de ser self-service e passou a depender do dono da plataforma. Note que
+ * esta rota **não** devolve token novo — antes devolvia, porque o papel mudava
+ * ali mesmo. Agora nada muda até alguém decidir, e quando mudar o papel já vem do
+ * banco a cada requisição (middleware/auth.js): ninguém precisa relogar.
+ */
+router.post('/me/organizer-request', auth, validate(schemas.organizerRequest), asyncHandler(async (req, res) => {
+  const user = await db.get('SELECT id, display_name, role FROM users WHERE id = ?', [req.user.id]);
   if (!user) throw new HttpError(404, 'User not found', 'api.userNotFound');
-
-  if (user.role !== 'organizer') {
-    await db.run("UPDATE users SET role = 'organizer' WHERE id = ?", [user.id]);
-    user.role = 'organizer';
+  if (!podePedirParaOrganizar(user.role)) {
+    throw new HttpError(409, 'You can already organize events', 'api.alreadyOrganizer');
   }
 
-  const token = jwt.sign(
-    { id: user.id, email: user.email, display_name: user.display_name, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
-  );
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      display_name: user.display_name,
-      email: user.email,
-      role: user.role,
-      profile_public: user.profile_public,
-    },
-  });
+  const id = uuidv4();
+  const justification = req.body.justification ?? null;
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx.run(
+        'INSERT INTO organizer_requests (id, user_id, justification) VALUES (?, ?, ?)',
+        [id, user.id, justification]
+      );
+      // O dono não fica sabendo por acaso: o pedido chega na caixa dele como
+      // qualquer outro aviso do sistema.
+      await notifyUsers(tx, await adminUserIds(tx), 'notif.organizerRequested', { nome: user.display_name });
+    });
+  } catch (err) {
+    // O índice único é quem garante um pendente por pessoa — duas abas clicando
+    // ao mesmo tempo esbarram aqui, e não em duas linhas na fila.
+    if (err.code === 'ER_DUP_ENTRY') {
+      throw new HttpError(409, 'You already have a request awaiting review', 'api.requestPending');
+    }
+    throw err;
+  }
+
+  res.status(201).json(await meuPedido(req.user.id));
 }));
+
+/**
+ * O meu pedido mais recente, com o desfecho.
+ *
+ * A tela de conta precisa dos três estados: nunca pedi (null), estou na fila, ou
+ * fui recusado — e neste último o motivo, que é o que torna a recusa uma resposta
+ * e não um silêncio.
+ */
+router.get('/me/organizer-request', auth, asyncHandler(async (req, res) => {
+  res.json(await meuPedido(req.user.id));
+}));
+
+function meuPedido(userId) {
+  return db.get(
+    `SELECT r.id, r.status, r.justification, r.reason, r.created_at, r.decided_at,
+            u.display_name AS decided_by_name
+     FROM organizer_requests r
+     LEFT JOIN users u ON u.id = r.decided_by
+     WHERE r.user_id = ?
+     ORDER BY r.created_at DESC LIMIT 1`,
+    [userId]
+  );
+}
 
 /**
  * Liga e desliga a visibilidade do próprio perfil.

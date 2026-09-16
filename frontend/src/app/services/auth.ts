@@ -8,9 +8,21 @@ export interface User {
   id: string;
   display_name: string;
   email: string;
-  role: 'player' | 'organizer';
+  role: 'player' | 'organizer' | 'admin';
   /** Se o histórico entre eventos pode ser reunido numa página pública. */
   profile_public?: number;
+}
+
+/** Um pedido para organizar, do ponto de vista de quem pediu. */
+export interface OrganizerRequest {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  justification: string | null;
+  /** O recado de quem decidiu. É o que transforma uma recusa em resposta. */
+  reason: string | null;
+  created_at: string;
+  decided_at: string | null;
+  decided_by_name: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -59,15 +71,47 @@ export class AuthService {
     return this.http.post(`${this.API}/forgot-password`, { email });
   }
 
-  upgradeToOrganizer() {
-    const headers = new HttpHeaders({ Authorization: `Bearer ${this.token()}` });
+  /**
+   * Pede para organizar. Não muda papel nenhum: abre uma solicitação que o dono
+   * da plataforma decide.
+   *
+   * Substituiu `upgradeToOrganizer`, que promovia na hora e devolvia um token
+   * novo com o papel dentro. Hoje não há token novo a receber — o servidor lê o
+   * papel do banco a cada requisição, então quando a aprovação sair ela vale no
+   * clique seguinte, sem relogar.
+   */
+  requestOrganizer(justification: string) {
+    return this.http.post<OrganizerRequest>(
+      `${this.USERS_API}/me/organizer-request`,
+      { justification },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** O meu pedido mais recente, ou null se nunca pedi. */
+  myOrganizerRequest() {
+    return this.http.get<OrganizerRequest | null>(`${this.USERS_API}/me/organizer-request`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /**
+   * Relê o papel do servidor.
+   *
+   * O usuário guardado no localStorage foi escrito no login e não sabe de nada
+   * que aconteceu depois — e agora o papel muda por decisão de outra pessoa, nos
+   * dois sentidos. Sem isto, quem foi aprovado continuaria vendo a interface de
+   * jogador até relogar, e quem foi revogado continuaria vendo botões que o
+   * servidor já recusa.
+   */
+  refreshMe() {
     return this.http
-      .post<{ token: string; user: User }>(
-        `${this.USERS_API}/me/upgrade-to-organizer`,
-        {},
-        { headers },
-      )
-      .pipe(tap(({ token, user }) => this.persist(token, user)));
+      .get<User>(`${this.USERS_API}/me`, { headers: this.authHeaders() })
+      .pipe(tap((user) => this.patchCurrentUser(user)));
+  }
+
+  private authHeaders() {
+    return new HttpHeaders({ Authorization: `Bearer ${this.token()}` });
   }
 
   // Descarta a sessão sem tirar o usuário de onde ele está. É o que a expiração

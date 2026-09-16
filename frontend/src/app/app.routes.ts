@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth-guard';
 import { organizerGuard } from './guards/organizer-guard';
+import { adminGuard } from './guards/admin-guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./pages/home/home').then((m) => m.HomeComponent) },
@@ -33,6 +34,12 @@ export const routes: Routes = [
     path: 'badges',
     loadComponent: () => import('./pages/badges/badges').then((m) => m.BadgesComponent),
     canActivate: [authGuard, organizerGuard],
+  },
+  {
+    // Área do dono da plataforma: quem pediu para organizar, e quem já organiza.
+    path: 'admin',
+    loadComponent: () => import('./pages/admin/admin').then((m) => m.AdminComponent),
+    canActivate: [authGuard, adminGuard],
   },
   {
     path: 'events',

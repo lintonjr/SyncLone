@@ -1,0 +1,135 @@
+<div class="admin-page">
+  <header class="admin-header">
+    <h2>{{ i18n.t('admin.title') }}</h2>
+    <p class="sub">{{ i18n.t('admin.subtitle') }}</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="aba() === 'fila'" (click)="aba.set('fila')">
+      {{ i18n.t('admin.tabQueue') }}
+      @if (pendentes().length) {
+        <span class="count">{{ pendentes().length }}</span>
+      }
+    </button>
+    <button class="tab" [class.active]="aba() === 'staff'" (click)="aba.set('staff')">
+      {{ i18n.t('admin.tabStaff') }}
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error-msg">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="loading"><span class="spinner"></span></div>
+  } @else if (aba() === 'fila') {
+    @if (pendentes().length === 0) {
+      <div class="card empty">{{ i18n.t('admin.queueEmpty') }}</div>
+    }
+
+    @for (p of pendentes(); track p.id) {
+      <div class="card request">
+        <div class="who">
+          <a [routerLink]="['/player', p.user_id]" class="name">{{ p.display_name }}</a>
+          <span class="email">{{ p.email }}</span>
+          <span class="meta">
+            {{ i18n.t('admin.memberSince', { data: (p.user_since | date: 'mediumDate') ?? '' }) }}
+            ·
+            {{ i18n.t('admin.eventsPlayed', { n: p.events_played }) }}
+          </span>
+        </div>
+
+        @if (p.justification) {
+          <blockquote class="justification">{{ p.justification }}</blockquote>
+        } @else {
+          <p class="no-justification">{{ i18n.t('admin.noJustification') }}</p>
+        }
+
+        <div class="actions">
+          <span class="asked">{{
+            i18n.t('admin.askedAt', { data: (p.created_at | date: 'short') ?? '' })
+          }}</span>
+          <button
+            class="btn btn-ghost"
+            [disabled]="decidindo() === p.id"
+            (click)="decidir(p, 'reject')"
+          >
+            {{ i18n.t('admin.reject') }}
+          </button>
+          <button
+            class="btn btn-primary"
+            [disabled]="decidindo() === p.id"
+            (click)="decidir(p, 'approve')"
+          >
+            @if (decidindo() === p.id) {
+              <span class="spinner-sm"></span>
+            }
+            {{ i18n.t('admin.approve') }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (decididos().length) {
+      <h3 class="section-title">{{ i18n.t('admin.history') }}</h3>
+      <div class="card history">
+        @for (p of decididos(); track p.id) {
+          <div class="history-row">
+            <span
+              class="badge"
+              [class.badge-green]="p.status === 'approved'"
+              [class.badge-red]="p.status === 'rejected'"
+            >
+              {{ i18n.t('admin.status.' + p.status) }}
+            </span>
+            <a [routerLink]="['/player', p.user_id]" class="name">{{ p.display_name }}</a>
+            @if (p.reason) {
+              <span class="reason">“{{ p.reason }}”</span>
+            }
+            <span class="when">{{ p.decided_at | date: 'short' }}</span>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    <div class="card staff">
+      @for (s of staff(); track s.id) {
+        <div class="staff-row">
+          <span
+            class="badge"
+            [class.badge-purple]="s.role === 'admin'"
+            [class.badge-green]="s.role === 'organizer'"
+          >
+            {{ i18n.t('role.' + s.role) }}
+          </span>
+          <a [routerLink]="['/player', s.id]" class="name">{{ s.display_name }}</a>
+          <span class="email">{{ s.email }}</span>
+          <span class="owned">{{ i18n.t('admin.eventsOwned', { n: s.events_owned }) }}</span>
+
+          @if (souEu(s.id)) {
+            <span class="you">{{ i18n.t('admin.you') }}</span>
+          } @else {
+            <div class="staff-actions">
+              @if (s.role === 'organizer') {
+                <button
+                  class="btn btn-ghost"
+                  [disabled]="decidindo() === s.id"
+                  (click)="trocarPapel(s, 'admin')"
+                >
+                  {{ i18n.t('admin.promote') }}
+                </button>
+              }
+              <button
+                class="btn btn-ghost danger"
+                [disabled]="decidindo() === s.id"
+                (click)="trocarPapel(s, 'player')"
+              >
+                {{ i18n.t('admin.revoke') }}
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

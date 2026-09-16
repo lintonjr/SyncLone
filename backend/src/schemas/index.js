@@ -28,6 +28,9 @@ const TOURNAMENT_FORMATS = ['standard', 'clafronto', 'partner'];
 const EVENT_STATUSES = ['upcoming', 'ongoing', 'completed'];
 const PLAYER_STATUSES = ['active', 'pending', 'dropped'];
 const RESULTS = ['player1', 'player2', 'player3', 'player4', 'draw', 'bye'];
+// Mesma lista de lib/roles.js — importada de lá para não haver duas verdades
+// sobre quais papéis existem.
+const { PAPEIS: ROLES } = require('../lib/roles');
 
 // Column widths mirror db/init/01-schema.sql — validating here is what turns a
 // raw "Data too long for column ..." driver error into a readable 400.
@@ -151,6 +154,22 @@ const schemas = {
     (v) => Boolean(v.emails) !== Boolean(v.display_names),
     { message: 'Informe e-mails ou nomes de convidado, n\u00e3o os dois' }
   ),
+
+  // A justificativa é opcional: ela existe para dar contexto a quem decide, não
+  // para ser um formulário que reprova quem escreve pouco.
+  organizerRequest: z.object({
+    justification: blank(z.string().trim().max(1000).optional()),
+  }),
+
+  // Vale para aprovar e para recusar — nos dois casos a pessoa recebe o recado
+  // junto com a notificação.
+  requestDecision: z.object({
+    reason: blank(z.string().trim().max(1000).optional()),
+  }),
+
+  changeRole: z.object({
+    role: z.enum(ROLES),
+  }),
 
   createLeague: z.object({
     name: z.string().trim().min(1).max(100),

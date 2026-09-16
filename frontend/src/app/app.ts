@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar';
 import { DialogComponent } from './components/dialog/dialog';
+import { AuthService } from './services/auth';
 
 @Component({
   selector: 'app-root',
@@ -53,4 +54,17 @@ import { DialogComponent } from './components/dialog/dialog';
     `,
   ],
 })
-export class App {}
+export class App {
+  private auth = inject(AuthService);
+
+  constructor() {
+    // O papel guardado no navegador foi escrito no login e hoje muda por decisão
+    // de outra pessoa: uma aprovação ou uma revogação acontece com a aba aberta.
+    // Uma leitura por carregamento basta para a interface não ficar oferecendo o
+    // que o servidor já recusa — nem escondendo o que ele já permite.
+    //
+    // No construtor e não num effect de propósito: `refreshMe` escreve no mesmo
+    // signal que um effect leria, e isso se realimentaria.
+    if (this.auth.isLoggedIn()) this.auth.refreshMe().subscribe({ error: () => {} });
+  }
+}

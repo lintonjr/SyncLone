@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `display_name` varchar(100) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password_hash` text NOT NULL,
-  `role` enum('player','organizer') NOT NULL DEFAULT 'player',
+  -- Papéis excludentes e hierárquicos: admin pode tudo que organizador pode.
+  -- Quem cria conta nasce player; organizar depende de pedido aprovado.
+  `role` enum('player','organizer','admin') NOT NULL DEFAULT 'player',
   `profile_public` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -196,6 +198,32 @@ CREATE TABLE IF NOT EXISTS `user_badges` (
   CONSTRAINT `user_badges_badge_fk` FOREIGN KEY (`badge_id`) REFERENCES `badges` (`id`),
   CONSTRAINT `user_badges_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `user_badges_awarder_fk` FOREIGN KEY (`awarded_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Pedidos para virar organizador.
+--
+-- Organizar não é self-service: o jogador pede, o dono da plataforma decide. A
+-- tabela guarda o pedido e a decisão na mesma linha porque é uma coisa só — um
+-- pedido sem desfecho é o que está na fila, e um com desfecho é o histórico.
+--
+-- `pendente` vale 1 enquanto o pedido está na fila e NULL depois de decidido.
+-- Como índice único ignora NULL, o banco garante um pendente por pessoa sem
+-- impedir que ela peça de novo depois de uma recusa.
+CREATE TABLE IF NOT EXISTS `organizer_requests` (
+  `id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `justification` text DEFAULT NULL,
+  `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `decided_by` varchar(36) DEFAULT NULL,
+  `decided_at` datetime(3) DEFAULT NULL,
+  `reason` text DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `pendente` tinyint GENERATED ALWAYS AS (IF(`status` = 'pending', 1, NULL)) STORED,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `um_pendente_por_usuario` (`user_id`, `pendente`),
+  KEY `fila` (`status`, `created_at`),
+  CONSTRAINT `organizer_requests_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `organizer_requests_admin_fk` FOREIGN KEY (`decided_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -12,7 +12,7 @@
     </div>
     <div class="form-field">
       <label>{{ i18n.t('profile.role') }}</label>
-      <p class="role-value">{{ auth.currentUser()?.role }}</p>
+      <p class="role-value">{{ i18n.t('role.' + auth.currentUser()?.role) }}</p>
     </div>
 
     <div class="form-field visibility-field">
@@ -44,17 +44,61 @@
       }
     </div>
 
-    @if (auth.currentUser()?.role === 'player') {
-      @if (error()) {
-        <div class="error-msg">{{ error() }}</div>
-      }
-      <p class="auth-sub">{{ i18n.t('profile.roleHelp') }}</p>
-      <button class="btn btn-primary w-full" (click)="upgrade()" [disabled]="loading()">
-        @if (loading()) {
-          <span class="spinner-sm"></span>
+    @if (error()) {
+      <div class="error-msg">{{ error() }}</div>
+    }
+
+    @if (ehJogador()) {
+      @if (naFila()) {
+        <!-- Na fila: a pessoa precisa ver que o pedido saiu, e que agora a bola
+             está com outra pessoa. -->
+        <div class="request-state pending">
+          <strong>{{ i18n.t('profile.requestPending') }}</strong>
+          <p>{{ i18n.t('profile.requestPendingHelp') }}</p>
+        </div>
+      } @else if (formAberto()) {
+        <div class="form-field">
+          <label for="justificativa">{{ i18n.t('profile.justification') }}</label>
+          <textarea
+            id="justificativa"
+            rows="3"
+            maxlength="1000"
+            [ngModel]="justificativa()"
+            (ngModelChange)="justificativa.set($event)"
+            [placeholder]="i18n.t('profile.justificationPlaceholder')"
+          ></textarea>
+          <p class="auth-sub">{{ i18n.t('profile.justificationHelp') }}</p>
+        </div>
+        <div class="request-actions">
+          <button class="btn btn-ghost" (click)="formAberto.set(false)" [disabled]="loading()">
+            {{ i18n.t('common.cancel') }}
+          </button>
+          <button class="btn btn-primary" (click)="solicitar()" [disabled]="loading()">
+            @if (loading()) {
+              <span class="spinner-sm"></span>
+            }
+            {{ i18n.t('profile.sendRequest') }}
+          </button>
+        </div>
+      } @else {
+        @if (recusado()) {
+          <!-- Uma recusa sem motivo vira silêncio; com motivo, vira resposta. -->
+          <div class="request-state rejected">
+            <strong>{{ i18n.t('profile.requestRejected') }}</strong>
+            @if (pedido()?.reason) {
+              <p class="reason">“{{ pedido()?.reason }}”</p>
+            }
+            <p>{{ i18n.t('profile.requestRejectedHelp') }}</p>
+          </div>
         }
-        {{ i18n.t('profile.becomeOrganizer') }}
-      </button>
+        <p class="auth-sub">{{ i18n.t('profile.roleHelp') }}</p>
+        <button class="btn btn-primary w-full" (click)="formAberto.set(true)">
+          {{ i18n.t(recusado() ? 'profile.requestAgain' : 'profile.becomeOrganizer') }}
+        </button>
+      }
+    } @else if (auth.currentUser()?.role === 'admin') {
+      <div class="success-msg">{{ i18n.t('profile.isAdmin') }}</div>
+      <a routerLink="/admin" class="btn btn-primary w-full admin-link">{{ i18n.t('nav.admin') }}</a>
     } @else {
       <div class="success-msg">{{ i18n.t('profile.isOrganizer') }}</div>
     }

@@ -10,9 +10,12 @@
         }}</a>
         <a routerLink="/events" routerLinkActive="active">{{ i18n.t('nav.myEvents') }}</a>
         <a routerLink="/leagues" routerLinkActive="active">{{ i18n.t('nav.leagues') }}</a>
-        @if (auth.currentUser()?.role === 'organizer') {
+        @if (podeOrganizar()) {
           <a routerLink="/create" routerLinkActive="active">{{ i18n.t('nav.createEvent') }}</a>
           <a routerLink="/badges" routerLinkActive="active">{{ i18n.t('nav.badges') }}</a>
+        }
+        @if (auth.currentUser()?.role === 'admin') {
+          <a routerLink="/admin" routerLinkActive="active">{{ i18n.t('nav.admin') }}</a>
         }
       </div>
     </div>

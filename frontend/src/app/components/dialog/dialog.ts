@@ -59,7 +59,9 @@ export class DialogComponent {
     });
   }
 
-  podeConfirmar = computed(() => !this.ehPrompt() || this.texto().trim().length > 0);
+  podeConfirmar = computed(
+    () => !this.ehPrompt() || this.opcoes()?.opcional === true || this.texto().trim().length > 0,
+  );
 
   confirmar() {
     if (!this.podeConfirmar()) return;

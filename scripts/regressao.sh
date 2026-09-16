@@ -520,5 +520,42 @@ QP2=$(body $API/events/$QEV | jqp 'd["players"][0]["id"]')
 chk "nem sai jogador -> 400" "$(code -X DELETE $API/events/$QEV/players/$QP2 -H "Authorization: Bearer $OT")" "400"
 
 
+sec "10. Organizar depende de aprovacao do dono"
+# O self-service acabou: quem pede e quem decide sao pessoas diferentes, e a
+# decisao precisa valer sem ninguem relogar.
+mkadmin(){ reg "$2" "$1"; docker compose exec -T mysql mysql -uroot -proot123 manasync \
+           -e "UPDATE users SET role='admin' WHERE email='$1';" 2>/dev/null; tok "$1"; }
+AE="dono$S@t.local"; AT=$(mkadmin "$AE" "Dono Reg")
+RJ="pede$S@t.local"; reg "Pedinte Reg" "$RJ"; RT=$(tok "$RJ")
+chk "endpoint antigo de auto-promocao nao existe mais" "$(code -X POST $API/users/me/upgrade-to-organizer -H "Authorization: Bearer $RT")" "404"
+chk "jogador nao cria evento" "$(code -X POST $API/events -H "Authorization: Bearer $RT" -F "name=X" -F "game=Magic" -F "date=2026-10-01")" "403"
+chk "solicita" "$(code -X POST $API/users/me/organizer-request -H "Authorization: Bearer $RT" -H 'Content-Type: application/json' -d '{"justification":"organizo na loja"}')" "201"
+chk "dois pedidos pendentes nao existem" "$(code -X POST $API/users/me/organizer-request -H "Authorization: Bearer $RT" -H 'Content-Type: application/json' -d '{}')" "409"
+chk "pedir nao promoveu ninguem" "$(body $API/users/me -H "Authorization: Bearer $RT" | jqp 'd["role"]')" "player"
+chk "jogador nao enxerga a fila" "$(code $API/admin/organizer-requests -H "Authorization: Bearer $RT")" "403"
+RID=$(body $API/admin/organizer-requests -H "Authorization: Bearer $AT" | jqp "[r['id'] for r in d if r['email']=='$RJ'][0]")
+chk "a fila mostra a justificativa" "$(body $API/admin/organizer-requests -H "Authorization: Bearer $AT" | jqp "[r['justification'] for r in d if r['email']=='$RJ'][0]")" "organizo na loja"
+body -X POST $API/admin/organizer-requests/$RID/reject -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"reason":"jogue antes"}' >/dev/null
+chk "decidido nao volta para a fila" "$(code -X POST $API/admin/organizer-requests/$RID/approve -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{}')" "409"
+chk "a recusa chega com o motivo" "$(body $API/users/me/organizer-request -H "Authorization: Bearer $RT" | jqp 'd["status"]+"/"+d["reason"]')" "rejected/jogue antes"
+chk "recusado pode pedir de novo" "$(code -X POST $API/users/me/organizer-request -H "Authorization: Bearer $RT" -H 'Content-Type: application/json' -d '{}')" "201"
+RID2=$(body $API/admin/organizer-requests -H "Authorization: Bearer $AT" | jqp "[r['id'] for r in d if r['email']=='$RJ' and r['status']=='pending'][0]")
+chk "aprova" "$(body -X POST $API/admin/organizer-requests/$RID2/approve -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{}' | jqp 'd["role"]')" "organizer"
+# O token e o mesmo de antes da aprovacao: o papel sai do banco a cada chamada.
+REV=$(body -X POST $API/events -H "Authorization: Bearer $RT" -F "name=Pos aprovacao $S" -F "game=Magic" -F "date=2026-10-01" | jqp 'd.get("id","")')
+chk "aprovado cria evento sem relogar" "$([ -n "$REV" ] && echo ok)" "ok"
+RUID=$(body $API/users/me -H "Authorization: Bearer $RT" | jqp 'd["id"]')
+chk "revogar rebaixa" "$(body -X PUT $API/admin/users/$RUID/role -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"role":"player"}' | jqp 'd["role"]')" "player"
+chk "e vale no clique seguinte, com o mesmo token" "$(code -X POST $API/events -H "Authorization: Bearer $RT" -F "name=X" -F "game=Magic" -F "date=2026-10-01")" "403"
+# Revogar tira a permissao, nao o passado: o evento continua dele, inteiro.
+chk "o evento criado continua existindo, e continua dele" "$(body $API/events/$REV | jqp 'd["owner_id"]')" "$RUID"
+AUID=$(body $API/users/me -H "Authorization: Bearer $AT" | jqp 'd["id"]')
+chk "dono nao mexe no proprio papel" "$(code -X PUT $API/admin/users/$AUID/role -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"role":"player"}')" "400"
+chk "papel inexistente -> 400" "$(code -X PUT $API/admin/users/$RUID/role -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"role":"superuser"}')" "400"
+chk "admin organiza tambem" "$(code -X POST $API/events -H "Authorization: Bearer $AT" -F "name=Admin organiza $S" -F "game=Magic" -F "date=2026-10-01")" "201"
+chk "o dono foi avisado do pedido" "$(body $API/notifications -H "Authorization: Bearer $AT" | jqp "len([n for n in d if n['code']=='notif.organizerRequested'])>=1")" "True"
+chk "e o pedinte, de cada desfecho" "$(body $API/notifications -H "Authorization: Bearer $RT" | jqp "sorted({n['code'] for n in d if n['code'].startswith('notif.organizer')})")" "['notif.organizerApproved', 'notif.organizerRejectedReason', 'notif.organizerRevoked']"
+
+
 printf '\n\033[1mRESULTADO: %d ok / %d falhas\033[0m\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

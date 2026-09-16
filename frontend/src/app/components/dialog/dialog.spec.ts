@@ -129,4 +129,18 @@ describe('DialogComponent', () => {
 
     expect(fixture.componentInstance.texto()).toBe('Atraxa');
   });
+  it('prompt marcado como opcional confirma vazio, e devolve string vazia', async () => {
+    // O caso é o motivo de uma aprovação: decidir sem escrever nada é resposta,
+    // não desistência — e precisa ser distinguível do cancelar, que devolve null.
+    const { fixture, svc, html } = montar();
+    const resposta = svc.prompt({ titulo: 'Aprovar?', opcional: true });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.podeConfirmar()).toBe(true);
+    const confirmar = html.querySelectorAll('.dialog-actions button')[1] as HTMLButtonElement;
+    expect(confirmar.disabled).toBe(false);
+
+    confirmar.click();
+    expect(await resposta).toBe('');
+  });
 });

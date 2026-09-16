@@ -1,0 +1,208 @@
+.admin-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.admin-header {
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+  }
+  .sub {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+
+  .tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
+    .count {
+      display: inline-block;
+      margin-left: 6px;
+      min-width: 18px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+    }
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+.empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.request {
+  padding: 16px;
+  margin-bottom: 12px;
+
+  .who {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .justification {
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border-left: 3px solid var(--accent);
+    background: var(--surface2);
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
+
+  .no-justification {
+    margin: 12px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+
+    .asked {
+      margin-right: auto;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+  }
+}
+
+.name {
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+.email {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.section-title {
+  margin: 28px 0 10px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.history,
+.staff {
+  padding: 4px 0;
+}
+
+.history-row,
+.staff-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+
+  & + & {
+    border-top: 1px solid var(--border);
+  }
+
+  .when,
+  .owned {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .reason {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+}
+
+.staff-row {
+  // O e-mail é a parte elástica da linha: cortá-lo é o que mantém nome, contagem
+  // e ações na mesma altura quando o endereço é longo.
+  .email {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .owned {
+    margin-left: 0;
+  }
+
+  .you {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .staff-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
+
+    .danger {
+      color: var(--danger);
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .history-row,
+  .staff-row {
+    .when,
+    .owned {
+      margin-left: 0;
+    }
+  }
+}
