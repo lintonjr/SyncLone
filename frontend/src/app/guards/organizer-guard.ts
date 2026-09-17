@@ -7,7 +7,6 @@ export const organizerGuard: CanActivateFn = () => {
   const router = inject(Router);
   // Admin passa também: os papéis são excludentes na coluna e hierárquicos na
   // permissão, como no `requireOrganizer` do servidor.
-  const papel = auth.currentUser()?.role;
-  if (papel === 'organizer' || papel === 'admin') return true;
+  if (auth.podeOrganizar()) return true;
   return router.createUrlTree(['/profile']);
 };

@@ -1,7 +1,7 @@
 <div class="leagues-page">
   <div class="page-header">
     <h1>{{ i18n.t('leagues.title') }}</h1>
-    @if (auth.currentUser()?.role === 'organizer') {
+    @if (auth.podeOrganizar()) {
       <a routerLink="/leagues/create" class="btn btn-primary">{{ i18n.t('leagues.create') }}</a>
     }
   </div>
@@ -11,7 +11,7 @@
   } @else if (leagues().length === 0) {
     <div class="empty-state">
       <p>{{ i18n.t('leagues.empty') }}</p>
-      @if (auth.currentUser()?.role === 'organizer') {
+      @if (auth.podeOrganizar()) {
         <a routerLink="/leagues/create" class="btn btn-primary">{{
           i18n.t('leagues.createFirst')
         }}</a>

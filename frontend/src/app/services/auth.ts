@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
@@ -30,6 +30,17 @@ export class AuthService {
   private readonly API = `${environment.apiUrl}/auth`;
   private readonly USERS_API = `${environment.apiUrl}/users`;
   currentUser = signal<User | null>(this.loadUser());
+
+  /**
+   * Admin também organiza: os papéis são excludentes na coluna e hierárquicos na
+   * permissão, como `podeOrganizar` no servidor (lib/roles.js). Toda tela que
+   * mostra algo "só para organizador" pergunta aqui — comparar com 'organizer'
+   * direto deixava o admin sem os botões de criar evento e liga.
+   */
+  podeOrganizar = computed(() => {
+    const papel = this.currentUser()?.role;
+    return papel === 'organizer' || papel === 'admin';
+  });
 
   /** Reflete no usuário guardado uma mudança feita em outra tela. */
   patchCurrentUser(campos: Partial<User>) {

@@ -1,7 +1,7 @@
 <div class="my-events-page">
   <div class="page-header">
     <h1>{{ i18n.t('myEvents.title') }}</h1>
-    @if (auth.currentUser()?.role === 'organizer') {
+    @if (auth.podeOrganizar()) {
       <a routerLink="/create" class="btn btn-primary">{{ i18n.t('myEvents.create') }}</a>
     }
   </div>
@@ -29,7 +29,7 @@
     @if (activeTab() === 'owned') {
       @if (owned().length === 0) {
         <div class="empty-state">
-          @if (auth.currentUser()?.role === 'organizer') {
+          @if (auth.podeOrganizar()) {
             <p>{{ i18n.t('myEvents.noneCreated') }}</p>
             <a routerLink="/create" class="btn btn-primary">{{ i18n.t('myEvents.createFirst') }}</a>
           } @else {

@@ -21,11 +21,8 @@ export class NavbarComponent {
   showNotifications = signal(false);
   showUserMenu = signal(false);
 
-  /** Admin também organiza — mesma hierarquia do `requireOrganizer` do servidor. */
-  podeOrganizar = computed(() => {
-    const papel = this.auth.currentUser()?.role;
-    return papel === 'organizer' || papel === 'admin';
-  });
+  /** Admin também organiza — a regra mora no AuthService. */
+  podeOrganizar = this.auth.podeOrganizar;
 
   constructor() {
     // O painel de notificações só é montado quando aberto, então quem carrega a
