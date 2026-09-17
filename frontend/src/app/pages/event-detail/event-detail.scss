@@ -21,10 +21,25 @@
   margin-bottom: 32px;
 }
 
-.banner-img {
+/* Fundo: a própria capa, ampliada, desfocada e escurecida. O scale esconde a
+   borda clara que o blur cria nas extremidades. */
+.banner-bg {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: blur(28px) brightness(0.55) saturate(1.2);
+  transform: scale(1.2);
+}
+
+/* A capa inteira, sem corte, centralizada sobre o fundo. */
+.banner-img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .banner-placeholder {

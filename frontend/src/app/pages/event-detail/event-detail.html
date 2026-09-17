@@ -5,6 +5,10 @@
     <!-- Header Banner -->
     <div class="event-banner">
       @if (event()!.thumbnail) {
+        <!-- A capa é pensada para o card (retrato 2:3) e o banner é paisagem: cortar
+             com cover deixava só uma faixa do meio. A imagem entra inteira, sobre uma
+             cópia dela desfocada que preenche o espaço (decorativa: alt vazio). -->
+        <img [src]="thumbnailUrl()" class="banner-bg" alt="" aria-hidden="true" />
         <img [src]="thumbnailUrl()" class="banner-img" [alt]="event()!.name" />
       } @else {
         <div class="banner-placeholder">
