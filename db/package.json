@@ -1,0 +1,20 @@
+{
+  "name": "manasync-db",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "description": "Runner de migrations e usuário de aplicação do ManaSync",
+  "main": "migrate.js",
+  "scripts": {
+    "migrate": "node migrate.js",
+    "baseline": "node migrate.js baseline",
+    "test": "node --test"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "mysql2": "3.24.4"
+  }
+}
