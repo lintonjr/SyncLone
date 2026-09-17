@@ -43,14 +43,39 @@ Billing**.
 scripts/zona.sh --gravar
 ```
 
-1. Cria a hosted zone `app.mercadiastore.online` (pede confirmação; US$ 0,50/mês).
-2. Mostra os 4 servidores de nome.
-3. **No cPanel da HostGator → Zone Editor de `mercadiastore.online`:** crie 4
-   registros `NS` com nome `app`, um para cada servidor mostrado. Nada mais muda lá.
-4. Grava o ID da zona em `infra/cdk.json`.
+O Route 53 passa a responder pelo **domínio inteiro** `mercadiastore.online` (o editor
+de zona da HostGator não cria registros NS, então não dá para delegar só `app`). O
+site e o e-mail da HostGator continuam funcionando porque os registros dela são
+copiados antes.
 
-Rode `scripts/zona.sh` de novo até aparecer **delegação ativa** (minutos, às vezes
-mais).
+1. Valida `infra/dns/registros-hostgator.json` (A e MX da raiz, `www`, `mail`, `ftp`).
+2. Cria a hosted zone `mercadiastore.online` (pede confirmação; US$ 0,50/mês).
+3. Aplica os registros do arquivo (UPSERT) e grava o ID da zona em `infra/cdk.json`.
+4. Compara **cada registro** no Route 53 com a HostGator (`dns3.hostgator.com.br`).
+   Se algum aparecer como `DIFERENTE`, o script para: **não troque os servidores de
+   nome** — corrija o arquivo e rode de novo.
+5. Com tudo conferido, mostra os 4 servidores de nome `awsdns`.
+
+**Troca dos servidores de nome** (manual, uma vez): área do cliente HostGator →
+**Domínios** → `mercadiastore.online` → **Servidores DNS** / "Alterar DNS" → servidores
+personalizados → os 4 mostrados pelo script. É o menu do **domínio**, não o Zone
+Editor do cPanel.
+
+Rode `scripts/zona.sh` de novo até aparecer **delegação ativa**. A propagação leva de
+minutos a algumas horas (o TTL dos NS na zona `.online` manda). Durante esse tempo,
+parte da internet ainda consulta a HostGator — por isso os registros precisam ser
+iguais nos dois lados. Confira à parte: `dig +short NS mercadiastore.online @1.1.1.1`.
+
+**Depois da troca:**
+- Registro novo ou alterado (SPF, DKIM, DMARC para o e-mail, outro subdomínio) vai em
+  `infra/dns/registros-hostgator.json` + `scripts/zona.sh`. Mudar no cPanel **não tem
+  mais efeito**.
+- Com o domínio estável por alguns dias, suba o `ttl` do arquivo de 300 para 14400 e
+  rode o script.
+- `app.*` e `origin.app.*` são do CDK e da Lambda de DNS: o script recusa esses nomes
+  no arquivo.
+- Voltar atrás: recolocar `dns3.hostgator.com.br` e `dns4.hostgator.com.br` no mesmo
+  menu (o site na AWS deixa de ser encontrado).
 
 ### 2.3 Certificado
 
@@ -251,7 +276,8 @@ para isso: o CloudFormation só reaplica o valor se ele mudar no template.
 | Log `[valkey:…] conexão fechada logo após conectar` | senha ou permissões do usuário do Valkey | o ElastiCache fecha a conexão em vez de dizer `WRONGPASS`; conferir segredo e `ACESSO_VALKEY_APP` |
 | Migração: "banco já tem tabelas mas nenhum histórico" | banco criado fora do runner | conferir que tem todas as migrations e rodar `node migrate.js baseline` (db/README) |
 | Migração: "migrations já aplicadas foram alteradas" | alguém editou um `.sql` aplicado | desfazer a edição; corrigir com migration nova |
-| Certificado não valida | delegação ainda não propagou ou CNAME ausente | `scripts/zona.sh`; conferir o CNAME na zona |
+| Certificado não valida | servidores de nome ainda não trocados/propagados, ou CNAME ausente | `scripts/zona.sh` até "delegação ativa"; conferir o CNAME na zona |
+| Site ou e-mail da HostGator parou depois da troca | registro que faltou no arquivo | `dig` o nome em `dns3.hostgator.com.br`, acrescentar em `infra/dns/registros-hostgator.json`, `scripts/zona.sh` |
 | Acesso negado em operação que funcionava | limite de gasto do plano atingido | **AWS Settings → Billing** (só o dono do projeto altera) |
 
 ---

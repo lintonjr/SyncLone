@@ -249,7 +249,7 @@ Pré-requisito: `.env` da raiz com `ADMIN_EMAIL` (seu e-mail) e `MANASYNC_CONTA`
 conta AWS do projeto). Os dois ficam **fora do git** — o repositório é público.
 
 ```bash
-scripts/zona.sh --gravar          # uma vez: zona app.mercadiastore.online + NS na HostGator
+scripts/zona.sh --gravar          # uma vez: zona mercadiastore.online + troca dos servidores DNS na HostGator
 scripts/certificado.sh --gravar   # uma vez: certificado do CloudFront (us-east-1)
 scripts/deploy.sh primeiro        # primeira vez
 scripts/deploy.sh release         # depois

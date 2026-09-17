@@ -8,7 +8,7 @@
 >   (spikes, testes) e onde a implementação se afastou do plano (marcado com ✅ e
 >   "Implementado no PR N" em cada seção). Em caso de divergência, vale o código e a SPEC.
 >
-> Site: `app.mercadiastore.online` (D11 = B). Região: `us-east-2`.
+> Site: `app.mercadiastore.online`; DNS do domínio inteiro no Route 53 (D11 = C). Região: `us-east-2`.
 >
 > **ID da conta fora do repositório** (público): onde este histórico mostra `<CONTA>`,
 > o valor real está em `MANASYNC_CONTA` no `.env` da raiz. Por isso o `cdk.context.json`
@@ -53,7 +53,7 @@
 | # | Decisão | Escolha |
 |---|---|---|
 | D1 | Domínio | `app.mercadiastore.online` (subdomínio de `mercadiastore.online`) |
-| D11 | DNS do domínio (hoje na HostGator) | **B**: só `app.mercadiastore.online` delegado ao Route 53; HostGator intocada |
+| D11 | DNS do domínio (hoje na HostGator) | **C**: zona inteira no Route 53, registros da HostGator copiados; site continua em `app.mercadiastore.online` (B tentada e inviável, ver 0.5) |
 | D2 | Plano da conta | Free durante a construção; **Paid antes de abrir ao público** (seção 12) |
 | D3 | Deploy sem queda | DNS com vários IPs + Lambda (sem ALB) |
 | D4 | Autenticação no Valkey | usuário com senha (RBAC), `default` desligado |
@@ -134,17 +134,37 @@ minutos): o backend não tem dependência nativa.
 registro ALIAS, que o DNS da HostGator não oferece; e a Lambda de DNS (7.1) grava
 `origin.app.mercadiastore.online` pela API do Route 53.
 
-**Decisão D11 — escolhida: B** (16/09/2026):
+**Decisão D11 — escolhida: B, depois trocada para C** (16/09/2026):
 
 | Opção | Site em | O que acontece com a HostGator | Quando escolher |
 |---|---|---|---|
 | **A** — zona inteira no Route 53 | `mercadiastore.online` e `www` | hospedagem e e-mail do cPanel **param**, a menos que os registros MX/`mail` sejam recriados no Route 53 | a HostGator não é usada para nada (ou só o e-mail, recriando o MX) |
 | **B** — só um subdomínio no Route 53 | `app.mercadiastore.online` | nada muda; na HostGator só se criam 4 registros NS para `app` | a HostGator hospeda algo em uso |
+| **C** — zona inteira no Route 53, site no subdomínio | `app.mercadiastore.online` | nada para: os registros dela (A, MX, `www`, `mail`, `ftp`) são **copiados** para o Route 53 antes da troca dos servidores de nome | a HostGator hospeda algo em uso **e** não permite criar NS |
 
 Com B, `manasync:domainName` vira `app.mercadiastore.online`; o `www` sai do
 certificado e da distribuição, e o `origin` vira `origin.app.mercadiastore.online`.
 
-**Passos (opção B):**
+> **Atualização (16/09/2026) — B inviável, escolhida C.** Na primeira execução real,
+> o editor de zona da HostGator só oferece A, AAAA, CAA, MX, TXT, CNAME e SRV: não há
+> como criar os registros NS do passo 2. A zona `app.mercadiastore.online` criada foi
+> apagada (só tinha NS/SOA). Com C:
+>
+> - `manasync:zoneName` = `mercadiastore.online` (zona) e `manasync:domainName` =
+>   `app.mercadiastore.online` (site) passam a ser chaves separadas; o CDK só cria
+>   A/AAAA do site dentro da zona do domínio.
+> - Inventário dos registros, feito nos servidores autoritativos da HostGator (AXFR
+>   recusado; tipos da raiz, nomes padrão do cPanel, SRV de e-mail e curinga
+>   consultados): os 5 da tabela acima, em `infra/dns/registros-hostgator.json`.
+> - `scripts/zona.sh` cria a zona, aplica o arquivo (UPSERT, TTL 300 na migração),
+>   compara cada registro Route 53 × HostGator e só então mostra os 4 servidores de
+>   nome para trocar em **Domínios → Servidores DNS** na área do cliente HostGator
+>   (o registrador é a PDR, revenda da HostGator; vence em 14/10/2027).
+> - `certificado.sh` passou a exigir que o NS público da zona seja **o do Route 53**
+>   (antes bastava responder NS, o que a HostGator já fazia).
+> - Depois da troca, registro novo de DNS (SPF, DKIM...) vai no arquivo, não no cPanel.
+
+**Passos (opção B, histórico):**
 1. Criar a hosted zone `app.mercadiastore.online`: `aws route53 create-hosted-zone
    --name app.mercadiastore.online --caller-reference manasync-$(date +%s)`.
    US$ 0,50/mês.
@@ -588,7 +608,7 @@ leitura ou listagem.
 | `/uploads/*` | bucket imagens (OAC) | `CACHING_OPTIMIZED`; política de cabeçalhos própria com `nosniff` e `Content-Security-Policy: default-src 'none'; sandbox` |
 
 - **Remover `errorResponses`** (h).
-- **Sem `www`** (D11 = B): `domainNames` só com `app.mercadiastore.online`, sem SAN no
+- **Sem `www`** (D11 = B, mantido em C): `domainNames` só com `app.mercadiastore.online`, sem SAN no
   certificado, um par A/AAAA na raiz da zona. Remove o laço `Apex`/`Www` de
   `edge-stack.ts`.
 - CloudFront Function não é Lambda@Edge: permitida.
@@ -771,7 +791,7 @@ não conferido). Job `scripts` no CI. Acréscimos em relação à tabela abaixo:
 
 - **`scripts/zona.sh`** (novo): cria a hosted zone (idempotente, com confirmação),
   mostra os 4 NS para o cPanel, confere a delegação e grava o ID no `cdk.json`
-  (`--gravar`). `certificado.sh --gravar` faz o mesmo com o ARN.
+  (`--gravar`). *(Reescrito para D11 = C: zona do domínio inteiro, ver 0.5.)* `certificado.sh --gravar` faz o mesmo com o ARN.
 - `migrar.sh --sem-snapshot` só no primeiro deploy; a limpeza mantém sempre os 3
   snapshots mais recentes e só toca o prefixo `manasync-pre-migracao-`.
 - `deploy.sh` roda os testes de template antes (`--pular-testes` desliga), usa

@@ -8,7 +8,7 @@ e o histórico, veja o [PLANO-DEPLOY](PLANO-DEPLOY.md).
 |---|---|
 | Conta | projeto da nova experiência AWS. O ID **não fica no repositório** (é público): vem de `MANASYNC_CONTA` no `.env` da raiz |
 | Região | **`us-east-2`** — todo recurso regional. Única exceção: o certificado do CloudFront, em `us-east-1` |
-| Site | `https://app.mercadiastore.online` (subdomínio delegado ao Route 53; a raiz continua na HostGator) |
+| Site | `https://app.mercadiastore.online` (DNS do domínio inteiro no Route 53; a raiz e o e-mail continuam hospedados na HostGator) |
 | IaC | AWS CDK v2 (TypeScript), 5 stacks, `cdk-nag` (AwsSolutions) derrubando o synth em achado não reconhecido |
 | Custo estimado | ~US$ 37/mês (seção 11) |
 
@@ -99,8 +99,12 @@ ano; `index.html` `no-cache` e enviado por último; demais arquivos 5 min.
 
 ### 3.3 DNS
 
-- Hosted zone `app.mercadiastore.online` no Route 53, delegada por 4 registros NS no
-  cPanel da HostGator (`scripts/zona.sh`).
+- Hosted zone `mercadiastore.online` no Route 53 (`manasync:zoneName`), com os
+  servidores de nome trocados no registrador. O editor de zona da HostGator não
+  cria NS, então delegar só o subdomínio não era possível.
+- Registros de fora do site (raiz A e MX, `www`, `mail`, `ftp` → hospedagem e e-mail
+  da HostGator) vêm de `infra/dns/registros-hostgator.json`, aplicados e conferidos
+  contra a HostGator por `scripts/zona.sh`. Depois da troca, é ali que se muda DNS.
 - `app.mercadiastore.online` A/AAAA → CloudFront.
 - `origin.app.mercadiastore.online` A (TTL 30) → IPs públicos das tasks saudáveis,
   mantido pela Lambda de DNS (seção 5). Não é gerenciado pelo CloudFormation.
@@ -298,8 +302,8 @@ Alarmes:
 |---|---|
 | `backend` | unitários + integração com Valkey 8.1 real |
 | `db` | unitários + integração com MySQL 8.4 real |
-| `infra` | tipos + 58 testes de template + `cdk-nag` |
-| `scripts` | `shellcheck` + 40 testes dos scripts de deploy com stubs |
+| `infra` | tipos + 60 testes de template + `cdk-nag` |
+| `scripts` | `shellcheck` + 55 testes dos scripts de deploy com stubs |
 | `dns-updater` | 23 testes da Lambda |
 | `frontend` | formatação, testes, build |
 
