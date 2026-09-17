@@ -9,6 +9,9 @@
     "test": "ng test"
   },
   "private": true,
+  "engines": {
+    "node": ">=24"
+  },
   "packageManager": "npm@11.18.0",
   "dependencies": {
     "lucide-angular": "^1.0.0",

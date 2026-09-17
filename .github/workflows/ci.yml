@@ -1,0 +1,181 @@
+# Portão de qualidade a cada PR.
+#
+# Os jobs rodam em paralelo. Backend e frontend não precisam de banco: os testes
+# de backend são unitários sobre o motor de torneio (pareamento, bye, desempates),
+# e os de frontend montam componentes em jsdom — se um dia um teste deles precisar
+# de MySQL, é sinal de que deixou de ser unitário.
+#
+# Duas exceções deliberadas, cada uma com um service container na versão de
+# produção — porque o que elas testam só existe no servidor real:
+#
+#   - job `db`: MySQL 8.4 (mesma do RDS). O runner de migrations fala DDL, GRANT e
+#     lock nomeado, e nenhum dublê prova isso;
+#   - job `backend`: Valkey 8.1 (mesma do ElastiCache Serverless), para a
+#     integração do pub/sub do SSE entre tasks e do contador do rate limit.
+#     Os testes de backend que não são desses dois continuam unitários.
+#
+# Nas duas, a integração é obrigatória (`*_IT_OBRIGATORIO=true`): se a variável do
+# servidor faltar, os testes falham em vez de serem pulados em silêncio.
+#
+# O `audit` roda com --omit=dev de propósito: as vulnerabilidades da cadeia de
+# build (postcss, browserslist e companhia) não chegam ao usuário e reprovariam
+# todo PR sem dizer nada de útil. O que chega ao usuário é o que precisa passar.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      valkey:
+        image: valkey/valkey:8.1-alpine   # mesma versão do ElastiCache Serverless
+        ports:
+          - 6379:6379
+        # Diferente do MySQL, o Valkey não tem fase de inicialização sem rede:
+        # respondeu PING, está pronto.
+        options: >-
+          --health-cmd="valkey-cli ping"
+          --health-interval=3s
+          --health-timeout=3s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'   # mesma do backend/Dockerfile
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Testes (unitários + integração com Valkey 8.1)
+        run: npm test
+        env:
+          VALKEY_IT_URL: redis://127.0.0.1:6379
+          VALKEY_IT_OBRIGATORIO: 'true'
+      - name: Vulnerabilidades em produção
+        run: npm audit --omit=dev --audit-level=high
+
+  db:
+    # Unitários do runner + os cenários de integração contra MySQL 8.4 real.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: db
+    services:
+      mysql:
+        image: mysql:8.4   # mesma versão major do RDS (infra/lib/data-stack.ts)
+        env:
+          # Banco descartável: existe só durante o job, só dentro do runner.
+          MYSQL_ROOT_PASSWORD: itroot
+        ports:
+          - 3306:3306
+        # Health check por TCP, não por socket: a imagem sobe primeiro um servidor
+        # temporário sem rede para o initdb, e um ping por socket o daria como
+        # pronto antes da hora — testes falhando de vez em quando, sem motivo.
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -pitroot --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'   # mesma do db/Dockerfile
+          cache: npm
+          cache-dependency-path: db/package-lock.json
+      - run: npm ci
+      - name: Testes (unitários + integração com MySQL 8.4)
+        run: npm test
+        env:
+          MIGRATE_IT_HOST: 127.0.0.1
+          MIGRATE_IT_PORT: 3306
+          MIGRATE_IT_ROOT_PASS: itroot
+          # Sem isto, uma variável quebrada faria a integração ser pulada em
+          # silêncio e o job ficar verde sem testar nada.
+          MIGRATE_IT_OBRIGATORIO: 'true'
+      - name: Vulnerabilidades em produção
+        run: npm audit --omit=dev --audit-level=high
+
+  infra:
+    # O CDK: tipos, testes de template (segurança da rede, IAM, CloudFront, task)
+    # e o cdk-nag, que derruba o synth em achado sem reconhecimento aprovado.
+    # Sem credenciais AWS: os lookups vêm do cdk.context.json versionado.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+      - run: npm ci
+      - name: Tipos
+        run: npx tsc --noEmit
+      - name: Testes de template e cdk-nag
+        run: npm test
+
+  scripts:
+    # Scripts de deploy: ordem dos passos, parada no erro, guardas de conta e
+    # região — com stubs no lugar de aws/cdk/docker (nenhuma chamada à AWS).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'   # aws-env.sh exige Node 24
+      - name: shellcheck
+        run: shellcheck -x -S style scripts/lib/comum.sh scripts/aws-env.sh scripts/zona.sh scripts/certificado.sh scripts/migrar.sh scripts/publicar-spa.sh scripts/deploy.sh scripts/fumaca.sh
+      - name: Testes
+        run: node --test 'scripts/test/*.test.js'
+
+  dns-updater:
+    # A Lambda que mantém origin.<domínio> apontando para as tasks saudáveis.
+    # Testes sem AWS: a lógica recebe um adaptador injetado. Os SDKs são só
+    # devDependencies — no runtime Node.js da Lambda eles já vêm instalados.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/lambda/dns-updater
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'   # mesmo runtime da Lambda (NODEJS_24_X)
+          cache: npm
+          cache-dependency-path: infra/lambda/dns-updater/package-lock.json
+      - run: npm ci
+      - name: Testes
+        run: npm test
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'   # mesma do frontend/Dockerfile
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Formatação
+        run: npx prettier --check "src/**/*.{ts,html,scss,json}"
+      - name: Testes
+        run: npm test
+      - name: Build de produção
+        run: npm run build
+      - name: Vulnerabilidades em produção
+        run: npm audit --omit=dev --audit-level=high
