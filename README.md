@@ -2,14 +2,19 @@
 
 Clone funcional do [manasync.io](https://manasync.io) — plataforma de gerenciamento de torneios de card games (Magic, Commander, etc.), com pareamento suíço, playoffs em bracket, aprovação de jogadores e mais.
 
-Stack: **Angular 21** (frontend) + **Node/Express** (backend) + **MySQL 8**.
+Stack: **Angular 21** (frontend) + **Node 24/Express** (backend) + **MySQL 8** + **Valkey 8** (opcional: SSE entre instâncias e rate limit).
+Produção: **AWS** (CloudFront, ECS Fargate, RDS, ElastiCache Serverless), descrita em código com CDK — veja [Deploy na AWS](#deploy-na-aws).
 
 ## Funcionalidades
 
 ### Contas e papéis
+- Três papéis, excludentes na coluna e hierárquicos na permissão: **player** → **organizer** → **admin**. Admin pode tudo que organizador pode (inclusive criar e tocar eventos), e a regra mora em um lugar só, `backend/src/lib/roles.js`
 - Todo cadastro nasce com papel **player** — pode participar de eventos, mas não pode criar/organizar
-- Upgrade para **organizer** é self-service, um clique, na página `/profile` — sem aprovação. Organizer também pode participar como jogador em outros eventos (não é uma troca, é uma permissão a mais); não existe downgrade
-- `POST /api/events` (criação de evento) exige papel `organizer` (middleware `requireOrganizer`); UI esconde os CTAs de "Create Event" para contas `player`
+- **Organizar depende de aprovação.** Em `/profile` o jogador envia uma solicitação, com justificativa opcional; o dono da plataforma aprova ou recusa em `/admin`. Aprovado, vira `organizer` — que também participa como jogador em outros eventos (não é troca, é permissão a mais). Recusado, recebe o motivo e pode pedir de novo. Um pedido pendente por pessoa, garantido por índice único no banco, não por consulta prévia na rota
+- **O primeiro dono vem de `ADMIN_EMAIL`**: na subida, o backend promove a conta com esse e-mail a `admin` **somente se ainda não existir admin nenhum** (`lib/bootstrapAdmin.js`, nunca derruba o servidor). Sem essa trava, qualquer pessoa que se cadastrasse com o e-mail configurado viraria dona no próximo deploy, porque o cadastro não confirma e-mail. Daí em diante, um admin promove outros na aba **Organizadores** de `/admin`
+- **Revogação existe**: o dono rebaixa um organizador a player. Os eventos que a pessoa já criou continuam dela, com histórico e jogadores intactos — o que ela perde é criar novos e administrar os que tem. Ninguém altera o próprio papel, nos dois sentidos: um admin que se rebaixasse perderia a rota que desfaria isso
+- **O papel é lido do banco a cada requisição** (`middleware/auth.js`), não do JWT. O token dura 7 dias e o papel muda por decisão de outra pessoa: assim a aprovação vale no clique seguinte, sem relogar, e a revogação também — um organizador rebaixado não continua criando eventos por uma semana com o crachá velho no bolso
+- `POST /api/events` (criação de evento) exige `organizer` ou `admin` (middleware `requireOrganizer`); as rotas de `/api/admin` exigem `admin` (`requireAdmin`, aplicado no router inteiro). A UI esconde os CTAs conforme o papel, mas quem barra é o servidor
 
 ### Eventos
 - Criação de evento com nome, descrição, local (presencial/online), data, jogo, formato, imagem de capa (com placeholder automático quando não há imagem)
@@ -73,11 +78,13 @@ CloneManaSync/
 │   │   ├── middleware/
 │   │   │   ├── auth.js
 │   │   │   ├── requireOrganizer.js
+│   │   │   ├── requireAdmin.js
 │   │   │   ├── validate.js         # aplica um schema zod ao body
 │   │   │   └── errorHandler.js     # único lugar que responde 500
 │   │   ├── schemas/index.js        # schemas de todas as rotas de escrita
 │   │   ├── routes/
 │   │   │   ├── auth.js             # /api/auth  (com rate limit)
+│   │   │   ├── admin.js            # /api/admin (fila de solicitações e papéis)
 │   │   │   ├── events.js           # /api/events
 │   │   │   ├── leagues.js          # /api/leagues
 │   │   │   ├── users.js            # /api/users
@@ -90,11 +97,18 @@ CloneManaSync/
 │   └── test/                       # node --test — pareamento e desempates
 ├── frontend/           # SPA Angular
 │   └── src/app/
-│       ├── pages/{home,login,register,forgot-password,my-events,create-event,event-detail,leagues,league-detail,create-league,profile}
+│       ├── pages/{home,login,register,forgot-password,my-events,create-event,event-detail,leagues,league-detail,create-league,profile,admin}
 │       ├── components/{event-card,navbar,notification-panel}
 │       └── services/
-├── db/init/01-schema.sql   # schema MySQL (rodado automaticamente pelo container na 1ª subida)
-├── db/migrations/          # alterações posteriores, aplicadas em banco já existente
+├── db/
+│   ├── init/01-schema.sql  # schema consolidado (initdb no Docker; banco vazio no runner)
+│   ├── migrations/         # alterações posteriores, NNN_nome.sql
+│   └── migrate.js          # runner: histórico, lock, usuário só-DML — ver db/README.md
+├── infra/                  # AWS CDK (TypeScript): 5 stacks, testes de template, cdk-nag
+│   └── lambda/dns-updater/ # Lambda que mantém o DNS da origem com as tasks saudáveis
+├── scripts/                # deploy (zona, certificado, migrar, publicar-spa, deploy, fumaça)
+├── infraestructure/        # SPEC, RUNBOOK e plano da AWS; diagramas
+├── .github/workflows/ci.yml
 ├── docker-compose.yml
 └── README.md
 ```
@@ -102,8 +116,22 @@ CloneManaSync/
 ## Testes
 
 ```bash
-cd backend  && npm test   # node --test — pareamento, byes, seeding de playoff e desempates
-cd frontend && npm test   # vitest via Angular CLI
+cd backend  && npm test          # node --test — torneio, segurança, uploads, SSE, desligamento
+cd frontend && npm test          # vitest via Angular CLI
+cd db       && npm test          # runner de migrations (unitários)
+cd infra    && npm test          # templates do CDK + cdk-nag
+cd infra/lambda/dns-updater && npm test
+node --test 'scripts/test/*.test.js'   # scripts de deploy, com stubs (sem AWS)
+```
+
+Integrações com servidor real (no CI rodam sempre, com service containers):
+
+```bash
+# Valkey (backend)
+docker run -d --rm --name vk -p 127.0.0.1:36379:6379 valkey/valkey:8.1-alpine
+(cd backend && VALKEY_IT_URL=redis://127.0.0.1:36379 npm test); docker stop vk
+
+# MySQL (db) — ver db/README.md
 ```
 
 ## Como rodar — Docker (recomendado)
@@ -129,11 +157,12 @@ Evita ter que instalar Node e MySQL nativamente e os problemas de compatibilidad
 docker compose up -d --build
 ```
 
-Isso sobe 3 containers:
+Isso sobe 4 containers:
 
 | Serviço  | Descrição                          | Porta no host |
 |----------|-------------------------------------|---------------|
 | mysql    | MySQL 8, banco `manasync` já criado com schema | 3307 (interno 3306) |
+| valkey   | Valkey 8.1 — pub/sub do SSE e contador do rate limit | nenhuma (só o backend acessa) |
 | backend  | API Express                         | 3001          |
 | frontend | Angular buildado e servido por Nginx (proxy `/api` e `/uploads` para o backend) | 4200 |
 
@@ -159,14 +188,17 @@ docker compose logs -f frontend
 
 ## Como rodar sem Docker (desenvolvimento local)
 
-Pré-requisitos: Node 20+, MySQL 8 rodando localmente.
+Pré-requisitos: Node 24 (`nvm use` lê o `.nvmrc`), MySQL 8 rodando localmente.
 
 ### 1. Banco de dados
-Crie o banco e aplique o schema:
+Crie o banco e deixe o runner aplicar o schema e registrar as migrations:
 ```bash
-mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS manasync"
-mysql -uroot -p manasync < db/init/01-schema.sql
+mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS manasync CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+cd db && npm ci
+DB_HOST=127.0.0.1 DB_NAME=manasync DB_ADMIN_USER=root DB_ADMIN_PASS=<senha> node migrate.js
 ```
+Depois, a cada migration nova, basta rodar `node migrate.js` de novo. Banco criado
+antes do runner (sem histórico): veja [`db/README.md`](db/README.md#banco-local-já-existente-docker-antes-do-runner).
 
 ### 2. Backend
 ```bash
@@ -190,13 +222,43 @@ Ver `backend/.env.example`:
 | Variável         | Descrição                          |
 |------------------|--------------------------------------|
 | `PORT`           | Porta da API (padrão 3001)          |
-| `JWT_SECRET`     | Chave de assinatura dos tokens JWT  |
+| `JWT_SECRET`     | Chave de assinatura dos tokens JWT. Obrigatória: sem ela o backend não sobe; em `NODE_ENV=production`, mínimo de 32 caracteres |
 | `JWT_EXPIRES_IN` | Validade do token (padrão `7d`)     |
 | `DB_HOST`        | Host do MySQL (`mysql` no Docker, `127.0.0.1` local) |
 | `DB_PORT`        | Porta do MySQL (padrão 3306)        |
 | `DB_USER`        | Usuário do MySQL                    |
 | `DB_PASS`        | Senha do MySQL                      |
 | `DB_NAME`        | Nome do banco (`manasync`)          |
+| `ADMIN_EMAIL`    | Conta promovida a dono na subida, **só enquanto não houver admin**. Precisa já existir; vazio significa "sem dono", e aí ninguém decide as solicitações |
+| `CORS_ORIGINS`   | Origens liberadas, separadas por vírgula. Vazio: `localhost:4200/4201` fora de produção; **nenhuma** em `NODE_ENV=production` |
+| `ORIGIN_VERIFY_ATUAL` / `ORIGIN_VERIFY_ANTERIOR` | Segredo do header `x-origin-verify` que só o CloudFront envia (≥ 32 caracteres). Vazio desliga a verificação (Docker local). `ANTERIOR` existe para rotacionar sem queda |
+| `VALKEY_URL`     | `redis://host:6379` ou `rediss://…` (TLS). Liga o pub/sub do SSE entre processos e o rate limit compartilhado. **Vazio: tudo em memória, como antes** (um processo só) |
+| `VALKEY_CLUSTER` | `true` para o ElastiCache Serverless (exige `rediss://`) |
+| `VALKEY_USER` / `VALKEY_PASS` | Credencial do Valkey. Nunca na URL |
+| `UPLOADS_BUCKET` | Bucket S3 das imagens enviadas (chaves `uploads/<uuid>.<ext>`, servidas pelo CloudFront). **Vazio: disco local** em `backend/uploads`, servido pelo próprio backend |
+| `AWS_REGION`     | Região do bucket. Obrigatória com `UPLOADS_BUCKET` |
+| `PRE_STOP_DELAY_MS` | Depois do SIGTERM, quanto tempo o backend **continua atendendo** antes de fechar (o DNS da origem ainda aponta para a task). Padrão `0`; produção `45000`. SIGINT (Ctrl+C) não espera |
+| `SHUTDOWN_TIMEOUT_MS` | Prazo para fechar conexões, SSE, Valkey e banco, contado **depois** do atraso. Padrão `10000`. Atraso + prazo ≤ 115000 (o Fargate mata aos 120 s) |
+
+## Deploy na AWS
+
+Tudo por script, na ordem certa (a migração roda entre as stacks de dados e a
+aplicação) e parando no primeiro erro:
+
+Pré-requisito: `.env` da raiz com `ADMIN_EMAIL` (seu e-mail) e `MANASYNC_CONTA` (ID da
+conta AWS do projeto). Os dois ficam **fora do git** — o repositório é público.
+
+```bash
+scripts/zona.sh --gravar          # uma vez: zona app.mercadiastore.online + NS na HostGator
+scripts/certificado.sh --gravar   # uma vez: certificado do CloudFront (us-east-1)
+scripts/deploy.sh primeiro        # primeira vez
+scripts/deploy.sh release         # depois
+scripts/fumaca.sh                 # verificação do site no ar
+```
+
+- [RUNBOOK](infraestructure/aws/RUNBOOK.md) — pré-requisitos, passo a passo, rotação de segredos, rollback, problemas comuns
+- [SPEC](infraestructure/aws/SPEC.md) — arquitetura, segurança, custos
+- [PLANO-DEPLOY](infraestructure/aws/PLANO-DEPLOY.md) — decisões e histórico
 
 ## API — endpoints principais
 
@@ -232,7 +294,14 @@ PUT    /api/notifications/read-all
 PUT    /api/notifications/:id/read
 
 GET    /api/users/me
-POST   /api/users/me/upgrade-to-organizer
+POST   /api/users/me/organizer-request     # pedir para organizar (não promove ninguém)
+GET    /api/users/me/organizer-request     # o meu pedido mais recente, com o desfecho
+
+GET    /api/admin/organizer-requests       # a fila e o histórico (só admin)
+POST   /api/admin/organizer-requests/:id/approve
+POST   /api/admin/organizer-requests/:id/reject
+GET    /api/admin/staff                    # quem é organizer ou admin hoje
+PUT    /api/admin/users/:id/role           # promover ou rebaixar
 
 GET    /api/leagues
 GET    /api/leagues/mine
@@ -246,5 +315,4 @@ DELETE /api/leagues/:id
 
 - **Organizer Can Play** — dono se auto-registrar como jogador no próprio evento
 - Decklist real (busca de comandante + partner commander + link Moxfield) — hoje é só texto livre
-- Página de Perfil/Configurações — existe uma versão mínima (`/profile`, nome/email/papel + upgrade para organizer); falta o restante (editar nome/email, trocar senha, preferências)
-- Criação efetiva de notificações (hoje o endpoint existe mas nada as dispara)
+- Página de Perfil/Configurações — existe uma versão mínima (`/profile`: nome/e-mail/papel, visibilidade do perfil e a solicitação para organizar); falta o restante (editar nome/e-mail, trocar senha, preferências)
