@@ -80,8 +80,8 @@ test('deploy: --sim não pede aprovação; sem --sim, o CDK pergunta', (t) => {
   assert.doesNotMatch(semSim.chamadas().find((c) => c.ferramenta === 'cdk').linha, /--require-approval/);
 });
 
-test('deploy: zona ou certificado ainda TROCAR param antes de tudo', (t) => {
-  for (const chave of ['manasync:hostedZoneId', 'manasync:certificateArn']) {
+test('deploy: zona, ID da zona ou certificado ainda TROCAR param antes de tudo', (t) => {
+  for (const chave of ['manasync:zoneName', 'manasync:hostedZoneId', 'manasync:certificateArn']) {
     const amb = ambiente(t, { regras: regras(), contexto: { ...CONTEXTO_PRONTO, [chave]: 'TROCAR_depois' } });
     const r = amb.rodar('deploy.sh', ['primeiro']);
     assert.notEqual(r.codigo, 0);

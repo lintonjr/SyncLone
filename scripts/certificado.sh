@@ -21,12 +21,18 @@ done
 
 MANASYNC_PULAR_DOCKER=1 preparar_ambiente
 DOMINIO="$(contexto_preenchido manasync:domainName 'domínio do site')"
+NOME_ZONA="$(contexto_preenchido manasync:zoneName 'zona do domínio')"
 ZONA="$(contexto_preenchido manasync:hostedZoneId 'rode scripts/zona.sh --gravar')"
 ACM=(--region us-east-1)
 
-# A validação por DNS só conclui se a zona já responde publicamente.
-[ -n "$(dig_ +short NS "$DOMINIO" @8.8.8.8)" ] ||
-  falha "o DNS público ainda não responde por $DOMINIO — crie os NS na HostGator (scripts/zona.sh) e espere"
+# A validação por DNS só conclui se o DNS público já aponta para ESTA zona. Não
+# basta "responder NS": antes da troca, quem responde é a HostGator, e o CNAME
+# de validação criado no Route 53 nunca seria visto.
+esperados="$(aws_ route53 get-hosted-zone --id "$ZONA" --query 'DelegationSet.NameServers' --output text |
+  tr '\t' '\n' | sed '/^$/d' | sort | tr '\n' ' ')"
+publicos="$(dig_ +short NS "$NOME_ZONA" @8.8.8.8 | sed 's/\.$//' | sed '/^$/d' | sort | tr '\n' ' ')"
+[ -n "$esperados" ] && [ "$publicos" = "$esperados" ] ||
+  falha "o DNS público de $NOME_ZONA ainda não aponta para o Route 53 (hoje: ${publicos:-nenhum}) — troque os servidores de nome na HostGator (scripts/zona.sh) e espere"
 
 info "certificado para $DOMINIO (us-east-1)"
 ARN="$(aws_ acm list-certificates "${ACM[@]}" --certificate-statuses ISSUED PENDING_VALIDATION \

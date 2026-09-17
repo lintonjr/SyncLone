@@ -13,6 +13,7 @@ const CONTA_TESTE = '111122223333';
 const CONTEXTO_PRONTO = {
   'manasync:region': 'us-east-2',
   'manasync:domainName': 'app.mercadiastore.online',
+  'manasync:zoneName': 'mercadiastore.online',
   'manasync:hostedZoneId': 'Z0TESTE00000000',
   'manasync:certificateArn': `arn:aws:acm:us-east-1:${CONTA_TESTE}:certificate/abc`,
 };

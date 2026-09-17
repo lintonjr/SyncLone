@@ -37,6 +37,7 @@ MIGRAR="${MANASYNC_MIGRAR:-$DIR/migrar.sh}"
 PUBLICAR="${MANASYNC_PUBLICAR:-$DIR/publicar-spa.sh}"
 
 preparar_ambiente
+contexto_preenchido manasync:zoneName 'zona do domínio (infra/cdk.json)' >/dev/null
 contexto_preenchido manasync:hostedZoneId 'rode scripts/zona.sh --gravar' >/dev/null
 contexto_preenchido manasync:certificateArn 'rode scripts/certificado.sh --gravar' >/dev/null
 
