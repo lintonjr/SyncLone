@@ -18,11 +18,14 @@ test('app: segredos esperados, todos do Secrets Manager', () => {
   assert.deepEqual(Object.keys(sec).sort(), ['DB_PASS', 'DB_USER', 'JWT_SECRET', 'ORIGIN_VERIFY_ATUAL', 'VALKEY_PASS']);
   assert.match(json(sec.DB_USER), /:username::/);
   assert.match(json(sec.ORIGIN_VERIFY_ATUAL), /:atual::/);
-  assert.doesNotMatch(json(container.Environment), /PASS|SECRET|JWT/i);
+  // JWT_EXPIRES_IN (prazo, não segredo) pode; JWT_SECRET cai no SECRET.
+  assert.doesNotMatch(json(container.Environment), /PASS|SECRET/i);
 });
 
 test('app: configuração de produção do backend', () => {
   assert.equal(env.NODE_ENV, 'production');
+  // Faltou no primeiro deploy: o cadastro respondeu 500 (jwt.sign sem expiresIn).
+  assert.equal(env.JWT_EXPIRES_IN, '7d');
   assert.equal(env.PORT, '3001');
   assert.equal(env.TRUST_PROXY, '1');
   assert.equal(env.CORS_ORIGINS, '');

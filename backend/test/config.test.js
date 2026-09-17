@@ -6,6 +6,7 @@ const {
   dbSsl,
   sseHeartbeatMs,
   jwtSecret,
+  jwtExpiresIn,
   segredosOrigem,
   ORIGENS_DEV,
 } = require('../src/lib/config');
@@ -159,4 +160,24 @@ test('origem: segredo curto não sobe', () => {
     () => segredosOrigem({ ORIGIN_VERIFY_ATUAL: 'a'.repeat(32), ORIGIN_VERIFY_ANTERIOR: 'curto' }),
     /32/
   );
+});
+
+// --- Validade do token ---
+
+test('jwt: sem JWT_EXPIRES_IN, vale 7d (a task de produção nascia sem ela e o cadastro dava 500)', () => {
+  assert.equal(jwtExpiresIn({}), '7d');
+  assert.equal(jwtExpiresIn({ JWT_EXPIRES_IN: '  ' }), '7d');
+});
+
+test('jwt: validade com unidade, entre 1 minuto e 30 dias', () => {
+  for (const ok of ['1m', '12h', '7d', '2w', '30d', '60s']) assert.equal(jwtExpiresIn({ JWT_EXPIRES_IN: ok }), ok);
+  for (const ruim of ['59s', '31d', '5w', '0m']) {
+    assert.throws(() => jwtExpiresIn({ JWT_EXPIRES_IN: ruim }), /1 minuto e 30 dias/, ruim);
+  }
+});
+
+test('jwt: só dígitos é recusado (no jsonwebtoken seriam milissegundos)', () => {
+  for (const ruim of ['3600', '7 d', '7days', 'sete', '-1d']) {
+    assert.throws(() => jwtExpiresIn({ JWT_EXPIRES_IN: ruim }), /unidade/, ruim);
+  }
 });

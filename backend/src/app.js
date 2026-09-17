@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const errorHandler = require('./middleware/errorHandler');
-const { corsOrigins, trustProxy, jwtSecret, segredosOrigem, desligamentoConfig } = require('./lib/config');
+const { corsOrigins, trustProxy, jwtSecret, jwtExpiresIn, segredosOrigem, desligamentoConfig } = require('./lib/config');
 const { criarDesligamento } = require('./lib/desligamento');
 const { criarOriginVerify } = require('./middleware/originVerify');
 const valkey = require('./lib/valkey');
@@ -12,6 +12,7 @@ const { servirUploadsLocalmente, UPLOAD_DIR } = require('./lib/uploads');
 // Na subida, e não no primeiro login: sem segredo o servidor ficaria no ar,
 // passando no health check, com todo login respondendo 500.
 jwtSecret();
+jwtExpiresIn();
 // Também na subida: um atraso de desligamento que não cabe no stopTimeout do
 // Fargate só apareceria no primeiro deploy, com o SIGKILL no meio do fechamento.
 const configDesligamento = desligamentoConfig();

@@ -16,7 +16,7 @@ const db = require('../db');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
-const { jwtSecret } = require('../lib/config');
+const { jwtSecret, jwtExpiresIn } = require('../lib/config');
 const { obterClientes } = require('../lib/valkey');
 const { ValkeyStore } = require('../lib/rateLimitStore');
 
@@ -55,7 +55,7 @@ router.post('/register', credentialLimiter, validate(schemas.register), asyncHan
 
   const role = 'player';
   const token = jwt.sign({ id, email, display_name, role }, jwtSecret(), {
-    expiresIn: process.env.JWT_EXPIRES_IN,
+    expiresIn: jwtExpiresIn(),
   });
   // `profile_public` acompanha desde o cadastro: sem ele a tela de conta nasceria
   // sem saber a preferência e teria de ir buscá-la só para desenhar um interruptor.
@@ -72,7 +72,7 @@ router.post('/login', credentialLimiter, validate(schemas.login), asyncHandler(a
   const token = jwt.sign(
     { id: user.id, email: user.email, display_name: user.display_name, role: user.role },
     jwtSecret(),
-    { expiresIn: process.env.JWT_EXPIRES_IN }
+    { expiresIn: jwtExpiresIn() }
   );
   res.json({ token, user: usuarioPublico(user) });
 }));

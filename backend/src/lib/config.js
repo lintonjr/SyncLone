@@ -140,6 +140,37 @@ function jwtSecret(env = process.env) {
   return valor;
 }
 
+const SEGUNDOS_POR_UNIDADE = { s: 1, m: 60, h: 3600, d: 86400, w: 604800 };
+const VALIDADE_MINIMA_S = 60;
+const VALIDADE_MAXIMA_S = 30 * 86400;
+
+/**
+ * Por quanto tempo um token de sessão vale (`JWT_EXPIRES_IN`, ex.: `7d`).
+ *
+ * Sem valor, o `jwt.sign` recebe `undefined` e **lança** — foi o que derrubou o
+ * primeiro cadastro em produção: a variável só existia no `.env` e no compose, a
+ * task não a recebia, e o erro só apareceu na primeira conta criada. Daí o padrão
+ * `7d` e a validação na subida.
+ *
+ * A unidade é obrigatória: no `jsonwebtoken`, texto só com dígitos quer dizer
+ * **milissegundos** (`"3600"` expira em 3,6 s), uma armadilha que ninguém vê até
+ * todo login cair. E o prazo tem limites: abaixo de um minuto ninguém usa o site,
+ * acima de 30 dias um token vazado vale tempo demais (não há revogação).
+ */
+function jwtExpiresIn(env = process.env) {
+  const bruto = env.JWT_EXPIRES_IN?.trim();
+  if (!bruto) return '7d';
+  const m = /^(\d+)(s|m|h|d|w)$/.exec(bruto);
+  if (!m) {
+    throw new Error(`JWT_EXPIRES_IN precisa ser número + unidade (s, m, h, d, w), ex.: 7d (veio "${bruto}")`);
+  }
+  const segundos = Number(m[1]) * SEGUNDOS_POR_UNIDADE[m[2]];
+  if (segundos < VALIDADE_MINIMA_S || segundos > VALIDADE_MAXIMA_S) {
+    throw new Error(`JWT_EXPIRES_IN precisa ficar entre 1 minuto e 30 dias (veio "${bruto}")`);
+  }
+  return bruto;
+}
+
 /**
  * Os valores aceitos no header que prova que a requisição passou pelo CloudFront.
  *
@@ -297,6 +328,7 @@ module.exports = {
   dbSsl,
   sseHeartbeatMs,
   jwtSecret,
+  jwtExpiresIn,
   segredosOrigem,
   ORIGENS_DEV,
   TAMANHO_MINIMO_SEGREDO,

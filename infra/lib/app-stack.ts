@@ -97,6 +97,8 @@ export class AppStack extends Stack {
       readonlyRootFilesystem: !config.depuracao,
       environment: {
         NODE_ENV: 'production',
+        // Explícito: sem ele o backend usa o padrão (7d), mas quem lê a task vê o prazo.
+        JWT_EXPIRES_IN: '7d',
         PORT: String(PORTA_BACKEND),
         AWS_REGION: this.region,
         // Um salto: o CloudFront fala direto com a task.
