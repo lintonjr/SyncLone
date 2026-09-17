@@ -10,6 +10,13 @@ export interface League {
   playoff_counts: number;
   created_at: string;
   event_count?: number;
+  // Só em /leagues/mine: se a pessoa é dona ou está no time da liga.
+  is_owner?: boolean;
+}
+
+export interface LeagueOrganizer {
+  user_id: string;
+  display_name: string;
 }
 
 export interface LeagueStanding {
@@ -35,6 +42,8 @@ export interface LeagueEvent {
 export interface LeagueDetail extends League {
   events: LeagueEvent[];
   standings: LeagueStanding[];
+  // Co-organizadores: o time que cuida da liga e de todos os eventos dela.
+  organizers: LeagueOrganizer[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -70,5 +79,19 @@ export class LeagueService {
 
   deleteLeague(id: string) {
     return this.http.delete(`${this.API}/${id}`, { headers: this.authHeaders() });
+  }
+
+  addOrganizer(id: string, email: string) {
+    return this.http.post<LeagueOrganizer[]>(
+      `${this.API}/${id}/organizers`,
+      { email },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  removeOrganizer(id: string, userId: string) {
+    return this.http.delete<LeagueOrganizer[]>(`${this.API}/${id}/organizers/${userId}`, {
+      headers: this.authHeaders(),
+    });
   }
 }

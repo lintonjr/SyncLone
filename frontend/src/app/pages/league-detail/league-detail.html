@@ -15,14 +15,16 @@
           }}
         </p>
       </div>
-      @if (isOwner()) {
+      @if (canManage()) {
         <div class="league-actions">
           <a [routerLink]="['/leagues', id(), 'edit']" class="btn btn-ghost">{{
             i18n.t('common.edit')
           }}</a>
-          <button class="btn btn-danger" (click)="deleteLeague()" [disabled]="actionLoading()">
-            {{ i18n.t('common.delete') }}
-          </button>
+          @if (isOwner()) {
+            <button class="btn btn-danger" (click)="deleteLeague()" [disabled]="actionLoading()">
+              {{ i18n.t('common.delete') }}
+            </button>
+          }
         </div>
       }
     </div>
@@ -79,6 +81,60 @@
         </table>
       </div>
     }
+
+    <h2 class="section-title">{{ i18n.t('league.organizers') }}</h2>
+    <div class="organizers card">
+      <p class="organizers-help">{{ i18n.t('league.organizersHelp') }}</p>
+      <ul class="organizers-list">
+        <li>
+          <span class="organizer-name">{{ league()!.owner_name }}</span>
+          <span class="badge badge-purple">{{ i18n.t('league.ownerBadge') }}</span>
+        </li>
+        @for (org of league()!.organizers; track org.user_id) {
+          <li>
+            <span class="organizer-name">{{ org.display_name }}</span>
+            @if (isOwner()) {
+              <button
+                class="btn btn-ghost"
+                (click)="removeOrganizer(org)"
+                [disabled]="organizerLoading()"
+              >
+                {{ i18n.t('league.removeOrganizer') }}
+              </button>
+            } @else if (org.user_id === auth.currentUser()?.id) {
+              <button
+                class="btn btn-ghost"
+                (click)="removeOrganizer(org)"
+                [disabled]="organizerLoading()"
+              >
+                {{ i18n.t('league.leaveTeam') }}
+              </button>
+            }
+          </li>
+        }
+      </ul>
+      @if (isOwner()) {
+        <form class="organizer-add" (submit)="$event.preventDefault(); addOrganizer()">
+          <input
+            type="email"
+            [value]="organizerEmail()"
+            (input)="organizerEmail.set($any($event.target).value)"
+            [placeholder]="i18n.t('league.organizerEmailPlaceholder')"
+            [attr.aria-label]="i18n.t('league.organizerEmailPlaceholder')"
+          />
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="organizerLoading() || !organizerEmail().trim()"
+          >
+            {{ i18n.t('league.addOrganizer') }}
+          </button>
+        </form>
+      }
+      @if (organizerError()) {
+        <div class="error-msg">{{ organizerError() }}</div>
+      }
+    </div>
 
     <h2 class="section-title">{{ i18n.t('league.tournaments') }}</h2>
     @if (league()!.events.length === 0) {

@@ -79,8 +79,12 @@ export class CreateEventComponent implements OnInit {
     Other: [],
   } as Record<string, string[]>;
 
+  // Tirar o evento da liga (ou trocá-lo de liga) é de quem o criou ou do dono da
+  // liga; para o restante do time o seletor fica travado, como o servidor exige.
+  leagueLocked = signal(false);
+
   ngOnInit() {
-    if (this.auth.currentUser()?.role === 'organizer') {
+    if (this.auth.podeOrganizar()) {
       this.leagueSvc.getMyLeagues().subscribe({
         next: (leagues) => this.myLeagues.set(leagues),
         error: (err) => console.error('Failed to load leagues', err),
@@ -115,6 +119,8 @@ export class CreateEventComponent implements OnInit {
           this.confirmPlayers.set(!!ev.confirm_players);
           this.qrCodeEnabled.set(!!ev.qr_code_enabled);
           this.leagueId.set(ev.league_id ?? '');
+          const eu = this.auth.currentUser()?.id;
+          this.leagueLocked.set(!!ev.league_id && ev.owner_id !== eu && ev.league_owner_id !== eu);
           if (ev.thumbnail) {
             this.existingThumbnail = `${this.apiUrl}${ev.thumbnail}`;
             this.thumbnailPreview.set(this.existingThumbnail);

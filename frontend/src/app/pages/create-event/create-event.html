@@ -197,12 +197,19 @@
       @if (myLeagues().length) {
         <div class="form-field">
           <label>{{ i18n.t('form.league') }}</label>
-          <select [value]="leagueId()" (change)="leagueId.set($any($event.target).value)">
+          <select
+            [value]="leagueId()"
+            [disabled]="leagueLocked()"
+            (change)="leagueId.set($any($event.target).value)"
+          >
             <option value="">{{ i18n.t('form.noLeague') }}</option>
             @for (l of myLeagues(); track l.id) {
               <option [value]="l.id">{{ l.name }}</option>
             }
           </select>
+          @if (leagueLocked()) {
+            <span class="field-hint">{{ i18n.t('form.leagueLocked') }}</span>
+          }
         </div>
       }
     </div>

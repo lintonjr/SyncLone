@@ -30,6 +30,20 @@ CREATE TABLE IF NOT EXISTS `leagues` (
   CONSTRAINT `leagues_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Co-organizadores: o time que cuida da liga e de todos os eventos dela
+-- (migrations/016). O papel de organizador é conferido em users.role a cada ação.
+CREATE TABLE IF NOT EXISTS `league_organizers` (
+  `league_id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `added_by` varchar(36) NOT NULL,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`league_id`, `user_id`),
+  KEY `por_usuario` (`user_id`),
+  CONSTRAINT `league_organizers_league_fk` FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `league_organizers_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `league_organizers_added_by_fk` FOREIGN KEY (`added_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `events` (
   `id` varchar(36) NOT NULL,
   `name` varchar(100) NOT NULL,

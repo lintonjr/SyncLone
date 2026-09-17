@@ -44,6 +44,52 @@
   margin: 28px 0 14px;
 }
 
+.organizers {
+  padding: 20px 24px;
+}
+
+.organizers-help {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.organizers-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.organizer-name {
+  flex: 1;
+  font-size: 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.organizer-add {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  input {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
 .empty {
   color: var(--text-muted);
   font-size: 14px;

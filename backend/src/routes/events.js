@@ -4,6 +4,7 @@ const multer = require('multer');
 const db = require('../db');
 const auth = require('../middleware/auth');
 const requireOrganizer = require('../middleware/requireOrganizer');
+const { podeOrganizar } = require('../lib/roles');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
@@ -16,6 +17,10 @@ const {
 const { computeStandings, computeClanStandings, winningSide } = require('../services/standings');
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
 const eventStream = require('../services/eventStream');
+const {
+  gerenciaEvento, respondePeloEvento, gerenciaLiga,
+  papelDoUsuarioNoEvento, papelDoUsuarioNaLiga, idsDoTime,
+} = require('../lib/equipeLiga');
 
 // A capa é uma foto: 5 MB. As regras de segurança do recebimento estão em
 // lib/uploads.js, compartilhadas com quem mais receber imagem.
@@ -66,12 +71,27 @@ function playoffStageLabel(playerCount, podSize) {
   return `Round of ${playerCount}`;
 }
 
-// Loads an event and asserts the caller owns it.
-async function ownedEvent(conn, eventId, userId) {
+/**
+ * Carrega o evento e exige que quem chama o gerencie: quem o criou, ou o time da
+ * liga dele (dono e co-organizadores — lib/equipeLiga.js). O time cuida de todos
+ * os eventos da liga, inclusive os que outra pessoa criou, e de nenhum fora dela.
+ */
+async function managedEvent(conn, eventId, userId) {
   const event = await conn.get('SELECT * FROM events WHERE id = ?', [eventId]);
   if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
-  if (event.owner_id !== userId) throw new HttpError(403, 'Forbidden', 'api.forbidden');
+  if (!gerenciaEvento(await papelDoUsuarioNoEvento(conn, event, userId))) {
+    throw new HttpError(403, 'Forbidden', 'api.forbidden');
+  }
   return event;
+}
+
+/** Vincular um evento a uma liga exige gerenciar a liga (dono ou time). */
+async function assertPodeVincularLiga(conn, leagueId, userId) {
+  const league = await conn.get('SELECT * FROM leagues WHERE id = ?', [leagueId]);
+  if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
+  if (!gerenciaLiga(await papelDoUsuarioNaLiga(conn, league, userId))) {
+    throw new HttpError(403, 'You can only attach events to leagues you organize', 'api.leagueNotYours');
+  }
 }
 
 // A finished event is a closed record: nothing may be added to it or altered in
@@ -102,9 +122,9 @@ function assertReopenOnly(event, campos) {
   }
 }
 
-// Convenience for the many owner-only routes that also require a live event.
-async function liveOwnedEvent(conn, eventId, userId) {
-  const event = await ownedEvent(conn, eventId, userId);
+// Convenience for the many organizer-only routes that also require a live event.
+async function liveManagedEvent(conn, eventId, userId) {
+  const event = await managedEvent(conn, eventId, userId);
   assertNotFinished(event);
   return event;
 }
@@ -281,17 +301,28 @@ function assertClanRosterOpen(event, acao) {
 
 // Auth: get my events (must be before /:id)
 router.get('/user/mine', auth, asyncHandler(async (req, res) => {
+  // "Organizados" inclui os eventos das ligas em que a pessoa está no time, mesmo
+  // os criados por outra pessoa: é por aqui que o co-organizador os encontra.
+  // O papel vem do banco, não do token — quem perdeu o acesso de organizador
+  // deixa de ver os eventos alheios na hora, não quando o token vencer.
+  const eu = await db.get('SELECT role FROM users WHERE id = ?', [req.user.id]);
+  const noTime = podeOrganizar(eu?.role) ? 1 : 0;
   const owned = await db.query(`
     SELECT e.*, (SELECT COUNT(*) FROM event_players ep WHERE ep.event_id = e.id AND ep.status = 'active') as player_count
-    FROM events e WHERE e.owner_id = ? ORDER BY e.date ASC
-  `, [req.user.id]);
-  const joined = await db.query(`
+    FROM events e
+    WHERE e.owner_id = ?
+       OR e.league_id IN (SELECT l.id FROM leagues l WHERE l.owner_id = ?)
+       OR (? = 1 AND e.league_id IN (SELECT lo.league_id FROM league_organizers lo WHERE lo.user_id = ?))
+    ORDER BY e.date ASC
+  `, [req.user.id, req.user.id, noTime, req.user.id]);
+  const organizados = new Set(owned.map((e) => e.id));
+  const joined = (await db.query(`
     SELECT e.*, (SELECT COUNT(*) FROM event_players ep2 WHERE ep2.event_id = e.id AND ep2.status = 'active') as player_count
     FROM events e
     JOIN event_players ep ON ep.event_id = e.id
     WHERE ep.user_id = ? AND e.owner_id != ?
     ORDER BY e.date ASC
-  `, [req.user.id, req.user.id]);
+  `, [req.user.id, req.user.id])).filter((e) => !organizados.has(e.id));
   res.json({ owned, joined });
 }));
 
@@ -324,7 +355,7 @@ router.get('/', asyncHandler(async (req, res) => {
 // Public: get single event
 router.get('/:id', asyncHandler(async (req, res) => {
   const event = await db.get(
-    `SELECT e.*, u.display_name as owner_name, l.name as league_name
+    `SELECT e.*, u.display_name as owner_name, l.name as league_name, l.owner_id as league_owner_id
      FROM events e JOIN users u ON u.id = e.owner_id LEFT JOIN leagues l ON l.id = e.league_id
      WHERE e.id = ?`,
     [req.params.id]
@@ -398,6 +429,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
   res.json({
     ...event,
+    // Quem gerencia o evento além de quem o criou: o time da liga (dono e
+    // co-organizadores). A tela usa para mostrar os controles de organizador; quem
+    // decide de verdade é a checagem de cada rota de escrita.
+    league_organizer_ids: event.league_id ? await idsDoTime(db, event.league_id) : [],
     players: ranked,
     rounds,
     pairings,
@@ -544,9 +579,7 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(sc
 
   let leagueIdVal = null;
   if (league_id) {
-    const league = await db.get('SELECT * FROM leagues WHERE id = ?', [league_id]);
-    if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
-    if (league.owner_id !== req.user.id) throw new HttpError(403, 'You can only attach events to your own leagues', 'api.leagueNotYours');
+    await assertPodeVincularLiga(db, league_id, req.user.id);
     leagueIdVal = league_id;
   }
 
@@ -580,7 +613,7 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(sc
 
 // Auth: update event (owner only)
 router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEvent), asyncHandler(async (req, res) => {
-  const event = await ownedEvent(db, req.params.id, req.user.id);
+  const event = await managedEvent(db, req.params.id, req.user.id);
 
   // O schema deixa todo campo opcional, então o que chegou é o que o organizador
   // realmente quis mudar. A capa entra pelo multipart, fora do corpo.
@@ -596,15 +629,15 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
   } = req.body;
 
   let leagueIdVal = event.league_id;
-  if (league_id !== undefined) {
-    if (!league_id) {
-      leagueIdVal = null;
-    } else {
-      const league = await db.get('SELECT * FROM leagues WHERE id = ?', [league_id]);
-      if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
-      if (league.owner_id !== req.user.id) throw new HttpError(403, 'You can only attach events to your own leagues', 'api.leagueNotYours');
-      leagueIdVal = league_id;
+  const novaLiga = league_id === undefined ? event.league_id : (league_id || null);
+  if (novaLiga !== event.league_id) {
+    // Tirar o evento da liga atual (ou trocá-lo de liga) fica com quem responde por
+    // ele: um co-organizador perderia, ele mesmo, o acesso a um torneio alheio.
+    if (event.league_id && !respondePeloEvento(await papelDoUsuarioNoEvento(db, event, req.user.id))) {
+      throw new HttpError(403, 'Only the event creator or the league owner can move this event out of its league', 'api.leagueMoveOwnerOnly');
     }
+    if (novaLiga) await assertPodeVincularLiga(db, novaLiga, req.user.id);
+    leagueIdVal = novaLiga;
   }
 
   const thumbnail = publicPath(req.file) ?? event.thumbnail;
@@ -663,10 +696,13 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
   res.json(await db.get('SELECT * FROM events WHERE id = ?', [req.params.id]));
 }));
 
-// Auth: delete event (owner only)
+// Auth: delete event (quem o criou ou o dono da liga — apagar leva os resultados junto)
 router.delete('/:id', auth, asyncHandler(async (req, res) => {
   const capa = await db.transaction(async (tx) => {
-    const evento = await ownedEvent(tx, req.params.id, req.user.id);
+    const evento = await managedEvent(tx, req.params.id, req.user.id);
+    if (!respondePeloEvento(await papelDoUsuarioNoEvento(tx, evento, req.user.id))) {
+      throw new HttpError(403, 'Only the event creator or the league owner can delete this event', 'api.eventDeleteOwnerOnly');
+    }
     await tx.run('DELETE FROM pairings WHERE event_id = ?', [req.params.id]);
     await tx.run('DELETE FROM rounds WHERE event_id = ?', [req.params.id]);
     await tx.run('DELETE FROM event_players WHERE event_id = ?', [req.params.id]);
@@ -760,7 +796,7 @@ router.delete('/:id/join', auth, asyncHandler(async (req, res) => {
 
 // Auth: add player by email or guest name (owner only)
 router.post('/:id/players', auth, validate(schemas.addPlayer), asyncHandler(async (req, res) => {
-  const event = await liveOwnedEvent(db, req.params.id, req.user.id);
+  const event = await liveManagedEvent(db, req.params.id, req.user.id);
   if (isTeamFormat(event)) {
     throw new HttpError(
       400,
@@ -821,7 +857,7 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
     }
     const tamanhoDoTime = teamSizeOf(event);
 
-    const isOwner = event.owner_id === req.user.id;
+    const isOwner = gerenciaEvento(await papelDoUsuarioNoEvento(tx, event, req.user.id));
     if (display_names && !isOwner) {
       throw new HttpError(403, `Só o organizador pode inscrever ${teamNoun(event) === 'dupla' ? 'uma dupla' : 'um clã'} de convidados`, 'api.guestClanOwnerOnly');
     }
@@ -898,7 +934,7 @@ router.post('/:id/clans', auth, validate(schemas.createClan), asyncHandler(async
 // Clã Fronto: desfaz a inscrição de um clã inteiro, antes do torneio começar.
 router.delete('/:id/clans/:clanId', auth, asyncHandler(async (req, res) => {
   await db.transaction(async (tx) => {
-    const event = await ownedEvent(tx, req.params.id, req.user.id);
+    const event = await managedEvent(tx, req.params.id, req.user.id);
     if (!isTeamFormat(event)) throw new HttpError(400, 'Este torneio não é disputado por times', 'api.notClanEvent');
     if (event.current_round > 0) {
       throw new HttpError(400, 'O torneio já começou: o elenco está fechado');
@@ -938,7 +974,7 @@ router.delete('/:id/clans/:clanId', auth, asyncHandler(async (req, res) => {
  */
 router.put('/:id/players/:playerId/link', auth, validate(schemas.linkPlayer), asyncHandler(async (req, res) => {
   const vinculado = await db.transaction(async (tx) => {
-    const event = await ownedEvent(tx, req.params.id, req.user.id);
+    const event = await managedEvent(tx, req.params.id, req.user.id);
 
     const player = await tx.get(
       'SELECT * FROM event_players WHERE id = ? AND event_id = ? FOR UPDATE',
@@ -981,7 +1017,8 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
   const player = await db.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]);
   if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
 
-  const isOwner = event.owner_id === req.user.id;
+  // "Owner" aqui é quem organiza o evento: quem o criou ou o time da liga.
+  const isOwner = gerenciaEvento(await papelDoUsuarioNoEvento(db, event, req.user.id));
   const isSelf = player.user_id === req.user.id;
   const { deck_name, status } = req.body;
 
@@ -1013,7 +1050,7 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
 
 // Auth: remove player (owner only) — kept as a drop once they've been paired
 router.delete('/:id/players/:playerId', auth, asyncHandler(async (req, res) => {
-  const event = await liveOwnedEvent(db, req.params.id, req.user.id);
+  const event = await liveManagedEvent(db, req.params.id, req.user.id);
   assertClanRosterOpen(event, 'remover jogador');
 
   const player = await db.get(
@@ -1029,7 +1066,7 @@ router.delete('/:id/players/:playerId', auth, asyncHandler(async (req, res) => {
 
 // Auth: finish event (owner only)
 router.post('/:id/finish', auth, asyncHandler(async (req, res) => {
-  const event = await ownedEvent(db, req.params.id, req.user.id);
+  const event = await managedEvent(db, req.params.id, req.user.id);
   await db.run("UPDATE events SET status = 'completed' WHERE id = ?", [req.params.id]);
   await notifyUsers(db, await activeEventUserIds(db, req.params.id), 'notif.eventFinished', { evento: event.name });
   eventStream.broadcast(req.params.id);
@@ -1039,7 +1076,7 @@ router.post('/:id/finish', auth, asyncHandler(async (req, res) => {
 // Auth: start next round, or advance the playoff bracket if the current round is a playoff round (owner only)
 router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
   const outcome = await db.transaction(async (tx) => {
-    const event = await liveOwnedEvent(tx, req.params.id, req.user.id);
+    const event = await liveManagedEvent(tx, req.params.id, req.user.id);
 
     let currentRoundRow = null;
     if (event.current_round > 0) {
@@ -1227,7 +1264,7 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
 // Auth: start the playoff bracket (owner only) — seeds top N players by standings into a single-elimination round
 router.post('/:id/playoffs/start', auth, asyncHandler(async (req, res) => {
   const body = await db.transaction(async (tx) => {
-    const event = await liveOwnedEvent(tx, req.params.id, req.user.id);
+    const event = await liveManagedEvent(tx, req.params.id, req.user.id);
     if (!event.playoff_structure || event.playoff_structure === 'none')
       throw new HttpError(400, 'This event has no playoff structure configured');
 
@@ -1341,7 +1378,7 @@ router.post('/:id/playoffs/start', auth, asyncHandler(async (req, res) => {
  */
 router.post('/:id/rounds/:roundId/timer', auth, asyncHandler(async (req, res) => {
   const round = await db.transaction(async (tx) => {
-    const event = await liveOwnedEvent(tx, req.params.id, req.user.id);
+    const event = await liveManagedEvent(tx, req.params.id, req.user.id);
 
     const round = await tx.get(
       'SELECT * FROM rounds WHERE id = ? AND event_id = ?',
@@ -1368,7 +1405,7 @@ router.post('/:id/rounds/:roundId/timer', auth, asyncHandler(async (req, res) =>
 // Auth: undo the latest round (owner only) — removes its pairings/results and reopens it for re-pairing
 router.post('/:id/rounds/undo', auth, asyncHandler(async (req, res) => {
   const updated = await db.transaction(async (tx) => {
-    const event = await ownedEvent(tx, req.params.id, req.user.id);
+    const event = await managedEvent(tx, req.params.id, req.user.id);
     if (event.current_round <= 0) throw new HttpError(400, 'No round to undo', 'api.noRoundToUndo');
 
     const round = await tx.get(
@@ -1403,7 +1440,7 @@ router.post('/:id/rounds/undo', auth, asyncHandler(async (req, res) => {
 // Auth: swap two players' seats within the current round (owner only) — both matches must still be pending
 router.post('/:id/rounds/swap', auth, validate(schemas.swapPlayers), asyncHandler(async (req, res) => {
   await db.transaction(async (tx) => {
-    const event = await liveOwnedEvent(tx, req.params.id, req.user.id);
+    const event = await liveManagedEvent(tx, req.params.id, req.user.id);
     if (event.current_round <= 0) throw new HttpError(400, 'No active round');
 
     const { player1Id, player2Id } = req.body;
@@ -1474,7 +1511,7 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
       throw new HttpError(400, 'A decided match cannot end on an even game score');
     }
 
-    const isOwner = event.owner_id === req.user.id;
+    const isOwner = gerenciaEvento(await papelDoUsuarioNoEvento(tx, event, req.user.id));
     if (!isOwner) {
       // Player-Reported Results: a seated player may self-report the outcome of their own
       // still-pending match. In a 1v1 they can report a win, a loss, or a draw. In a
@@ -1520,7 +1557,9 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
     // Quem reportou já sabe o que reportou: o aviso é para o organizador, quando
     // tem algo esperando aprovação dele.
     if (newStatus === 'pending') {
-      await notifyUsers(tx, [event.owner_id], 'notif.resultPending', { evento: event.name });
+      // O time inteiro da liga pode aprovar, então o time inteiro é avisado.
+      const organizadores = event.league_id ? await idsDoTime(tx, event.league_id) : [];
+      await notifyUsers(tx, [event.owner_id, ...organizadores], 'notif.resultPending', { evento: event.name });
     } else {
       await notifyUsers(tx, await pairingUserIds(tx, pairing), 'notif.resultRecorded', { evento: event.name });
     }
@@ -1535,7 +1574,7 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
 // Auth: approve a player-submitted result (owner only) — applies its already-stored points
 router.post('/:id/pairings/:pairingId/approve', auth, asyncHandler(async (req, res) => {
   const updated = await db.transaction(async (tx) => {
-    const event = await liveOwnedEvent(tx, req.params.id, req.user.id);
+    const event = await liveManagedEvent(tx, req.params.id, req.user.id);
 
     const pairing = await tx.get('SELECT * FROM pairings WHERE id = ? FOR UPDATE', [req.params.pairingId]);
     if (!pairing) throw new HttpError(404, 'Pairing not found', 'api.pairingNotFound');

@@ -7,17 +7,30 @@ const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
 const { computeStandings } = require('../services/standings');
+const { notifyUsers } = require('../services/notify');
+const { podeOrganizar } = require('../lib/roles');
+const {
+  gerenciaLiga, ehDonoDaLiga, impedimentoParaAdicionar, podeRemoverDoTime,
+  papelDoUsuarioNaLiga, coOrganizadores,
+} = require('../lib/equipeLiga');
 
 const parseBool = (v) => v === 'true' || v === true || v === 1 || v === '1';
 
-// Auth: leagues owned by the current user (must be before /:id)
+// Auth: ligas que a pessoa organiza — as dela e as em que está no time (must be before /:id).
+// É a lista de onde o formulário de evento tira as ligas a que um evento pode ser vinculado.
 router.get('/mine', auth, asyncHandler(async (req, res) => {
+  const eu = await db.get('SELECT role FROM users WHERE id = ?', [req.user.id]);
+  const noTime = podeOrganizar(eu?.role) ? 1 : 0;
   const leagues = await db.query(
-    `SELECT l.*, (SELECT COUNT(*) FROM events e WHERE e.league_id = l.id) as event_count
-     FROM leagues l WHERE l.owner_id = ? ORDER BY l.created_at DESC`,
-    [req.user.id]
+    `SELECT l.*, (l.owner_id = ?) AS is_owner,
+       (SELECT COUNT(*) FROM events e WHERE e.league_id = l.id) as event_count
+     FROM leagues l
+     WHERE l.owner_id = ?
+        OR (? = 1 AND l.id IN (SELECT lo.league_id FROM league_organizers lo WHERE lo.user_id = ?))
+     ORDER BY l.created_at DESC`,
+    [req.user.id, req.user.id, noTime, req.user.id]
   );
-  res.json(leagues);
+  res.json(leagues.map((l) => ({ ...l, is_owner: Boolean(l.is_owner) })));
 }));
 
 // Public: list all leagues
@@ -122,7 +135,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
   const standings = [...totals.values()].sort((a, b) => b.points - a.points || b.wins - a.wins);
 
-  res.json({ ...league, events, standings });
+  // O time da liga, sem e-mail: esta rota é pública.
+  const organizers = await coOrganizadores(db, req.params.id);
+
+  res.json({ ...league, events, standings, organizers });
 }));
 
 // Auth: create league (organizer only)
@@ -136,11 +152,13 @@ router.post('/', auth, requireOrganizer, validate(schemas.createLeague), asyncHa
   res.status(201).json(await db.get('SELECT * FROM leagues WHERE id = ?', [id]));
 }));
 
-// Auth: update league (owner only)
+// Auth: update league (dono ou time)
 router.put('/:id', auth, validate(schemas.updateLeague), asyncHandler(async (req, res) => {
   const league = await db.get('SELECT * FROM leagues WHERE id = ?', [req.params.id]);
   if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
-  if (league.owner_id !== req.user.id) throw new HttpError(403, 'Forbidden', 'api.forbidden');
+  if (!gerenciaLiga(await papelDoUsuarioNaLiga(db, league, req.user.id))) {
+    throw new HttpError(403, 'Forbidden', 'api.forbidden');
+  }
 
   const { name, playoff_counts } = req.body;
   await db.run('UPDATE leagues SET name = ?, playoff_counts = ? WHERE id = ?', [
@@ -157,8 +175,77 @@ router.delete('/:id', auth, asyncHandler(async (req, res) => {
   if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
   if (league.owner_id !== req.user.id) throw new HttpError(403, 'Forbidden', 'api.forbidden');
 
+  // O time vai junto (ON DELETE CASCADE em league_organizers).
   await db.run('DELETE FROM leagues WHERE id = ?', [req.params.id]);
   res.json({ message: 'League deleted' });
+}));
+
+/**
+ * Adiciona um co-organizador ao time da liga. Só o dono escolhe o time.
+ *
+ * A pessoa precisa ter conta e já ser organizadora: o time gerencia torneios, e
+ * quem decide quem organiza na plataforma é o admin, não o dono de uma liga.
+ */
+router.post('/:id/organizers', auth, validate(schemas.addLeagueOrganizer), asyncHandler(async (req, res) => {
+  const organizers = await db.transaction(async (tx) => {
+    const league = await tx.get('SELECT * FROM leagues WHERE id = ?', [req.params.id]);
+    if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
+    if (!ehDonoDaLiga(await papelDoUsuarioNaLiga(tx, league, req.user.id))) {
+      throw new HttpError(403, 'Only the league owner can manage its organizers', 'api.leagueOwnerOnly');
+    }
+
+    const alvo = await tx.get('SELECT id, role FROM users WHERE email = ?', [req.body.email]);
+    const jaNoTime = alvo
+      ? await tx.get('SELECT user_id FROM league_organizers WHERE league_id = ? AND user_id = ?', [league.id, alvo.id])
+      : null;
+    const impedimento = impedimentoParaAdicionar({ liga: league, alvo, jaNoTime: !!jaNoTime });
+    if (impedimento) {
+      const status = { 'api.userNotFound': 404, 'api.coOrganizerAlready': 409 }[impedimento] ?? 400;
+      throw new HttpError(status, 'Cannot add this organizer', impedimento);
+    }
+
+    await tx.run(
+      'INSERT INTO league_organizers (league_id, user_id, added_by) VALUES (?, ?, ?)',
+      [league.id, alvo.id, req.user.id]
+    );
+    await notifyUsers(tx, [alvo.id], 'notif.addedAsLeagueOrganizer', { liga: league.name });
+    return coOrganizadores(tx, league.id);
+  });
+  res.status(201).json(organizers);
+}));
+
+/**
+ * Tira alguém do time: o dono remove qualquer co-organizador, e cada um pode sair
+ * por conta própria. Os eventos que a pessoa criou continuam na liga e com ela.
+ */
+router.delete('/:id/organizers/:userId', auth, asyncHandler(async (req, res) => {
+  const organizers = await db.transaction(async (tx) => {
+    const league = await tx.get('SELECT * FROM leagues WHERE id = ?', [req.params.id]);
+    if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
+
+    // Quem sai do time por conta própria pode já ter perdido o papel de
+    // organizador; sair continua permitido, então a linha basta aqui.
+    const linhaDeQuemPede = await tx.get(
+      'SELECT user_id FROM league_organizers WHERE league_id = ? AND user_id = ?',
+      [league.id, req.user.id]
+    );
+    const papelDeQuemPede = league.owner_id === req.user.id ? 'dono' : (linhaDeQuemPede ? 'equipe' : null);
+    if (!podeRemoverDoTime({ papelDeQuemPede, quemPedeId: req.user.id, alvoId: req.params.userId })) {
+      throw new HttpError(403, 'Only the league owner can manage its organizers', 'api.leagueOwnerOnly');
+    }
+
+    const removido = await tx.run(
+      'DELETE FROM league_organizers WHERE league_id = ? AND user_id = ?',
+      [league.id, req.params.userId]
+    );
+    if (!removido.affectedRows) throw new HttpError(404, 'Not an organizer of this league', 'api.coOrganizerNotFound');
+
+    if (req.params.userId !== req.user.id) {
+      await notifyUsers(tx, [req.params.userId], 'notif.removedAsLeagueOrganizer', { liga: league.name });
+    }
+    return coOrganizadores(tx, league.id);
+  });
+  res.json(organizers);
 }));
 
 module.exports = router;

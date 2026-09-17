@@ -99,10 +99,20 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  // "Owner" na tela é quem organiza o evento: quem o criou ou o time da liga dele
+  // (dono e co-organizadores). A permissão de verdade é conferida no servidor.
   isOwner = computed(() => {
     const user = this.auth.currentUser();
     const ev = this.event();
-    return !!(user && ev && ev.owner_id === user.id);
+    if (!user || !ev) return false;
+    return ev.owner_id === user.id || !!ev.league_organizer_ids?.includes(user.id);
+  });
+
+  // Apagar leva os resultados junto: só quem criou o evento ou o dono da liga.
+  canDelete = computed(() => {
+    const user = this.auth.currentUser();
+    const ev = this.event();
+    return !!(user && ev && (ev.owner_id === user.id || ev.league_owner_id === user.id));
   });
 
   isJoined = computed(() => {

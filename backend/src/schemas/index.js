@@ -180,6 +180,11 @@ const schemas = {
     name: blank(z.string().trim().min(1).max(100).optional()),
     playoff_counts: boolish,
   }),
+
+  // Co-organizador: pela conta, e ela precisa já existir e já organizar.
+  addLeagueOrganizer: z.object({
+    email: z.email().max(255),
+  }),
 };
 
 module.exports = schemas;
