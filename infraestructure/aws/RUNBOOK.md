@@ -84,8 +84,18 @@ scripts/certificado.sh --gravar
 ```
 
 Emite em `us-east-1`, cria o CNAME de validação na zona, espera a emissão e grava o ARN
-em `infra/cdk.json`. **Nunca apague o CNAME `_…acm-validations.aws`**: é ele que
+em `infra/cdk.context.json`. **Nunca apague o CNAME `_…acm-validations.aws`**: é ele que
 renova o certificado.
+
+O ARN leva o ID da conta, por isso fica no `cdk.context.json` (fora do git), e **não**
+no `cdk.json` (versionado, repositório público). A chave também não pode existir no
+`cdk.json`, nem como `TROCAR`: o CDK lê aquele arquivo primeiro e esconderia o valor.
+Os scripts recusam gravar no `cdk.json` um valor com ID de conta, e um teste do `infra`
+falha se ele aparecer lá.
+
+`cdk context --clear` (ou apagar o `cdk.context.json`, ou clonar o repositório em outra
+máquina) leva o ARN junto: rode `scripts/certificado.sh --gravar` de novo — ele
+reaproveita o certificado emitido, sem pedir outro.
 
 ### 2.4 Bootstrap do CDK
 

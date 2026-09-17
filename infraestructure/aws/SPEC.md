@@ -85,7 +85,7 @@ e a aplicação, o que `cdk deploy --all` não faz.
 - **Cabeçalhos de segurança:** HSTS 1 ano com subdomínios, `nosniff`, `X-Frame-Options: DENY`, `strict-origin-when-cross-origin`.
 - **Sem `errorResponses`:** um 403/404 da API chega como ele é; só as rotas da SPA são reescritas, e só no comportamento padrão.
 - TLS mínimo `TLSv1.2_2021`, HTTP/2 e HTTP/3, classe de preço completa (bordas da América do Sul).
-- Certificado ACM em `us-east-1`, emitido por `scripts/certificado.sh` e importado por ARN (`infra/cdk.json`). Renova sozinho enquanto o CNAME de validação existir.
+- Certificado ACM em `us-east-1`, emitido por `scripts/certificado.sh` e importado por ARN (`infra/cdk.context.json`, fora do git: o ARN leva o ID da conta). Renova sozinho enquanto o CNAME de validação existir.
 
 ### 3.2 Buckets
 

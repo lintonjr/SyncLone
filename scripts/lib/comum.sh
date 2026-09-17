@@ -15,6 +15,8 @@ REGIAO_PROJETO=us-east-2
 PERFIL_PROJETO=manasync
 # Trocáveis nos testes: sem isto eles leriam o cdk.json e o .env de verdade.
 CDK_JSON="${MANASYNC_CDK_JSON:-$RAIZ/infra/cdk.json}"
+# Fora do git: guarda o que leva o ID da conta (ARN do certificado, lookups do CDK).
+CDK_CONTEXT_JSON="${MANASYNC_CDK_CONTEXT_JSON:-$RAIZ/infra/cdk.context.json}"
 ENV_FILE="${MANASYNC_ENV_FILE:-$RAIZ/.env}"
 
 AWS_BIN="${MANASYNC_AWS:-aws}"
@@ -56,9 +58,15 @@ exigir_comando() {
   done
 }
 
-# Lê uma chave de contexto do infra/cdk.json.
+# Lê uma chave de contexto na mesma ordem do CDK: infra/cdk.json primeiro, depois o
+# infra/cdk.context.json (o CDK usa o primeiro arquivo que tiver a chave).
 contexto() {
-  jq -r --arg k "$1" '.context[$k] // empty' "$CDK_JSON"
+  local valor
+  valor="$(jq -r --arg k "$1" '.context[$k] // empty' "$CDK_JSON")"
+  if [ -z "$valor" ] && [ -f "$CDK_CONTEXT_JSON" ]; then
+    valor="$(jq -r --arg k "$1" '.[$k] // empty' "$CDK_CONTEXT_JSON")"
+  fi
+  printf '%s' "$valor"
 }
 
 # Uma chave de contexto que precisa estar preenchida (não vazia, não TROCAR...).
@@ -66,15 +74,36 @@ contexto_preenchido() {
   local valor
   valor="$(contexto "$1")"
   if [ -z "$valor" ] || [[ "$valor" == TROCAR* ]]; then
-    falha "infra/cdk.json: '$1' ainda não foi preenchido ($2)"
+    falha "contexto do CDK: '$1' ainda não foi preenchido ($2)"
   fi
   printf '%s' "$valor"
 }
 
-# Grava uma chave de contexto no infra/cdk.json, preservando o resto.
+# Grava uma chave de contexto, preservando o resto.
+#   gravar_contexto CHAVE VALOR          no infra/cdk.json (versionado, repositório público)
+#   gravar_contexto CHAVE VALOR local    no infra/cdk.context.json (fora do git)
 gravar_contexto() {
-  local chave="$1" valor="$2" tmp
+  local chave="$1" valor="$2" destino="${3:-}" tmp
   tmp="$(mktemp)"
+  if [ "$destino" = "local" ]; then
+    [ -f "$CDK_CONTEXT_JSON" ] || printf '{}\n' >"$CDK_CONTEXT_JSON"
+    jq --arg k "$chave" --arg v "$valor" '.[$k] = $v' "$CDK_CONTEXT_JSON" >"$tmp"
+    mv "$tmp" "$CDK_CONTEXT_JSON"
+    # No cdk.json a chave esconderia este valor (o CDK lê aquele arquivo primeiro).
+    if jq -e --arg k "$chave" '.context | has($k)' "$CDK_JSON" >/dev/null; then
+      tmp="$(mktemp)"
+      jq --arg k "$chave" 'del(.context[$k])' "$CDK_JSON" >"$tmp"
+      mv "$tmp" "$CDK_JSON"
+      aviso "infra/cdk.json: $chave removida (agora vem do cdk.context.json)"
+    fi
+    ok "infra/cdk.context.json (fora do git): $chave gravada"
+    return
+  fi
+  # ARN com ID de conta no arquivo versionado vazaria a conta no repositório público.
+  if [[ "$valor" =~ :[0-9]{12}: ]]; then
+    rm -f "$tmp"
+    falha "recusado gravar $chave no infra/cdk.json: o valor tem um ID de conta (use o cdk.context.json)"
+  fi
   jq --arg k "$chave" --arg v "$valor" '.context[$k] = $v' "$CDK_JSON" >"$tmp"
   mv "$tmp" "$CDK_JSON"
   ok "infra/cdk.json: $chave = $valor"

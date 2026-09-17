@@ -2,7 +2,8 @@
 # Certificado do CloudFront, em us-east-1 (PLANO §1.2).
 #
 #   scripts/certificado.sh            emite (ou reaproveita), valida por DNS e espera
-#   scripts/certificado.sh --gravar   também grava o ARN no infra/cdk.json
+#   scripts/certificado.sh --gravar   também grava o ARN no infra/cdk.context.json
+#                                     (fora do git: o ARN leva o ID da conta)
 #
 # Fora do CDK porque, nesta conta, o CDK não pode criar recurso em us-east-1 — e
 # o CloudFront só lê certificado de lá. A renovação é automática enquanto o CNAME
@@ -72,7 +73,7 @@ aws_ acm wait certificate-validated "${ACM[@]}" --certificate-arn "$ARN" ||
 ok "certificado emitido"
 
 if [ "$GRAVAR" = "1" ]; then
-  gravar_contexto manasync:certificateArn "$ARN"
+  gravar_contexto manasync:certificateArn "$ARN" local
 else
   printf '%s\n' "$ARN"
 fi

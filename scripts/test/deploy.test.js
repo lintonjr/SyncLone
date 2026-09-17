@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { ambiente, CONTEXTO_PRONTO } = require('./ajuda');
+const { ambiente, CONTEXTO_PRONTO, CONTEXTO_LOCAL_PRONTO, CONTA_TESTE } = require('./ajuda');
 
 function regras({ migrarFalha = false, semBootstrap = false, testesFalham = false } = {}) {
   return [
@@ -88,6 +88,19 @@ test('deploy: zona, ID da zona ou certificado ainda TROCAR param antes de tudo',
     assert.match(r.erro, new RegExp(chave));
     assert.equal(amb.indice('cdk', '.*'), -1);
   }
+});
+
+test('deploy: ARN do certificado vem do cdk.context.json; sem ele em nenhum dos dois arquivos, para', (t) => {
+  const comLocal = ambiente(t, { regras: regras() });
+  assert.equal(comLocal.rodar('deploy.sh', ['release', '--pular-testes']).codigo, 0);
+  assert.ok(!JSON.stringify(CONTEXTO_PRONTO).includes(CONTA_TESTE), 'o cdk.json de teste imita o versionado: sem conta');
+  assert.ok(CONTEXTO_LOCAL_PRONTO['manasync:certificateArn']);
+
+  const semLocal = ambiente(t, { regras: regras(), contextoLocal: null });
+  const r = semLocal.rodar('deploy.sh', ['release', '--pular-testes']);
+  assert.notEqual(r.codigo, 0);
+  assert.match(r.erro, /manasync:certificateArn/);
+  assert.equal(semLocal.indice('cdk', '.*'), -1);
 });
 
 test('deploy: sem bootstrap do CDK, orienta e para', (t) => {

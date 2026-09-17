@@ -115,6 +115,12 @@ export function lerConfig(ctx: Contexto, contas: Contas): ManaSyncConfig {
   if (domainName !== zoneName && !domainName.endsWith(`.${zoneName}`)) {
     throw new Error(`manasync:domainName (${domainName}) precisa estar dentro da zona manasync:zoneName (${zoneName}).`);
   }
+  if (ctx('manasync:certificateArn') === undefined) {
+    throw new Error(
+      'Contexto "manasync:certificateArn" não foi preenchido: rode scripts/certificado.sh --gravar ' +
+        '(grava no infra/cdk.context.json, fora do git, porque o ARN leva o ID da conta).'
+    );
+  }
   const certificateArn = texto(ctx, 'manasync:certificateArn');
   const prefixoCert = `arn:aws:acm:us-east-1:${conta}:certificate/`;
   if (!certificateArn.startsWith(prefixoCert)) {

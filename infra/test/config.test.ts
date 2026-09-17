@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { lerConfig } from '../lib/config';
 import { CONTA_TESTE, CONTEXTO_TESTE } from './ajuda';
 
@@ -76,4 +78,15 @@ test('config: domínio do site precisa estar dentro da zona', () => {
   // "appmercadiastore.online" termina com o texto da zona, mas não é subdomínio dela.
   assert.throws(() => ler({ 'manasync:domainName': 'appmercadiastore.online' }), /dentro da zona/);
   assert.throws(() => ler({ 'manasync:zoneName': undefined }), /zoneName/);
+});
+
+test('config: sem certificateArn, orienta o certificado.sh e o cdk.context.json', () => {
+  assert.throws(() => ler({ 'manasync:certificateArn': undefined }), /scripts\/certificado\.sh --gravar.*cdk\.context\.json/);
+});
+
+test('config: o cdk.json versionado não leva ID de conta nem o ARN do certificado (repositório público)', () => {
+  const texto = readFileSync(join(__dirname, '..', 'cdk.json'), 'utf8');
+  assert.doesNotMatch(texto, /\d{12}/, 'ID de conta no cdk.json: vai para o cdk.context.json');
+  // Um TROCAR aqui esconderia o ARN real do cdk.context.json: o CDK lê o cdk.json primeiro.
+  assert.equal(JSON.parse(texto).context['manasync:certificateArn'], undefined);
 });

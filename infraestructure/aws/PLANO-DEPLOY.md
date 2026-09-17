@@ -13,6 +13,8 @@
 > **ID da conta fora do repositório** (público): onde este histórico mostra `<CONTA>`,
 > o valor real está em `MANASYNC_CONTA` no `.env` da raiz. Por isso o `cdk.context.json`
 > também saiu do git (as chaves de lookup levam o ID) — diferente do que diz a §4.8.
+> Pelo mesmo motivo, `manasync:certificateArn` fica no `cdk.context.json`, não no
+> `cdk.json` (e nem como `TROCAR` lá: o CDK lê o `cdk.json` primeiro).
 
 ---
 

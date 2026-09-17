@@ -15,6 +15,10 @@ const CONTEXTO_PRONTO = {
   'manasync:domainName': 'app.mercadiastore.online',
   'manasync:zoneName': 'mercadiastore.online',
   'manasync:hostedZoneId': 'Z0TESTE00000000',
+};
+
+/** infra/cdk.context.json (fora do git) como estaria no dia do deploy: o que leva o ID da conta. */
+const CONTEXTO_LOCAL_PRONTO = {
   'manasync:certificateArn': `arn:aws:acm:us-east-1:${CONTA_TESTE}:certificate/abc`,
 };
 
@@ -28,13 +32,14 @@ const REGRAS_BASE = [
  * Um ambiente isolado: stubs no lugar das ferramentas, cdk.json e .env próprios.
  * `regras` vêm antes das base, então um teste pode sobrescrever qualquer resposta.
  */
-function ambiente(t, { regras = [], contexto = CONTEXTO_PRONTO, env = {} } = {}) {
+function ambiente(t, { regras = [], contexto = CONTEXTO_PRONTO, contextoLocal = CONTEXTO_LOCAL_PRONTO, env = {} } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'manasync-scripts-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
 
   fs.writeFileSync(path.join(dir, 'regras.json'), JSON.stringify([...regras, ...REGRAS_BASE]));
   fs.writeFileSync(path.join(dir, 'chamadas.jsonl'), '');
   fs.writeFileSync(path.join(dir, 'cdk.json'), JSON.stringify({ app: 'x', context: contexto }));
+  if (contextoLocal) fs.writeFileSync(path.join(dir, 'cdk.context.json'), JSON.stringify(contextoLocal));
   fs.writeFileSync(path.join(dir, '.env'), `ADMIN_EMAIL=dono@exemplo.com\nMANASYNC_CONTA=${CONTA_TESTE}\n`);
 
   const envStubs = {};
@@ -56,6 +61,7 @@ function ambiente(t, { regras = [], contexto = CONTEXTO_PRONTO, env = {} } = {})
     MANASYNC_MIGRAR: envStubs.migrar,
     MANASYNC_PUBLICAR: envStubs.publicar,
     MANASYNC_CDK_JSON: path.join(dir, 'cdk.json'),
+    MANASYNC_CDK_CONTEXT_JSON: path.join(dir, 'cdk.context.json'),
     MANASYNC_ENV_FILE: path.join(dir, '.env'),
     MANASYNC_SIM: '1',
     MANASYNC_ESPERA_S: '0',
@@ -113,4 +119,4 @@ const saida = (stack, chave, valor) => ({
   stdout: `${valor}\n`,
 });
 
-module.exports = { ambiente, saida, CONTEXTO_PRONTO, CONTA_TESTE, RAIZ };
+module.exports = { ambiente, saida, CONTEXTO_PRONTO, CONTEXTO_LOCAL_PRONTO, CONTA_TESTE, RAIZ };

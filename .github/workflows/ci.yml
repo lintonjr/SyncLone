@@ -107,7 +107,8 @@ jobs:
   infra:
     # O CDK: tipos, testes de template (segurança da rede, IAM, CloudFront, task)
     # e o cdk-nag, que derruba o synth em achado sem reconhecimento aprovado.
-    # Sem credenciais AWS: os lookups vêm do cdk.context.json versionado.
+    # Sem credenciais AWS nem cdk.context.json (fora do git): os testes usam contexto
+    # fictício (test/ajuda.ts), e os lookups devolvem os valores fictícios do CDK.
     runs-on: ubuntu-latest
     defaults:
       run:
