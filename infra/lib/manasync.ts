@@ -37,6 +37,7 @@ export function montar(app: App, config: ManaSyncConfig): StacksManaSync {
     terminationProtection: true,
     vpc: rede.vpc,
     sgBanco: rede.sgBanco,
+    backupDias: config.backupDias,
     sgCache: rede.sgCache,
   });
 

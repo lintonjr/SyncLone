@@ -12,6 +12,8 @@ interface DataStackProps extends StackProps {
   readonly vpc: ec2.Vpc;
   readonly sgBanco: ec2.SecurityGroup;
   readonly sgCache: ec2.SecurityGroup;
+  /** Dias de backup automático do RDS (`manasync:backupDias`). */
+  readonly backupDias: number;
 }
 
 /**
@@ -81,7 +83,7 @@ export class DataStack extends Stack {
       multiAz: false, // combinado: sem Multi-AZ por enquanto (~US$ 12/mês)
       publiclyAccessible: false,
       autoMinorVersionUpgrade: true,
-      backupRetention: Duration.days(TAMANHOS.rds.backupDays),
+      backupRetention: Duration.days(props.backupDias),
       // Madrugada no Brasil (UTC-3), fora de torneio.
       preferredBackupWindow: '06:00-07:00',
       preferredMaintenanceWindow: 'Sun:07:00-Sun:08:00',

@@ -211,7 +211,7 @@ A task **não** recebe a credencial master do banco nem `ADMIN_EMAIL`.
 | Instância | `db.t4g.micro`, Single-AZ, subnet isolada, sem IP público |
 | Disco | gp3 20 GB, cresce até 100 GB, cifrado |
 | Parâmetros | `require_secure_transport=ON`, `time_zone=UTC`, `utf8mb4_unicode_ci` |
-| Backups | 7 dias; janela 06:00–07:00 UTC; manutenção dom 07:00–08:00 UTC |
+| Backups | `manasync:backupDias`: 7 dias por padrão, **1 enquanto a conta estiver no plano Free** (o RDS do Free recusa mais); janela 06:00–07:00 UTC; manutenção dom 07:00–08:00 UTC |
 | Proteção | `deletionProtection`, `RETAIN`, stack com `terminationProtection` |
 | Logs | `error` e `slowquery` no CloudWatch, 1 semana |
 

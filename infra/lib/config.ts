@@ -56,6 +56,12 @@ export interface ManaSyncConfig {
    * CloudFormation atualiza o CloudFront.
    */
   readonly versaoSegredoOrigem?: string;
+  /**
+   * Dias de backup automático do RDS (point-in-time restore). Padrão 7; o plano Free
+   * da conta recusa mais que 1, então o cdk.json fica em 1 até a troca para o Paid
+   * (PLANO D2), que já é exigida antes de abrir ao público.
+   */
+  readonly backupDias: number;
 }
 
 type Contexto = (chave: string) => unknown;
@@ -76,6 +82,17 @@ function versao(ctx: Contexto, chave: string): string | undefined {
     throw new Error(`${chave} precisa ser o VersionId (UUID) do segredo, veio "${String(valor)}".`);
   }
   return valor;
+}
+
+function dias(ctx: Contexto, chave: string, padrao: number): number {
+  const valor = ctx(chave);
+  if (valor === undefined || valor === '') return padrao;
+  const n = typeof valor === 'number' ? valor : Number(valor);
+  // 0 desligaria o backup automático: fora de questão para o único banco do projeto.
+  if (!Number.isInteger(n) || n < 1 || n > 35) {
+    throw new Error(`${chave} precisa ser um número inteiro de 1 a 35 dias, veio "${String(valor)}".`);
+  }
+  return n;
 }
 
 function booleano(ctx: Contexto, chave: string): boolean {
@@ -155,6 +172,7 @@ export function lerConfig(ctx: Contexto, contas: Contas): ManaSyncConfig {
     depuracao: booleano(ctx, 'manasync:depuracao'),
     rotacaoOrigem: booleano(ctx, 'manasync:rotacaoOrigem'),
     versaoSegredoOrigem: versao(ctx, 'manasync:versaoSegredoOrigem'),
+    backupDias: dias(ctx, 'manasync:backupDias', TAMANHOS.rds.backupDays),
   };
 }
 

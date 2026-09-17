@@ -37,6 +37,16 @@ No console **Billing and Cost Management → Budgets**: budget mensal de US$ 40,
 alertas em 50/80/100% para o seu e-mail. Confira plano e gasto em **AWS Settings →
 Billing**.
 
+#### Plano Free: limites que já apareceram
+
+- **Backup do RDS:** o plano Free recusa retenção acima de 1 dia ("exceeds the maximum
+  available to free tier customers"). Por isso `manasync:backupDias` está em **1** no
+  `infra/cdk.json`. **Ao passar para o Paid** (obrigatório antes de abrir ao público,
+  PLANO D2): troque para `7` e rode `scripts/deploy.sh release`. Mudar entre valores
+  diferentes de 0 não derruba o banco.
+- Até lá, o ponto de restauração vai só até 1 dia atrás; os snapshots manuais do
+  `migrar.sh` (antes de cada migração) continuam valendo.
+
 ### 2.2 Zona DNS
 
 ```bash

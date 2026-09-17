@@ -8,8 +8,9 @@
 #   --sim            não pergunta nada (inclui mudanças de IAM/SG no CDK)
 #   --pular-testes   não roda os testes de template do infra/ antes
 #
-# Pré-requisitos (PLANO §0.4, §0.5): aws login --profile manasync; zona e
-# certificado gravados no infra/cdk.json (scripts/zona.sh, scripts/certificado.sh).
+# Pré-requisitos (PLANO §0.4, §0.5): aws login --profile manasync; zona gravada no
+# infra/cdk.json (scripts/zona.sh) e certificado no infra/cdk.context.json
+# (scripts/certificado.sh, fora do git).
 #
 # Para no primeiro erro. A migração roda ENTRE as stacks de dados e a aplicação:
 # uma aplicação nova nunca sobe sobre um schema velho.

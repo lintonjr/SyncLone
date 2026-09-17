@@ -90,3 +90,12 @@ test('config: o cdk.json versionado não leva ID de conta nem o ARN do certifica
   // Um TROCAR aqui esconderia o ARN real do cdk.context.json: o CDK lê o cdk.json primeiro.
   assert.equal(JSON.parse(texto).context['manasync:certificateArn'], undefined);
 });
+
+test('config: dias de backup do RDS — padrão 7, 1 no plano Free, nunca 0', () => {
+  assert.equal(ler().backupDias, 7);
+  assert.equal(ler({ 'manasync:backupDias': 1 }).backupDias, 1);
+  assert.equal(ler({ 'manasync:backupDias': '14' }).backupDias, 14);
+  for (const ruim of [0, 36, 1.5, 'sete', -1]) {
+    assert.throws(() => ler({ 'manasync:backupDias': ruim }), /backupDias/, String(ruim));
+  }
+});

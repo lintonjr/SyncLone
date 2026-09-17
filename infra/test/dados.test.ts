@@ -58,3 +58,9 @@ test('dados: usuário do app com a lista de permissões validada no spike (inclu
   // Senha como referência dinâmica: nunca em texto no template.
   assert.match(json(app.Properties.AuthenticationMode.Passwords), /resolve:secretsmanager/);
 });
+
+test('dados: retenção de backup do RDS vem do contexto (1 dia no plano Free)', () => {
+  assert.equal(unico(dados, 'AWS::RDS::DBInstance').Properties.BackupRetentionPeriod, 7);
+  const free = montarTeste({ 'manasync:backupDias': 1 });
+  assert.equal(unico(free.tpl.dados, 'AWS::RDS::DBInstance').Properties.BackupRetentionPeriod, 1);
+});

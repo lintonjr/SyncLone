@@ -18,6 +18,7 @@
     "manasync:zoneName": "mercadiastore.online",
     "manasync:hostedZoneId": "Z05167663AI901KY98NOY",
     "manasync:env": "prod",
+    "manasync:backupDias": 1,
     "manasync:depuracao": false,
     "manasync:rotacaoOrigem": false,
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
