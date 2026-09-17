@@ -65,10 +65,12 @@ export class EdgeStack extends Stack {
     super(scope, id, props);
     const { config } = props;
 
-    // A zona delegada é o próprio `app.mercadiastore.online` (D11 = B).
+    // A zona é o domínio inteiro; os registros do site ficam em `app.` dentro dela.
+    // Os demais registros (raiz, www, mail, ftp, MX da HostGator) não são do CDK:
+    // vêm de infra/dns/registros-hostgator.json, via scripts/zona.sh.
     const zona = route53.HostedZone.fromHostedZoneAttributes(this, 'Zona', {
       hostedZoneId: config.hostedZoneId,
-      zoneName: config.domainName,
+      zoneName: config.zoneName,
     });
 
     // Emitido fora do CDK, em us-east-1 (scripts/certificado.sh): nesta conta o
@@ -208,10 +210,10 @@ export class EdgeStack extends Stack {
     reconhecer(this.distribuicao, 'AwsSolutions-CFR5',
       'Origem da API em HTTP: TLS até a task exigiria ALB (+US$ 22/mês). Compensado por SG só com a prefix list do CloudFront e header secreto conferido pelo backend (PLANO §4.2).');
 
-    // Sem `www` (D11 = B): o site é a raiz da zona delegada.
+    // Só o nome do site (sem `www`): a raiz e o `www` continuam apontando para a HostGator.
     const alvo = route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(this.distribuicao));
-    new route53.ARecord(this, 'A', { zone: zona, target: alvo });
-    new route53.AaaaRecord(this, 'Aaaa', { zone: zona, target: alvo });
+    new route53.ARecord(this, 'A', { zone: zona, recordName: config.domainName, target: alvo });
+    new route53.AaaaRecord(this, 'Aaaa', { zone: zona, recordName: config.domainName, target: alvo });
 
     new CfnOutput(this, 'BucketSpa', { value: this.bucketSpa.bucketName });
     new CfnOutput(this, 'BucketImagens', { value: this.bucketImagens.bucketName });

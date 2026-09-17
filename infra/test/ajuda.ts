@@ -10,6 +10,7 @@ export const CONTA_TESTE = '111122223333';
 export const CONTEXTO_TESTE: Record<string, unknown> = {
   'manasync:region': 'us-east-2',
   'manasync:domainName': 'app.mercadiastore.online',
+  'manasync:zoneName': 'mercadiastore.online',
   'manasync:hostedZoneId': 'Z0TESTE00000000',
   'manasync:certificateArn': `arn:aws:acm:us-east-1:${CONTA_TESTE}:certificate/00000000-0000-4000-8000-000000000000`,
   'manasync:adminEmail': 'dono@exemplo.com',

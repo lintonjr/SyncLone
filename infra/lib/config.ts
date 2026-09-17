@@ -26,8 +26,15 @@ const DOMINIO_RAIZ = 'mercadiastore.online';
 export interface ManaSyncConfig {
   readonly conta: string;
   readonly regiao: string;
-  /** Onde a SPA responde. É também o nome da hosted zone delegada (D11 = B). */
+  /** Onde a SPA responde: `app.mercadiastore.online`. */
   readonly domainName: string;
+  /**
+   * A hosted zone do Route 53: o domínio inteiro (`mercadiastore.online`), cujos
+   * servidores de nome foram trocados no registrador (PLANO D11 = C). O editor de
+   * zona da HostGator não oferece registros NS, então delegar só o subdomínio não
+   * foi possível.
+   */
+  readonly zoneName: string;
   readonly hostedZoneId: string;
   /** Certificado ACM em us-east-1, emitido por scripts/certificado.sh. */
   readonly certificateArn: string;
@@ -104,6 +111,10 @@ export function lerConfig(ctx: Contexto, contas: Contas): ManaSyncConfig {
   }
 
   const domainName = texto(ctx, 'manasync:domainName').toLowerCase();
+  const zoneName = texto(ctx, 'manasync:zoneName').toLowerCase().replace(/\.$/, '');
+  if (domainName !== zoneName && !domainName.endsWith(`.${zoneName}`)) {
+    throw new Error(`manasync:domainName (${domainName}) precisa estar dentro da zona manasync:zoneName (${zoneName}).`);
+  }
   const certificateArn = texto(ctx, 'manasync:certificateArn');
   const prefixoCert = `arn:aws:acm:us-east-1:${conta}:certificate/`;
   if (!certificateArn.startsWith(prefixoCert)) {
@@ -129,6 +140,7 @@ export function lerConfig(ctx: Contexto, contas: Contas): ManaSyncConfig {
     conta,
     regiao,
     domainName,
+    zoneName,
     hostedZoneId: texto(ctx, 'manasync:hostedZoneId'),
     certificateArn,
     originHost: `origin.${domainName}`,

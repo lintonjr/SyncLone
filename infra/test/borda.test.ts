@@ -102,3 +102,11 @@ test('borda: rotação — versão explícita do segredo muda a referência do h
   const semVersao = origemDe(comportamento('/api/*')).OriginCustomHeaders.find((h: any) => h.HeaderName === 'x-origin-verify');
   assert.notEqual(json(header.HeaderValue), json(semVersao.HeaderValue), 'o texto precisa mudar para o CloudFormation agir');
 });
+
+test('borda: a zona é o domínio inteiro, mas o CDK só cria os registros do site', () => {
+  // Raiz, www, mail, ftp e MX vêm do arquivo da HostGator (scripts/zona.sh), não do CDK:
+  // um cdk destroy não pode levar o e-mail e o site da HostGator junto.
+  const registros = Object.values(borda.findResources('AWS::Route53::RecordSet')).map((r: any) => r.Properties);
+  assert.ok(registros.every((r: any) => r.Name === 'app.mercadiastore.online.'), json(registros.map((r: any) => r.Name)));
+  assert.ok(registros.every((r: any) => r.HostedZoneId === 'Z0TESTE00000000'));
+});

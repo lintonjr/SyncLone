@@ -68,3 +68,12 @@ test('config: sem MANASYNC_CONTA (ou com valor inválido), não sintetiza — a 
 test('config: certificado de outra conta é recusado mesmo em us-east-1', () => {
   assert.throws(() => ler({}, undefined, '444455556666'), /certificado ACM de us-east-1 da conta do projeto/);
 });
+
+test('config: domínio do site precisa estar dentro da zona', () => {
+  assert.equal(ler().zoneName, 'mercadiastore.online');
+  assert.equal(ler({ 'manasync:zoneName': 'mercadiastore.online.' }).zoneName, 'mercadiastore.online');
+  assert.throws(() => ler({ 'manasync:zoneName': 'outrodominio.com' }), /dentro da zona/);
+  // "appmercadiastore.online" termina com o texto da zona, mas não é subdomínio dela.
+  assert.throws(() => ler({ 'manasync:domainName': 'appmercadiastore.online' }), /dentro da zona/);
+  assert.throws(() => ler({ 'manasync:zoneName': undefined }), /zoneName/);
+});

@@ -1,0 +1,17 @@
+{
+  "_leia": [
+    "Registros da zona mercadiastore.online copiados da HostGator em 16/09/2026, para o Route 53 responder pelo domínio inteiro sem quebrar o site e o e-mail de lá.",
+    "Inventário feito nos servidores autoritativos (dns3/dns4.hostgator.com.br): AXFR recusado; consultados todos os tipos na raiz, nomes padrão do cPanel e SRV de e-mail; sem registro curinga.",
+    "NÃO entram aqui: NS e SOA (o Route 53 cria os seus) e os registros do site (app.* e origin.app.*), que são do CDK e da Lambda de DNS.",
+    "TTL 300 durante a migração, para uma correção chegar em minutos. Depois de estável, pode voltar a 14400 (o valor da HostGator) e rodar scripts/zona.sh de novo.",
+    "Depois da troca dos servidores de nome, a HostGator deixa de responder pelo domínio: qualquer registro novo (ex.: SPF, DKIM) é feito AQUI e aplicado com scripts/zona.sh."
+  ],
+  "zona": "mercadiastore.online",
+  "registros": [
+    { "nome": "mercadiastore.online", "tipo": "A", "ttl": 300, "valores": ["162.240.81.81"] },
+    { "nome": "mercadiastore.online", "tipo": "MX", "ttl": 300, "valores": ["0 mercadiastore.online"] },
+    { "nome": "www.mercadiastore.online", "tipo": "CNAME", "ttl": 300, "valores": ["mercadiastore.online"] },
+    { "nome": "mail.mercadiastore.online", "tipo": "CNAME", "ttl": 300, "valores": ["mercadiastore.online"] },
+    { "nome": "ftp.mercadiastore.online", "tipo": "CNAME", "ttl": 300, "valores": ["mercadiastore.online"] }
+  ]
+}

@@ -15,7 +15,8 @@
   "context": {
     "manasync:region": "us-east-2",
     "manasync:domainName": "app.mercadiastore.online",
-    "manasync:hostedZoneId": "TROCAR_depois_de_criar_a_zona",
+    "manasync:zoneName": "mercadiastore.online",
+    "manasync:hostedZoneId": "Z05167663AI901KY98NOY",
     "manasync:certificateArn": "TROCAR_depois_de_scripts/certificado.sh",
     "manasync:env": "prod",
     "manasync:depuracao": false,
