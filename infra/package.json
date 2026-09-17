@@ -1,0 +1,29 @@
+{
+  "name": "manasync-infra",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "manasync": "bin/manasync.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "test": "node --import tsx --test 'test/**/*.test.ts'"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.5",
+    "aws-cdk": "^2.174.0",
+    "cdk-nag": "3.0.2",
+    "tsx": "^4.23.13",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.174.0",
+    "constructs": "^10.4.2"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules
+cdk.out
+*.js
+*.d.ts
+!lambda/**/*.js
+
+# Lookups do CDK: as chaves levam o ID da conta, e o repositório é público.
+cdk.context.json

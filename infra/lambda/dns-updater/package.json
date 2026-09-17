@@ -1,0 +1,18 @@
+{
+  "name": "manasync-dns-updater",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "description": "Lambda que mantém origin.<domínio> apontando para as tasks saudáveis do backend",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/client-ec2": "3.1134.0",
+    "@aws-sdk/client-ecs": "3.1134.0",
+    "@aws-sdk/client-route-53": "3.1134.0"
+  }
+}

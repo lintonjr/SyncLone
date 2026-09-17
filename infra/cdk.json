@@ -1,0 +1,31 @@
+{
+  "app": "npx tsx bin/manasync.ts",
+  "watch": {
+    "include": [
+      "**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "**/*.d.ts",
+      "node_modules",
+      "cdk.out"
+    ]
+  },
+  "context": {
+    "manasync:region": "us-east-2",
+    "manasync:domainName": "app.mercadiastore.online",
+    "manasync:hostedZoneId": "TROCAR_depois_de_criar_a_zona",
+    "manasync:certificateArn": "TROCAR_depois_de_scripts/certificado.sh",
+    "manasync:env": "prod",
+    "manasync:depuracao": false,
+    "manasync:rotacaoOrigem": false,
+    "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true,
+    "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
+    "@aws-cdk/aws-ecs:disableEcsImdsBlocking": false,
+    "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
+    "@aws-cdk/core:defaultCrossStackReferences": "strong"
+  }
+}
