@@ -16,6 +16,19 @@ services:
       timeout: 5s
       retries: 10
 
+  # Pub/sub do SSE entre processos e contador do rate limit — o mesmo papel do
+  # ElastiCache Serverless em produção, na mesma versão (8.1). Sem porta no host e
+  # sem volume: só o backend fala com ele, e nada nele precisa sobreviver a um
+  # restart (contadores de tentativa e avisos em trânsito).
+  valkey:
+    image: valkey/valkey:8.1-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   backend:
     build:
       context: ./backend
@@ -24,6 +37,8 @@ services:
     restart: unless-stopped
     depends_on:
       mysql:
+        condition: service_healthy
+      valkey:
         condition: service_healthy
     environment:
       PORT: 3001
@@ -34,9 +49,12 @@ services:
       DB_USER: root
       DB_PASS: root123
       DB_NAME: manasync
-      # Dono da plataforma: a conta com este e-mail é promovida a admin a cada
-      # subida. É quem aprova as solicitações para organizar.
+      # Dono da plataforma: a conta com este e-mail é promovida a admin na subida,
+      # só enquanto não existir admin nenhum. É quem aprova as solicitações.
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      # Local, sem TLS nem cluster. Em produção: rediss://… com VALKEY_CLUSTER=true
+      # e credencial em VALKEY_USER/VALKEY_PASS (ver backend/src/lib/config.js).
+      VALKEY_URL: redis://valkey:6379
     ports:
       - "3001:3001"
     volumes:

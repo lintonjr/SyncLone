@@ -8,6 +8,7 @@ const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
 const { imageUpload, publicPath, removeFile } = require('../lib/uploads');
+const { sseHeartbeatMs } = require('../lib/config');
 const {
   generateSwissPairings, seedPlayoffPods,
   generateClanPairings, generatePartnerPairings, seedClanPlayoffPods,
@@ -418,7 +419,9 @@ router.get('/:id/stream', (req, res) => {
   res.write('\n');
 
   eventStream.subscribe(req.params.id, res);
-  const heartbeat = setInterval(() => res.write(': ping\n\n'), 25000);
+  // O intervalo vem da configuração porque quem manda nele é o intermediário
+  // mais impaciente do caminho, e isso muda por ambiente — ver lib/config.js.
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), sseHeartbeatMs());
 
   req.on('close', () => {
     clearInterval(heartbeat);

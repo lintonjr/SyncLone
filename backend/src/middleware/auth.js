@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { HttpError, asyncHandler } = require('../lib/http');
+const { jwtSecret } = require('../lib/config');
 
 const authMiddleware = asyncHandler(async (req, res, next) => {
   const header = req.headers.authorization;
@@ -10,7 +11,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
   const token = header.split(' ')[1];
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, jwtSecret());
   } catch {
     throw new HttpError(401, 'Invalid or expired token', 'api.badToken');
   }

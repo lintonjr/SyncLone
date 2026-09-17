@@ -1,6 +1,12 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
+const { dbSsl } = require('./lib/config');
 
+/**
+ * `connectionLimit` é por processo, não por sistema: com N tasks no ECS o banco
+ * vê N x 10 conexões. Um `db.t4g.micro` aceita ~60, então o teto precisa ser
+ * revisto junto com o número de tasks — não é um número para aumentar sozinho.
+ */
 const pool = mysql.createPool({
   host: process.env.DB_HOST || '127.0.0.1',
   port: Number(process.env.DB_PORT) || 3306,
@@ -10,6 +16,9 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   timezone: '+00:00',
+  // Indefinido fora de produção: o MySQL do Docker local não fala TLS. Ligado,
+  // exige o bundle da CA e verifica o servidor — ver lib/config.js.
+  ssl: dbSsl(),
 });
 
 // The same three helpers, bound either to the pool or to a single connection

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { asyncHandler } = require('../lib/http');
+const { jwtSecret } = require('../lib/config');
 
 /**
  * Autenticação opcional: identifica quem está chamando, sem exigir que alguém
@@ -15,7 +16,7 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
   const header = req.headers.authorization;
   if (header?.startsWith('Bearer ')) {
     try {
-      req.user = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+      req.user = jwt.verify(header.split(' ')[1], jwtSecret());
     } catch {
       // segue anônimo
     }

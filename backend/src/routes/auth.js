@@ -16,11 +16,21 @@ const db = require('../db');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
+const { jwtSecret } = require('../lib/config');
+const { obterClientes } = require('../lib/valkey');
+const { ValkeyStore } = require('../lib/rateLimitStore');
 
 // Credential endpoints are the brute-force surface, and bcrypt makes each attempt
 // expensive for us too — so the limit is per IP *and* per targeted account: one
 // attacker can't spend another user's budget, and spraying many accounts from one
 // address still trips the IP half of the key.
+//
+// Com Valkey, o contador é um só para todas as tasks e sobrevive a deploy (sem
+// ele, cada task conta sozinha e o limite zera a cada subida). Se o Valkey cair,
+// `passOnStoreError` deixa o login passar sem limite em vez de bloquear todo
+// mundo: o bcrypt continua encarecendo cada tentativa, e uma queda do cache não
+// pode virar queda do site.
+const valkey = obterClientes();
 const credentialLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -29,6 +39,7 @@ const credentialLimiter = rateLimit({
   skipSuccessfulRequests: true,
   keyGenerator: (req) => `${ipKeyGenerator(req.ip)}:${String(req.body?.email ?? '').toLowerCase()}`,
   message: { error: 'Too many attempts. Please wait a few minutes and try again.' },
+  ...(valkey && { store: new ValkeyStore({ cliente: valkey.comandos }), passOnStoreError: true }),
 });
 
 router.post('/register', credentialLimiter, validate(schemas.register), asyncHandler(async (req, res) => {
@@ -43,7 +54,7 @@ router.post('/register', credentialLimiter, validate(schemas.register), asyncHan
     [id, display_name, email, password_hash]);
 
   const role = 'player';
-  const token = jwt.sign({ id, email, display_name, role }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id, email, display_name, role }, jwtSecret(), {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
   // `profile_public` acompanha desde o cadastro: sem ele a tela de conta nasceria
@@ -60,7 +71,7 @@ router.post('/login', credentialLimiter, validate(schemas.login), asyncHandler(a
 
   const token = jwt.sign(
     { id: user.id, email: user.email, display_name: user.display_name, role: user.role },
-    process.env.JWT_SECRET,
+    jwtSecret(),
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
   res.json({ token, user: usuarioPublico(user) });
