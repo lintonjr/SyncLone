@@ -49,6 +49,21 @@ test('borda: a função de reescrita trata rota sem extensão e preserva arquivo
   assert.equal(uri('/assets/logo.svg'), '/assets/logo.svg');
 });
 
+test('borda: páginas estáticas (/presentation, /docs) não caem na SPA', () => {
+  // Sem esta regra o Angular responderia por elas e o visitante veria a home.
+  const codigo = unico(borda, 'AWS::CloudFront::Function').Properties.FunctionCode;
+  const handler = new Function(`${codigo}; return handler;`)();
+  const uri = (u: string) => handler({ request: { uri: u } }).uri;
+  for (const pagina of ['/presentation', '/docs']) {
+    assert.equal(uri(pagina), `${pagina}/index.html`);
+    assert.equal(uri(`${pagina}/`), `${pagina}/index.html`);
+  }
+  // Um caminho parecido, mas que não é a página, continua sendo rota da SPA.
+  assert.equal(uri('/documentos'), '/index.html');
+  assert.equal(uri('/docs/extra'), '/index.html');
+  assert.equal(uri('/docs/index.html'), '/docs/index.html');
+});
+
 test('borda: só o domínio app, sem www (D11 = B), TLS 1.2+', () => {
   assert.deepEqual(dist.Aliases, ['app.mercadiastore.online']);
   assert.equal(dist.ViewerCertificate.MinimumProtocolVersion, 'TLSv1.2_2021');

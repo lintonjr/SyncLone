@@ -28,6 +28,14 @@ export const PORTA_BACKEND = 3001;
 export const nomeBucketImagens = (conta: string, regiao: string) => `manasync-imagens-${conta}-${regiao}`;
 
 /**
+ * Páginas estáticas fora da SPA, publicadas em `frontend/public/<nome>/index.html`.
+ * Sem esta lista elas cairiam na reescrita abaixo e o Angular responderia no lugar
+ * delas — é o mesmo motivo de `/docs` e `/presentation` não terem link no site: são
+ * endereços próprios, não telas do aplicativo.
+ */
+export const PAGINAS_ESTATICAS = ['/presentation', '/docs'];
+
+/**
  * Rotas profundas da SPA: `/event/123` não existe no bucket, quem resolve é o
  * roteador do Angular. URI sem extensão vira `/index.html`; arquivo com extensão
  * que não existe continua 404.
@@ -37,9 +45,19 @@ export const nomeBucketImagens = (conta: string, regiao: string) => `manasync-im
  * 403 da API chegava ao navegador como 200 + HTML.
  */
 const CODIGO_REESCRITA_SPA = `
+var PAGINAS = ${JSON.stringify(PAGINAS_ESTATICAS)};
+
 function handler(event) {
   var request = event.request;
-  var ultimo = request.uri.substring(request.uri.lastIndexOf('/') + 1);
+  var uri = request.uri;
+  if (uri.length > 1 && uri.charAt(uri.length - 1) === '/') {
+    uri = uri.substring(0, uri.length - 1);
+  }
+  if (PAGINAS.indexOf(uri) !== -1) {
+    request.uri = uri + '/index.html';
+    return request;
+  }
+  var ultimo = uri.substring(uri.lastIndexOf('/') + 1);
   if (ultimo.indexOf('.') === -1) {
     request.uri = '/index.html';
   }
@@ -140,7 +158,7 @@ export class EdgeStack extends Stack {
     });
 
     const reescritaSpa = new cloudfront.Function(this, 'ReescritaSpa', {
-      comment: 'ManaSync: rota sem extensao -> /index.html',
+      comment: 'ManaSync: paginas estaticas e rota sem extensao -> index.html',
       runtime: cloudfront.FunctionRuntime.JS_2_0,
       code: cloudfront.FunctionCode.fromInline(CODIGO_REESCRITA_SPA),
     });

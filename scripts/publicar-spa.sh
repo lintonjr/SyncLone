@@ -53,5 +53,8 @@ ok "arquivos publicados"
 
 # Toda rota sem extensão vira /index.html na CloudFront Function (antes do cache),
 # então invalidar /index.html cobre a SPA inteira.
-aws_ cloudfront create-invalidation --distribution-id "$DISTRIBUICAO" --paths '/index.html' '/' >/dev/null
+# As páginas estáticas (/presentation, /docs) têm index.html próprio, fora da
+# reescrita da SPA: entram aqui para não ficarem até 5 min com a versão antiga.
+aws_ cloudfront create-invalidation --distribution-id "$DISTRIBUICAO" \
+  --paths '/index.html' '/' '/presentation*' '/docs*' >/dev/null
 ok "invalidação criada na distribuição $DISTRIBUICAO"

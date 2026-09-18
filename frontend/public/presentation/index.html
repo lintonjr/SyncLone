@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mercadia Tracker</title>
+<meta name="description" content="Mercadia Tracker: a plataforma de torneios da Mercadia Game Store, com a lista completa de funcionalidades.">
+<link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/png" href="/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="canonical" href="https://app.mercadiastore.online/presentation">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mercadia Tracker">
+<meta property="og:description" content="Mercadia Tracker: a plataforma de torneios da Mercadia Game Store, com a lista completa de funcionalidades.">
+<meta property="og:url" content="https://app.mercadiastore.online/presentation">
+<meta property="og:image" content="https://app.mercadiastore.online/mercadia-logo.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  img, svg { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  /* Identidade única: ameixa e ouro da placa da Mercadia Game Store.
+     Página de apresentação: assume um só visual, pintado explicitamente. */
+  :root {
+    --ameixa-900: #17101d;
+    --ameixa-800: #201628;
+    --ameixa-700: #2c1d35;
+    --ameixa-600: #43294c;
+    --ouro: #f5b027;
+    --ouro-claro: #ffd071;
+    --creme: #f6efe4;
+    --creme-suave: #cdbfc9;
+    --jade: #49b394;
+    --linha: rgba(246, 239, 228, 0.14);
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ameixa-900);
+    color: var(--creme);
+    font-family: 'Familjen Grotesk', 'Segoe UI', system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 { font-family: 'Archivo Black', 'Arial Black', sans-serif; font-weight: 400; text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  a { color: var(--ouro); }
+
+  .faixa { padding-block: clamp(56px, 8vw, 104px); padding-inline: 20px; }
+  .faixa--clara { background: var(--ameixa-800); }
+  .faixa--destaque { background: var(--ameixa-700); }
+  .interno { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+  .rotulo {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ouro);
+    margin: 0;
+  }
+
+  /* ── Capa ── */
+  .capa { padding-block: clamp(64px, 11vw, 132px); background:
+      radial-gradient(120% 90% at 12% 0%, rgba(245, 176, 39, 0.20), transparent 58%),
+      radial-gradient(90% 80% at 96% 8%, rgba(73, 179, 148, 0.14), transparent 60%),
+      var(--ameixa-900); }
+  .capa h1 { font-size: clamp(42px, 8.2vw, 88px); line-height: 0.96; letter-spacing: -0.02em; }
+  .capa h1 em { font-style: normal; color: var(--ouro); }
+  .capa .chamada { font-size: clamp(18px, 2.4vw, 23px); color: var(--creme-suave); max-width: 62ch; }
+  .marca {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--creme-suave);
+  }
+  .marca span.selo {
+    width: 30px; height: 30px; display: grid; place-items: center;
+    background: var(--ouro); color: var(--ameixa-900);
+    font-family: 'Archivo Black', sans-serif; font-size: 17px; border-radius: 7px;
+  }
+  .fichas { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ficha {
+    border: 1px solid var(--linha); border-radius: 999px; padding: 5px 13px;
+    font-size: 13px; color: var(--creme-suave); background: rgba(246, 239, 228, 0.04);
+  }
+  .endereco {
+    font-family: 'JetBrains Mono', monospace; font-size: clamp(13px, 1.9vw, 16px);
+    color: var(--ouro-claro); word-break: break-word;
+  }
+
+  /* ── Números ── */
+  .numeros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--linha); border: 1px solid var(--linha); }
+  .numero { background: var(--ameixa-800); padding: 22px 20px; display: flex; flex-direction: column; gap: 4px; }
+  .numero b {
+    font-family: 'Archivo Black', sans-serif; font-size: clamp(26px, 4vw, 38px);
+    color: var(--ouro); font-weight: 400; font-variant-numeric: tabular-nums;
+  }
+  .numero span { font-size: 14px; color: var(--creme-suave); }
+
+  /* ── Pilares ── */
+  .pilares { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .pilar { display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 3px solid var(--ouro); }
+  .pilar h3 { font-size: 20px; }
+  .pilar p { color: var(--creme-suave); font-size: 15px; }
+
+  /* ── Funcionalidades ── */
+  .titulo-secao { font-size: clamp(28px, 4.6vw, 44px); line-height: 1.04; letter-spacing: -0.015em; }
+  .subtitulo { color: var(--creme-suave); max-width: 70ch; }
+  .grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .bloco {
+    background: var(--ameixa-800); border: 1px solid var(--linha); border-radius: 14px;
+    padding: 22px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .faixa--clara .bloco { background: var(--ameixa-700); }
+  .bloco h3 { font-size: 17px; display: flex; align-items: baseline; gap: 10px; }
+  .bloco h3 .conta {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ouro);
+    font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .bloco ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .bloco li { position: relative; padding-left: 20px; font-size: 14.5px; color: var(--creme-suave); }
+  .bloco li::before {
+    content: ''; position: absolute; left: 0; top: 8px; width: 9px; height: 9px;
+    border-radius: 2px; background: var(--ouro); opacity: 0.85;
+  }
+  .bloco li b { color: var(--creme); font-weight: 600; }
+
+  /* ── Comparativo ── */
+  .comparativo { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .coluna { border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+  .coluna--antes { background: rgba(246, 239, 228, 0.05); border: 1px solid var(--linha); }
+  .coluna--depois { background: linear-gradient(160deg, rgba(245, 176, 39, 0.16), rgba(245, 176, 39, 0.04)); border: 1px solid rgba(245, 176, 39, 0.4); }
+  .coluna h3 { font-size: 16px; }
+  .coluna ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 14.5px; color: var(--creme-suave); }
+  .coluna--depois li { color: var(--creme); }
+
+  /* ── Plataforma ── */
+  .infra { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .infra div { border-left: 2px solid var(--jade); padding-left: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .infra b { font-size: 15px; }
+  .infra span { font-size: 14px; color: var(--creme-suave); }
+
+  /* ── Fecho ── */
+  .fecho { text-align: center; align-items: center; }
+  .fecho h2 { font-size: clamp(30px, 5.4vw, 52px); }
+  .botao {
+    display: inline-block; background: var(--ouro); color: var(--ameixa-900);
+    font-family: 'Archivo Black', sans-serif; font-size: 16px; text-decoration: none;
+    padding: 15px 30px; border-radius: 10px;
+  }
+  .botao:focus-visible { outline: 3px solid var(--creme); outline-offset: 3px; }
+  .rodape { color: var(--creme-suave); font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+
+  @media (max-width: 860px) {
+    .numeros { grid-template-columns: repeat(2, 1fr); }
+    .pilares, .grade, .comparativo, .infra { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .botao { transition: transform 0.15s ease; }
+    .botao:hover { transform: translateY(-2px); }
+  }
+</style>
+</head>
+<body>
+<header class="faixa capa">
+  <div class="interno">
+    <p class="marca"><span class="selo">M</span> Mercadia Game Store</p>
+    <h1>Todo torneio da loja, <em>do pareamento ao campeão</em>, num lugar só.</h1>
+    <p class="chamada">
+      O Mercadia Tracker organiza as noites de torneio da Mercadia: monta as rodadas, calcula os
+      desempates oficiais, mantém a classificação da liga e mostra tudo em tempo real no
+      celular de quem está jogando.
+    </p>
+    <div class="fichas">
+      <span class="ficha">Magic</span>
+      <span class="ficha">Commander</span>
+      <span class="ficha">Pokémon</span>
+      <span class="ficha">Yu-Gi-Oh!</span>
+      <span class="ficha">Lorcana</span>
+      <span class="ficha">Flesh and Blood</span>
+      <span class="ficha">e qualquer outro card game</span>
+    </div>
+    <p class="endereco">app.mercadiastore.online</p>
+  </div>
+</header>
+
+<section class="faixa faixa--clara">
+  <div class="interno">
+    <div class="numeros">
+      <div class="numero"><b>4</b><span>métodos de pareamento suíço</span></div>
+      <div class="numero"><b>4</b><span>desempates oficiais (MTR 2.3)</span></div>
+      <div class="numero"><b>3</b><span>formatos: individual, duplas e clãs 4×4</span></div>
+      <div class="numero"><b>2</b><span>idiomas: português e inglês</span></div>
+    </div>
+    <div class="pilares">
+      <div class="pilar">
+        <h3>Sem planilha</h3>
+        <p>
+          Pareamento, pontuação, desempates, bye e bracket saem prontos do servidor. O juiz
+          conduz a noite; a conta é feita sozinha e igual para todo mundo.
+        </p>
+      </div>
+      <div class="pilar">
+        <h3>Na tela de quem joga</h3>
+        <p>
+          Cada jogador abre a página do evento no celular e vê a própria mesa, o cronômetro
+          da rodada e a classificação. Tudo atualiza sozinho, sem recarregar.
+        </p>
+      </div>
+      <div class="pilar">
+        <h3>O ano inteiro conta</h3>
+        <p>
+          Torneios viram liga, liga vira ranking, e cada jogador tem um perfil com histórico,
+          aproveitamento, títulos e as badges que a loja entrega.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faixa">
+  <div class="interno">
+    <p class="rotulo">Funcionalidades</p>
+    <h2 class="titulo-secao">Tudo o que o sistema faz hoje</h2>
+    <p class="subtitulo">
+      A lista completa, por área. Cada item já está no ar — nada aqui é promessa de versão futura.
+    </p>
+
+    <div class="grade">
+      <article class="bloco">
+        <h3>Contas e papéis <span class="conta">01</span></h3>
+        <ul>
+          <li>Cadastro, login e recuperação de senha, com <b>limite de tentativas</b> por conta e por origem</li>
+          <li>Três papéis: <b>jogador</b>, <b>organizador</b> e <b>administrador</b>, com o administrador podendo tudo o que o organizador pode</li>
+          <li>Jogador pede para organizar com uma justificativa; a loja <b>aprova ou recusa com um motivo</b></li>
+          <li>Permissão vale no clique seguinte: aprovar e revogar não dependem de sair e entrar de novo</li>
+          <li>Perfil <b>público ou privado</b>, escolhido pelo jogador</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Criação do torneio <span class="conta">02</span></h3>
+        <ul>
+          <li>Nome, descrição, data, jogo, formato, cidade e endereço, ou marcado como <b>online</b></li>
+          <li><b>Imagem de capa</b> própria, com a arte da loja no lugar quando não há capa</li>
+          <li>Pontuação configurável: pontos por vitória, empate e derrota</li>
+          <li>Mesas de <b>2 a 4 jogadores</b>, com formatos individual, duplas e clãs de quatro</li>
+          <li><b>Duração da rodada</b> configurável, com 50 minutos por padrão</li>
+          <li>Torneio de teste, para treinar sem sujar o histórico da loja</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Inscrições <span class="conta">03</span></h3>
+        <ul>
+          <li>O jogador se inscreve sozinho, ou o organizador inscreve pelo e-mail da conta</li>
+          <li><b>Convidado sem conta</b>: entra só pelo nome, e depois pode ser <b>vinculado à conta</b> para o histórico não se perder</li>
+          <li><b>Aprovação de inscrição</b>, quando a loja quer conferir quem entra</li>
+          <li>Registro de deck por jogador, com modo <b>colaborativo</b> opcional</li>
+          <li>Desistência no meio do torneio mantém os resultados já disputados de pé</li>
+          <li>Inscrição de <b>clã ou dupla inteira</b> de uma vez, com todos os integrantes</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Rodadas e pareamento <span class="conta">04</span></h3>
+        <ul>
+          <li>Suíço por desempenho, suíço com menos repetição, evitar repetição e aleatório</li>
+          <li><b>Bye rotativo</b>: sai quem está pior colocado e ainda não recebeu um</li>
+          <li>Opção de <b>exigir mesas completas</b>, bloqueando a rodada quando o número não fecha</li>
+          <li><b>Cronômetro</b> visível para todos, que vira contagem de estouro ao acabar</li>
+          <li><b>Trocar jogadores de mesa</b> e <b>desfazer a rodada</b> quando algo sai errado</li>
+          <li>Página <b>Minha rodada</b>: o jogador vê só a própria mesa</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Resultados <span class="conta">05</span></h3>
+        <ul>
+          <li>Resultado lançado pelo organizador entra confirmado na hora</li>
+          <li><b>Jogador reporta o próprio resultado</b>, que fica pendente até a aprovação</li>
+          <li>Placar por games (2×0, 2×1) em mesas de um contra um, alimentando os desempates</li>
+          <li>Correção de resultado a qualquer momento antes de a rodada fechar</li>
+          <li>Classificação por pontos, <b>OMW%</b>, <b>GW%</b> e <b>OGW%</b>, calculada no servidor</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Mata-mata <span class="conta">06</span></h3>
+        <ul>
+          <li>Top 4, Top 8 e Top 16, com chaves próprias para duplas e clãs</li>
+          <li>Seed pela classificação oficial do suíço, em <b>distribuição cobra</b> nas mesas múltiplas</li>
+          <li>Fases nomeadas sozinhas: Final, Semifinal, Quartas ou Rodada de N</li>
+          <li>Empate na mesa avança quem entrou melhor classificado</li>
+          <li><b>Banner de campeão</b> ao fim da chave, e reabertura do torneio se precisar corrigir</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Ligas <span class="conta">07</span></h3>
+        <ul>
+          <li>Vários torneios somados numa <b>classificação de liga</b></li>
+          <li>Escolha se o mata-mata conta ou não para a soma da liga</li>
+          <li><b>Time de organização</b>: o dono da liga adiciona co-organizadores</li>
+          <li>O time cuida de <b>todos os torneios da liga</b>, inclusive os criados por outra pessoa</li>
+          <li>Apagar a liga não apaga os torneios: eles só deixam de somar</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Perfis e badges <span class="conta">08</span></h3>
+        <ul>
+          <li>Perfil público com histórico, aproveitamento, títulos e decks jogados</li>
+          <li>Recortes por <b>jogo, formato e liga</b>, ou só os eventos avulsos</li>
+          <li>A loja <b>cria badges</b> com imagem e nome e entrega a quem merecer</li>
+          <li>Badge pode ser <b>revogada</b> pela loja e <b>escondida</b> pelo jogador</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Acompanhar e divulgar <span class="conta">09</span></h3>
+        <ul>
+          <li><b>Tempo real</b>: nova rodada, resultado e aprovação aparecem sem recarregar a página</li>
+          <li><b>Notificações</b> no sino: inscrição aprovada, classificação para o mata-mata, resultado registrado, evento encerrado</li>
+          <li><b>QR code e link de divulgação</b>, com envio por WhatsApp e e-mail</li>
+          <li><b>Exportação em CSV</b> da classificação e de todas as rodadas, pronta para o Excel</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Administração <span class="conta">10</span></h3>
+        <ul>
+          <li>Fila de <b>pedidos para organizar</b>, com histórico de quem pede e decisão com motivo</li>
+          <li>Quadro de organizadores, com promoção e revogação de acesso</li>
+          <li>Interface em <b>português e inglês</b> e tema claro ou escuro, por pessoa</li>
+          <li>Funciona no celular, que é onde a noite de torneio acontece</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="faixa faixa--destaque">
+  <div class="interno">
+    <p class="rotulo">Por que trocar a planilha</p>
+    <h2 class="titulo-secao">A mesma noite, conduzida de dois jeitos</h2>
+    <div class="comparativo">
+      <div class="coluna coluna--antes">
+        <h3>Na planilha e no grupo do WhatsApp</h3>
+        <ul>
+          <li>Pareamento montado à mão, com o risco de repetir adversário</li>
+          <li>Desempate discutido no balcão, sem uma regra única</li>
+          <li>Jogador perguntando em que mesa senta</li>
+          <li>Classificação da liga recontada a cada semana</li>
+          <li>Histórico do jogador espalhado em vários arquivos</li>
+        </ul>
+      </div>
+      <div class="coluna coluna--depois">
+        <h3>No Mercadia Tracker</h3>
+        <ul>
+          <li>Rodada pareada em um clique, com bye justo e rotativo</li>
+          <li>Desempates oficiais calculados igual para todos</li>
+          <li>Cada jogador vê a própria mesa no celular</li>
+          <li>Liga somada sozinha a cada resultado confirmado</li>
+          <li>Perfil com o histórico completo de cada jogador</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faixa">
+  <div class="interno">
+    <p class="rotulo">Plataforma</p>
+    <h2 class="titulo-secao">Preparado para a noite de sexta cheia</h2>
+    <p class="subtitulo">
+      O sistema roda na AWS, com atualização sem tirar o site do ar e cuidado com os dados
+      de quem se cadastra.
+    </p>
+    <div class="infra">
+      <div><b>No ar durante a atualização</b><span>a versão nova entra e a antiga só sai depois de atender quem já estava conectado</span></div>
+      <div><b>Dados protegidos</b><span>banco com backup automático e cópia extra antes de cada atualização</span></div>
+      <div><b>Conexão cifrada</b><span>site, API e banco de dados falam sempre por conexão segura</span></div>
+      <div><b>Entrega rápida</b><span>rede global de distribuição, inclusive com pontos na América do Sul</span></div>
+      <div><b>Senhas guardadas com cuidado</b><span>nenhuma senha em texto e limite de tentativas contra força bruta</span></div>
+      <div><b>Imagens conferidas</b><span>toda imagem enviada é verificada antes de ser guardada</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="faixa faixa--clara">
+  <div class="interno">
+    <p class="rotulo">A seguir</p>
+    <h2 class="titulo-secao">O que vem pela frente</h2>
+    <div class="grade">
+      <article class="bloco">
+        <h3>Já planejado</h3>
+        <ul>
+          <li>Organizador entrar como jogador no próprio torneio</li>
+          <li>Decklist de verdade, com busca de comandante e link para a lista</li>
+          <li>Tela de conta mais completa: trocar nome, e-mail e senha</li>
+          <li>Confirmação de e-mail no cadastro</li>
+        </ul>
+      </article>
+      <article class="bloco">
+        <h3>Combinado com a loja</h3>
+        <ul>
+          <li>Badges da temporada e do campeonato da casa</li>
+          <li>Liga anual com o ranking da Mercadia</li>
+          <li>Divulgação por QR code no balcão e nas mesas</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<footer class="faixa fecho">
+  <div class="interno fecho">
+    <p class="rotulo">Comece hoje</p>
+    <h2>Crie a conta, monte o torneio, chame a mesa.</h2>
+    <p class="subtitulo">
+      Criar o torneio leva um minuto: nome, data, jogo e pontuação. O resto o sistema conduz.
+    </p>
+    <p><a class="botao" href="https://app.mercadiastore.online">Abrir o Mercadia Tracker</a></p>
+    <p class="rodape">app.mercadiastore.online · Mercadia Game Store · setembro de 2026</p>
+  </div>
+</footer>
+</body>
+</html>
