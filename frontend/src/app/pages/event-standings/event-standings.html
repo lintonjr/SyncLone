@@ -47,19 +47,19 @@
                     i18n.t('standings.clanRoster', { n: clan.player_count })
                   }}</span>
                 </td>
-                <td class="col-num">
+                <td class="col-num" data-rotulo="V">
                   <span class="stat-win">{{ clan.wins }}</span>
                 </td>
-                <td class="col-num">
+                <td class="col-num" data-rotulo="D">
                   <span class="stat-loss">{{ clan.losses }}</span>
                 </td>
-                <td class="col-num">
+                <td class="col-num" data-rotulo="E">
                   <span class="stat-draw">{{ clan.draws }}</span>
                 </td>
-                <td class="col-pts">
+                <td class="col-pts" data-rotulo="Pts">
                   <strong class="pts-val">{{ clan.points }}</strong>
                 </td>
-                <td class="col-tb tiebreaker-cell">
+                <td class="col-tb tiebreaker-cell" data-rotulo="OMW">
                   {{ clan.omw === null ? '—' : (clan.omw * 100).toFixed(1) + '%' }}
                 </td>
                 @if (isOwner() && ev()!.current_round === 0) {
@@ -125,9 +125,7 @@
   @if (sortedStandings().length === 0) {
     <p class="empty">
       @if (pendingPlayers().length) {
-        Ninguém aprovado ainda — há {{ pendingPlayers().length }}
-        {{ pendingPlayers().length === 1 ? 'pedido' : 'pedidos' }} de inscrição esperando o
-        organizador.
+        {{ i18n.t('standings.soPendentes', { n: pendingPlayers().length }) }}
       } @else {
         {{
           ev()!.status === 'completed'
@@ -223,7 +221,7 @@
                       'Entrou com o torneio em andamento e não jogou ' + faltando + ' rodada(s)'
                     "
                   >
-                    entrou depois · −{{ faltando }}
+                    {{ i18n.t('standings.entrouDepois', { n: faltando }) }}
                   </span>
                 }
               </td>
@@ -244,19 +242,19 @@
                   <span class="text-muted-sm">—</span>
                 }
               </td>
-              <td class="col-num">
+              <td class="col-num" data-rotulo="W">
                 <span class="stat-win">{{ player.wins }}</span>
               </td>
-              <td class="col-num">
+              <td class="col-num" data-rotulo="L">
                 <span class="stat-loss">{{ player.losses }}</span>
               </td>
-              <td class="col-num">
+              <td class="col-num" data-rotulo="D">
                 <span class="stat-draw">{{ player.draws }}</span>
               </td>
-              <td class="col-pts">
+              <td class="col-pts" data-rotulo="Pts">
                 <strong class="pts-val">{{ player.points }}</strong>
               </td>
-              <td class="col-tb tiebreaker-cell">
+              <td class="col-tb tiebreaker-cell" data-rotulo="MW | OMW | GW | OGW">
                 {{ tiebreakers(player).mw }} | {{ tiebreakers(player).omw }} |
                 {{ tiebreakers(player).gw }} | {{ tiebreakers(player).ogw }}
               </td>

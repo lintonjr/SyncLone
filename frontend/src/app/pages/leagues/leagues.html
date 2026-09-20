@@ -24,7 +24,8 @@
           <div class="league-card-main">
             <h3>{{ l.name }}</h3>
             <p class="league-meta">
-              Organized by {{ l.owner_name }} &nbsp;•&nbsp; {{ l.event_count ?? 0 }} events
+              {{ i18n.t('league.organizedBy', { quem: l.owner_name ?? '' }) }} &nbsp;•&nbsp;
+              {{ i18n.t('league.eventsCount', { n: l.event_count ?? 0 }) }}
             </p>
           </div>
           <span

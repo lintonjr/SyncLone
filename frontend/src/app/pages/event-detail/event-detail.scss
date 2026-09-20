@@ -161,9 +161,20 @@
   gap: 2px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 24px;
+  /* No celular as três abas não cabem lado a lado: a faixa rola em vez de
+     empurrar a página inteira (medido: 402px de abas em 384px de tela). */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .tab-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
   padding: 10px 20px;
   border: none;
   background: transparent;
@@ -317,15 +328,67 @@
 }
 
 @media (max-width: 640px) {
+  /* ── Banner no celular: empilhado, nada sobreposto ──
+     Com tudo por cima da imagem em 390px de tela, o título cobria a arte e os
+     botões de conduzir o torneio ficavam cortados na borda de baixo. A capa vira
+     uma faixa de altura própria e o texto e as ações descem para baixo dela. */
   .event-banner {
-    height: 220px;
-  }
-  .banner-overlay {
+    height: auto;
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
   }
+
+  .banner-img,
+  .banner-bg,
+  .banner-placeholder {
+    height: 150px;
+  }
+
+  .banner-bg {
+    position: absolute;
+    top: 0;
+  }
+
+  .banner-overlay {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+    background: var(--surface);
+  }
+
+  .banner-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .banner-actions {
+    align-self: stretch;
+  }
+
+  .owner-actions,
+  .owner-row {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  /* Fora da imagem, o texto branco fixo perderia contraste no tema claro. */
   .event-title {
     font-size: 20px;
+    color: var(--text);
+    margin-bottom: 0;
+  }
+
+  .event-meta,
+  .event-desc {
+    color: var(--text-muted);
+  }
+
+  .league-link,
+  .badges {
+    margin-bottom: 0;
   }
   .matchup {
     flex-direction: column;

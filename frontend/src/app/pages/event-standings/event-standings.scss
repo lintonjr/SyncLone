@@ -446,3 +446,80 @@
     border-color: var(--accent);
   }
 }
+
+/* ── Celular: a tabela vira lista ──
+   Abaixo de 640px uma tabela de 8 colunas só cabe rolando de lado, e rolagem
+   lateral dentro de página que também rola é a pior combinação no toque. Cada
+   linha vira um cartão: nome em cima, números embaixo, cada um com seu rótulo
+   (`data-rotulo`) — o cabeçalho da tabela some porque cada valor passa a se
+   explicar sozinho. */
+@media (max-width: 640px) {
+  .standings-table {
+    overflow-x: visible;
+  }
+
+  .standings-table table {
+    display: block;
+    min-width: 0;
+  }
+
+  .standings-table table thead {
+    display: none;
+  }
+
+  .standings-table table tbody {
+    display: block;
+  }
+
+  .standings-table table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .standings-table table td {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    width: auto;
+    padding: 0;
+    border: none;
+    text-align: left !important;
+  }
+
+  /* Colocação e nome dividem a primeira linha; o resto desce. */
+  .standings-table table td.rank-cell {
+    flex: 0 0 auto;
+  }
+
+  .standings-table table td.player-cell {
+    flex: 1 1 55%;
+    min-width: 0;
+    flex-wrap: wrap;
+    font-weight: 600;
+  }
+
+  /* Deck é texto livre e pode ser longo: linha própria. */
+  .standings-table table td.deck-cell {
+    flex: 1 1 100%;
+  }
+
+  .standings-table table td::before {
+    content: attr(data-rotulo);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .standings-table table td.col-tb {
+    flex: 1 1 100%;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+  }
+}

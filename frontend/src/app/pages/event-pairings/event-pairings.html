@@ -3,7 +3,9 @@
 } @else {
   <div class="round-section">
     <div class="round-header">
-      <h3 class="round-title">{{ roundLabel(currentRoundPairings()!.round) }} — Pairings</h3>
+      <h3 class="round-title">
+        {{ roundLabel(currentRoundPairings()!.round) }} — {{ i18n.t('event.tabPairings') }}
+      </h3>
       <span
         class="round-status-badge"
         [class]="
@@ -219,7 +221,7 @@
                 </td>
                 <td class="col-vs vs">vs</td>
                 <td class="player-col">
-                  {{ p.p2_name || 'Bye' }}
+                  {{ p.p2_name || i18n.t('common.bye') }}
                   @if (!p.result && isOwner() && swapMode() && p.player2_id) {
                     <button
                       class="swap-select-btn"

@@ -18,6 +18,7 @@ Produção: **AWS** (CloudFront, ECS Fargate, RDS, ElastiCache Serverless), desc
 
 ### Eventos
 - Criação de evento com nome, descrição, local (presencial/online), data, jogo, formato, imagem de capa (com placeholder automático quando não há imagem)
+- **Fuso horário do evento**: a data é guardada como **instante em UTC** e o evento carrega o fuso em que acontece (`timezone`, nome IANA como `America/Manaus`). A hora aparece sempre no fuso do torneio, com a etiqueta do deslocamento (`20:00 GMT-4`), para quem abre a página em qualquer lugar. Antes disso o horário de parede digitado era lido como UTC e a tela mostrava 16:00 para um torneio marcado às 20:00. A API **exige** fuso na data (`...Z` ou `...-04:00`): texto sem fuso seria lido no fuso do servidor
 - Pontuação configurável por evento — pontos para Win / Draw / Loss definidos pelo organizador e aplicados durante todo o torneio
 - Tamanho de pod configurável (2 a 4 jogadores por mesa)
 - Encerramento manual do evento (`finish`) — evento finalizado vira registro fechado: não aceita mais inscrição, adição de jogador, edição de deck, nova rodada, swap nem alteração de resultado (400 em todas). A única porta de volta é o **Undo**, que continua liberado
@@ -61,6 +62,7 @@ Produção: **AWS** (CloudFront, ECS Fargate, RDS, ElastiCache Serverless), desc
 
 ### Outros
 - Autenticação JWT (registro / login / esqueci a senha), com limite de 10 tentativas por 15 min por IP + e-mail nos endpoints de credencial
+- **Uso no celular**: nenhuma tela rola de lado (medido em 390 px de largura), as tabelas de classificação viram lista de cartões abaixo de 640 px, o banner do evento empilha em vez de sobrepor texto e botões, e todo alvo de toque tem no mínimo 44 px. Interface em português e inglês, com guarda automatizada: um teste falha se uma chave existir num idioma e faltar no outro, ou se um template usar chave inexistente
 - **Notificações**: o sino da barra superior traz contador de não lidas e é alimentado por eventos reais — inscrição feita pelo organizador, inscrição aprovada, rodada iniciada, classificação para os playoffs, resultado registrado ou aprovado, e evento finalizado. Um resultado auto-reportado avisa o organizador de que há algo esperando aprovação. Só jogadores com conta recebem (convidados avulsos não têm caixa de entrada)
 - **Exportação em CSV**: `GET /api/events/:id/export?type=standings|pairings` — classificação com todos os desempates, ou todas as rodadas com mesa, resultado, vencedor e placar por games. Botões na página do evento; arquivo sai com BOM para o Excel não quebrar acentuação
 - Upload de imagem de evento (multer) — só PNG / JPEG / WebP / GIF, até 5 MB; o arquivo é gravado com a extensão do tipo aceito (nunca a do nome enviado) e servido com `nosniff` + `Content-Disposition: attachment`, para que um upload nunca seja interpretado como documento na origem da SPA

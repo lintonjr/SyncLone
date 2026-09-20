@@ -28,8 +28,8 @@
             (click)="toggleNotifications(); $event.stopPropagation()"
             [attr.aria-label]="
               notif.unreadCount()
-                ? 'Open notifications (' + notif.unreadCount() + ' unread)'
-                : 'Open notifications'
+                ? i18n.t('nav.notificationsUnread', { n: notif.unreadCount() })
+                : i18n.t('nav.notifications')
             "
           >
             <svg

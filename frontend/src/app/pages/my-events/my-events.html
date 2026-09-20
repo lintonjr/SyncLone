@@ -12,14 +12,14 @@
       [class.active]="activeTab() === 'owned'"
       (click)="activeTab.set('owned')"
     >
-      Organized ({{ owned().length }})
+      {{ i18n.t('myEvents.tabOrganized', { n: owned().length }) }}
     </button>
     <button
       class="tab-btn"
       [class.active]="activeTab() === 'joined'"
       (click)="activeTab.set('joined')"
     >
-      Joined ({{ joined().length }})
+      {{ i18n.t('myEvents.tabJoined', { n: joined().length }) }}
     </button>
   </div>
 

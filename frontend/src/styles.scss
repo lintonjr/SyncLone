@@ -32,6 +32,22 @@
   padding: 0;
 }
 
+/**
+ * Rede de proteção contra rolagem lateral.
+ *
+ * Uma tabela larga ou um botão comprido empurravam a página inteira, e no celular
+ * isso vira aquela sensação de tela solta que anda de lado ao tocar. `clip` corta
+ * sem criar barra de rolagem e, diferente de `hidden`, não transforma o elemento
+ * em container de rolagem — o cabeçalho fixo continua funcionando.
+ *
+ * É rede, não conserto: cada estouro é corrigido na própria tela (tabelas viram
+ * lista no celular, abas rolam sozinhas). A trava existe para o próximo.
+ */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background-color: var(--bg);
   background-image:
@@ -373,5 +389,35 @@ a {
     background: var(--accent);
     border-color: var(--accent);
     color: #fff;
+  }
+}
+
+/* ── Alvo de toque ──
+   Dedo não é ponteiro: abaixo de ~44px a pessoa erra o botão, e a medição do
+   celular achou 27 alvos menores que isso só no formulário de evento. A altura
+   mínima vale para tudo que se toca; `icon-only` também ganha largura, porque
+   um quadrado de 24px continua difícil mesmo com altura suficiente.
+
+   Vale em tela estreita e em qualquer aparelho de toque: no mouse de uma tela
+   larga a régua é outra, e esticar tudo ali deixaria a interface frouxa. */
+@media (max-width: 640px), (pointer: coarse) {
+  .btn,
+  button,
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  .btn.icon-only,
+  button.icon-only {
+    min-width: 44px;
+  }
+
+  /* Ações lado a lado ganham respiro para o toque não cair na vizinha. */
+  .owner-row,
+  .banner-actions,
+  .export-bar {
+    gap: 10px;
   }
 }

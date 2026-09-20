@@ -185,7 +185,9 @@
                       }
                     </span>
                   </td>
-                  <td class="col-date text-muted-sm">{{ e.date | date: 'MMM d, y' }}</td>
+                  <td class="col-date text-muted-sm">
+                    {{ e.date | dataEvento: e.timezone : 'curto' }}
+                  </td>
                   <td class="col-pos">
                     @if (e.dropped) {
                       <span class="drop-tag">{{ i18n.t('profilePub.dropped') }}</span>
@@ -194,16 +196,16 @@
                       <span class="field-size">/ {{ e.field_size }}</span>
                     }
                   </td>
-                  <td class="col-num">
+                  <td class="col-num" data-rotulo="W">
                     <span class="stat-win">{{ e.wins }}</span>
                   </td>
-                  <td class="col-num">
+                  <td class="col-num" data-rotulo="L">
                     <span class="stat-loss">{{ e.losses }}</span>
                   </td>
-                  <td class="col-num">
+                  <td class="col-num" data-rotulo="D">
                     <span class="stat-draw">{{ e.draws }}</span>
                   </td>
-                  <td class="col-pts">
+                  <td class="col-pts" data-rotulo="Pts">
                     <strong class="pts-val">{{ e.points }}</strong>
                   </td>
                 </tr>

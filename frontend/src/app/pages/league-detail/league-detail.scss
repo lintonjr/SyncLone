@@ -186,7 +186,10 @@
 .event-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  /* Sem quebrar, o selo de status era empurrado para fora da tela no celular
+     (medido: 453px de conteúdo em 384px). */
+  flex-wrap: wrap;
+  gap: 8px 14px;
   padding: 14px 18px;
   text-decoration: none;
   color: inherit;
@@ -200,10 +203,67 @@
 .event-row-name {
   font-weight: 600;
   flex-shrink: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .event-row-meta {
   font-size: 12px;
   color: var(--text-muted);
   flex: 1;
+}
+
+/* ── Celular: classificação da liga vira lista ──
+   A tabela tem largura mínima de 500px e empurrava a página inteira para o lado
+   (medido em 390px de tela). Cada jogador vira uma linha de cartão. */
+@media (max-width: 640px) {
+  .standings-table table {
+    display: block;
+    min-width: 0;
+  }
+
+  .standings-table table thead {
+    display: none;
+  }
+
+  .standings-table table tbody {
+    display: block;
+  }
+
+  .standings-table table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 14px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .standings-table table td {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    width: auto;
+    padding: 0;
+    border: none;
+  }
+
+  /* Nome do jogador ocupa o resto da primeira linha. */
+  .standings-table table td:nth-child(2) {
+    flex: 1 1 60%;
+  }
+
+  .standings-table table td::before {
+    content: attr(data-rotulo);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* A linha de corte continua atravessando o cartão inteiro. */
+  .standings-table table tr.cut-divider td {
+    flex: 1 1 100%;
+  }
 }

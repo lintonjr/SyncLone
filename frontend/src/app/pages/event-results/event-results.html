@@ -195,7 +195,7 @@
                   </td>
                   <td class="col-vs vs">vs</td>
                   <td class="player-col">
-                    {{ p.p2_name || 'Bye' }}
+                    {{ p.p2_name || i18n.t('common.bye') }}
                     @if (
                       !p.result &&
                       isOwner() &&

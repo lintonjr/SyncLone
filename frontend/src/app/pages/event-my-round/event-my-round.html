@@ -2,11 +2,7 @@
   <div class="myround-empty">
     <div class="myround-icon">🏆</div>
     <p>
-      {{
-        ev()!.rounds?.length
-          ? 'You have no active pairing in the current round.'
-          : "The event hasn't started yet. Wait for the organizer to start Round 1."
-      }}
+      {{ ev()!.rounds?.length ? i18n.t('myRound.semMesa') : i18n.t('myRound.naoComecou') }}
     </p>
   </div>
 } @else {
@@ -66,7 +62,7 @@
         <div class="player-side" [class.is-me]="mr()!.pairing.player2_id === mr()!.myPlayer.id">
           <div class="player-avatar">{{ (mr()!.pairing.p2_name || 'B').charAt(0) }}</div>
           <div class="player-info">
-            <span class="player-label">{{ mr()!.pairing.p2_name || 'Bye' }}</span>
+            <span class="player-label">{{ mr()!.pairing.p2_name || i18n.t('common.bye') }}</span>
             @if (mr()!.pairing.player2_id === mr()!.myPlayer.id) {
               <span class="you-tag">{{ i18n.t('myRound.you') }}</span>
             }
