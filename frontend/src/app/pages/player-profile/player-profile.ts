@@ -6,6 +6,7 @@ import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { BadgeService } from '../../services/badge';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
+import { DataEventoPipe } from '../../lib/data-evento.pipe';
 
 /**
  * Perfil público de um jogador: o que ele jogou e como se saiu.
@@ -16,7 +17,7 @@ import { environment } from '../../../environments/environment';
  */
 @Component({
   selector: 'app-player-profile',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, DataEventoPipe],
   templateUrl: './player-profile.html',
   styleUrl: './player-profile.scss',
 })

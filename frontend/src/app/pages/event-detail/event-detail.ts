@@ -23,12 +23,14 @@ import { EventResultComponent } from '../event-result/event-result';
 import { EventClanEnrollComponent, InscricaoDeCla } from '../event-clan-enroll/event-clan-enroll';
 import { EventPairingsComponent } from '../event-pairings/event-pairings';
 import { EventResultsComponent } from '../event-results/event-results';
+import { DataEventoPipe } from '../../lib/data-evento.pipe';
 
 @Component({
   selector: 'app-event-detail',
   imports: [
     CommonModule,
     RouterLink,
+    DataEventoPipe,
     EventStandingsComponent,
     EventPairingsComponent,
     EventResultsComponent,

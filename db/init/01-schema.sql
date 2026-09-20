@@ -52,7 +52,10 @@ CREATE TABLE IF NOT EXISTS `events` (
   `address` text,
   `online` tinyint(1) NOT NULL DEFAULT '0',
   `thumbnail` varchar(255) DEFAULT NULL,
+  -- Instante do torneio, em UTC (migrations/017). A hora é exibida sempre em
+  -- `timezone`, o fuso onde o torneio acontece, e não no fuso de quem olha.
   `date` datetime NOT NULL,
+  `timezone` varchar(64) NOT NULL DEFAULT 'America/Manaus',
   `game` varchar(50) NOT NULL,
   `format` varchar(50) DEFAULT NULL,
   -- 'standard' ou 'clafronto' — ver db/migrations/007_cla_fronto.sql

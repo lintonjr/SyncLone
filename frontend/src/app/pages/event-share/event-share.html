@@ -7,7 +7,7 @@
 
     <ul class="share-meta">
       <li>🧑 {{ i18n.t('share.organizedBy', { quem: ev().owner_name || '' }) }}</li>
-      <li>📅 {{ ev().date | date: 'MMM d, y · h:mm a' }}</li>
+      <li>📅 {{ ev().date | dataEvento: ev().timezone }}</li>
       <li>📍 {{ ev().online ? i18n.t('common.online') : ev().city || i18n.t('common.tbd') }}</li>
       <li>👥 {{ i18n.t('event.playersCount', { n: ev().players?.length ?? 0 }) }}</li>
     </ul>

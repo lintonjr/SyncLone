@@ -53,7 +53,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
 
   const events = await db.query(
-    'SELECT id, name, date, status, thumbnail, game, format, points_win, points_draw, points_loss FROM events WHERE league_id = ? ORDER BY date',
+    'SELECT id, name, date, timezone, status, thumbnail, game, format, points_win, points_draw, points_loss FROM events WHERE league_id = ? ORDER BY date',
     [req.params.id]
   );
 

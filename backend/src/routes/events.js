@@ -5,6 +5,7 @@ const db = require('../db');
 const auth = require('../middleware/auth');
 const requireOrganizer = require('../middleware/requireOrganizer');
 const { podeOrganizar } = require('../lib/roles');
+const { fusoOuPadrao } = require('../lib/fusos');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
@@ -30,6 +31,16 @@ const upload = imageUpload({
 });
 
 const parseBool = (v) => v === 'true' || v === true || v === 1 || v === '1';
+
+/**
+ * O instante do torneio, como objeto de data.
+ *
+ * O cliente manda ISO com fuso (`2026-10-03T00:00:00.000Z`) e a coluna é
+ * `datetime`: passar o texto direto faria o MySQL recusar o "Z". Convertido aqui,
+ * o driver grava em UTC (a conexão é `+00:00`) e devolve o mesmo instante na
+ * leitura. O schema já garantiu que a data é válida.
+ */
+const instante = (valor) => new Date(valor);
 
 // `conn` is either the pool-backed `db` or a transaction handle — both expose the
 // same query/get/run trio, so these helpers work inside and outside a transaction.
@@ -574,7 +585,7 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(sc
     name, description, city, address, online, date, game, format, tournament_format,
     pairing_method, playoff_structure, allow_byes, test_event,
     collaborative_deck, async_draws, confirm_players, qr_code_enabled, league_id, pod_size,
-    points_win, points_draw, points_loss,
+    points_win, points_draw, points_loss, timezone,
   } = req.body;
 
   let leagueIdVal = null;
@@ -593,13 +604,13 @@ router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(sc
   const pointsLossVal = points_loss !== undefined && points_loss !== '' ? parseInt(points_loss) : 0;
 
   await db.run(`
-    INSERT INTO events (id, name, description, city, address, online, thumbnail, date, game, format,
+    INSERT INTO events (id, name, description, city, address, online, thumbnail, date, timezone, game, format,
       tournament_format, pairing_method, playoff_structure, allow_byes, test_event, collaborative_deck, async_draws,
       confirm_players, qr_code_enabled, league_id, pod_size, points_win, points_draw, points_loss, owner_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     id, name, description || null, city || null, address || null,
-    parseBool(online) ? 1 : 0, thumbnail, date, game, format || null,
+    parseBool(online) ? 1 : 0, thumbnail, instante(date), fusoOuPadrao(timezone), game, format || null,
     tournament_format || 'standard',
     pairing_method || 'swiss', playoff_structure || 'none',
     regras.allowByes(allow_byes), parseBool(test_event) ? 1 : 0,
@@ -625,7 +636,7 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
     name, description, city, address, online, date, game, format, tournament_format,
     pairing_method, pod_size, playoff_structure, allow_byes, test_event,
     collaborative_deck, async_draws, confirm_players, qr_code_enabled, league_id, status,
-    points_win, points_draw, points_loss,
+    points_win, points_draw, points_loss, timezone,
   } = req.body;
 
   let leagueIdVal = event.league_id;
@@ -662,14 +673,15 @@ router.put('/:id', auth, upload.single('thumbnail'), validate(schemas.updateEven
     : (allow_byes !== undefined ? (parseBool(allow_byes) ? 1 : 0) : event.allow_byes);
 
   await db.run(`
-    UPDATE events SET name=?, description=?, city=?, address=?, online=?, thumbnail=?, date=?,
+    UPDATE events SET name=?, description=?, city=?, address=?, online=?, thumbnail=?, date=?, timezone=?,
     game=?, format=?, tournament_format=?, pairing_method=?, pod_size=?, playoff_structure=?, allow_byes=?, test_event=?,
     collaborative_deck=?, async_draws=?, confirm_players=?, qr_code_enabled=?, league_id=?, points_win=?, points_draw=?, points_loss=?,
     status=? WHERE id=?
   `, [
     name || event.name, description ?? event.description, city ?? event.city,
     address ?? event.address, online !== undefined ? (parseBool(online) ? 1 : 0) : event.online,
-    thumbnail, date || event.date, game || event.game, format ?? event.format,
+    thumbnail, date ? instante(date) : event.date, timezone ? fusoOuPadrao(timezone) : event.timezone,
+    game || event.game, format ?? event.format,
     formatoEfetivo,
     pairing_method || event.pairing_method, podSizeEfetivo,
     playoffEfetivo,

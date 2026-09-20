@@ -92,6 +92,15 @@
         />
       </div>
       <div class="form-field">
+        <label>{{ i18n.t('form.timezone') }}</label>
+        <select [value]="fuso()" (change)="fuso.set($any($event.target).value)">
+          @for (f of fusos; track f) {
+            <option [value]="f">{{ rotuloFuso(f) }}</option>
+          }
+        </select>
+        <span class="field-hint">{{ i18n.t('form.timezoneHelp') }}</span>
+      </div>
+      <div class="form-field">
         <label>{{ i18n.t('form.game') }}</label>
         <select [value]="game()" (change)="game.set($any($event.target).value); format.set('')">
           <option value="">{{ i18n.t('form.selectGame') }}</option>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import * as QRCode from 'qrcode';
 import { TournamentEvent } from '../../services/event';
 import { I18nService } from '../../i18n/i18n';
+import { DataEventoPipe } from '../../lib/data-evento.pipe';
 
 /**
  * O convite do evento: QR code e os atalhos de compartilhar.
@@ -13,7 +14,7 @@ import { I18nService } from '../../i18n/i18n';
  */
 @Component({
   selector: 'app-event-share',
-  imports: [CommonModule],
+  imports: [CommonModule, DataEventoPipe],
   templateUrl: './event-share.html',
   styleUrl: './event-share.scss',
 })

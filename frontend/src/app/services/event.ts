@@ -38,6 +38,8 @@ export interface TournamentEvent {
   champion_clan_id?: string | null;
   owner_id: string;
   owner_name?: string;
+  /** Fuso em que o torneio acontece (IANA). A hora é sempre exibida nele. */
+  timezone?: string;
   // Time da liga do evento (dono e co-organizadores): também gerencia o evento.
   league_owner_id?: string | null;
   league_organizer_ids?: string[];

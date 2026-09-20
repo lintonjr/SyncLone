@@ -33,6 +33,7 @@ export interface LeagueEvent {
   id: string;
   name: string;
   date: string;
+  timezone?: string;
   status: string;
   thumbnail?: string;
   game: string;

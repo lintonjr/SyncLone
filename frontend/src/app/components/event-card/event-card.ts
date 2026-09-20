@@ -4,10 +4,11 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TournamentEvent } from '../../services/event';
 import { environment } from '../../../environments/environment';
+import { DataEventoPipe } from '../../lib/data-evento.pipe';
 
 @Component({
   selector: 'app-event-card',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, DataEventoPipe],
   templateUrl: './event-card.html',
   styleUrl: './event-card.scss',
 })

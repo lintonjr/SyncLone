@@ -7,6 +7,7 @@ export interface ProfileEvent {
   event_id: string;
   name: string;
   date: string;
+  timezone?: string;
   game: string;
   format?: string;
   event_status: string;

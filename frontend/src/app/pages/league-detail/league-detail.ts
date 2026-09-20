@@ -5,10 +5,11 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { LeagueService, LeagueDetail, LeagueOrganizer } from '../../services/league';
 import { AuthService } from '../../services/auth';
+import { DataEventoPipe } from '../../lib/data-evento.pipe';
 
 @Component({
   selector: 'app-league-detail',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, DataEventoPipe],
   templateUrl: './league-detail.html',
   styleUrl: './league-detail.scss',
 })

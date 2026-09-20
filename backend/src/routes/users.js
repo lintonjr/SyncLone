@@ -151,7 +151,7 @@ router.get('/:id/profile', optionalAuth, asyncHandler(async (req, res) => {
   // isso viraria uma ida ao banco por evento jogado.
   const inscricoes = await db.query(
     `SELECT ep.id, ep.event_id, ep.deck_name, ep.status,
-            e.name AS event_name, e.date, e.game, e.format, e.status AS event_status,
+            e.name AS event_name, e.date, e.timezone, e.game, e.format, e.status AS event_status,
             e.points_win, e.points_draw, e.points_loss, e.champion_id,
             e.league_id, l.name AS league_name
      FROM event_players ep

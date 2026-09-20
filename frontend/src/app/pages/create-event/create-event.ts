@@ -6,6 +6,13 @@ import { EventService } from '../../services/event';
 import { LeagueService, League } from '../../services/league';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
+import {
+  FUSO_PADRAO,
+  fusosSugeridos,
+  paraInstante,
+  paraPartes,
+  rotuloDoFuso,
+} from '../../lib/fuso';
 
 @Component({
   selector: 'app-create-event',
@@ -31,6 +38,10 @@ export class CreateEventComponent implements OnInit {
   description = signal('');
   date = signal('');
   time = signal('');
+  /** Fuso do torneio: a hora digitada é hora de parede dele (lib/fuso.ts). */
+  fuso = signal(FUSO_PADRAO);
+  fusos = fusosSugeridos();
+  rotuloFuso = (f: string) => rotuloDoFuso(f, this.i18n.lang());
   game = signal('');
   format = signal('');
   pairingMethod = signal('swiss');
@@ -99,9 +110,13 @@ export class CreateEventComponent implements OnInit {
           this.address.set(ev.address ?? '');
           this.online.set(!!ev.online);
           this.description.set(ev.description ?? '');
-          const d = new Date(ev.date);
-          this.date.set(d.toISOString().slice(0, 10));
-          this.time.set(d.toTimeString().slice(0, 5));
+          // O evento guarda um instante; o formulário mostra a hora de parede do
+          // fuso dele. Antes daqui saíam a data em UTC e a hora local, o que
+          // trocava o dia perto da meia-noite.
+          this.fuso.set(ev.timezone || FUSO_PADRAO);
+          const { data, hora } = paraPartes(new Date(ev.date), this.fuso());
+          this.date.set(data);
+          this.time.set(hora);
           this.game.set(ev.game);
           this.format.set(ev.format ?? '');
           this.pairingMethod.set(ev.pairing_method);
@@ -185,7 +200,8 @@ export class CreateEventComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
 
-    const dateTime = this.time() ? `${this.date()}T${this.time()}:00` : `${this.date()}T00:00:00`;
+    // Vai como instante (UTC): a hora digitada é hora de parede do fuso escolhido.
+    const dateTime = paraInstante(this.date(), this.time(), this.fuso()).toISOString();
     const fd = new FormData();
     fd.append('name', this.name());
     fd.append('city', this.city());
@@ -193,6 +209,7 @@ export class CreateEventComponent implements OnInit {
     fd.append('online', String(this.online()));
     fd.append('description', this.description());
     fd.append('date', dateTime);
+    fd.append('timezone', this.fuso());
     fd.append('game', this.game());
     fd.append('format', this.format());
     fd.append('pairing_method', this.pairingMethod());

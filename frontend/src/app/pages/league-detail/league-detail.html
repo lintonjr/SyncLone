@@ -6,12 +6,12 @@
       <div>
         <h1>{{ league()!.name }}</h1>
         <p class="league-meta">
-          Organized by {{ league()!.owner_name }} &nbsp;•&nbsp; {{ league()!.events.length }} events
-          &nbsp;•&nbsp;
+          {{ i18n.t('league.organizedBy', { quem: league()!.owner_name ?? '' }) }} &nbsp;•&nbsp;
+          {{ i18n.t('league.eventsCount', { n: league()!.events.length }) }} &nbsp;•&nbsp;
           {{
             league()!.playoff_counts
-              ? 'Playoffs count towards standings'
-              : 'Playoffs excluded from standings'
+              ? i18n.t('league.playoffsContam')
+              : i18n.t('league.playoffsNaoContam')
           }}
         </p>
       </div>
@@ -61,11 +61,11 @@
                   }
                 </td>
                 <td>{{ s.display_name }}</td>
-                <td>{{ s.events_played }}</td>
-                <td>{{ s.wins }}</td>
-                <td>{{ s.losses }}</td>
-                <td>{{ s.draws }}</td>
-                <td>
+                <td data-rotulo="Eventos">{{ s.events_played }}</td>
+                <td data-rotulo="W">{{ s.wins }}</td>
+                <td data-rotulo="L">{{ s.losses }}</td>
+                <td data-rotulo="D">{{ s.draws }}</td>
+                <td data-rotulo="Pts">
                   <strong>{{ s.points }}</strong>
                 </td>
               </tr>
@@ -146,7 +146,7 @@
             <span class="event-row-name">{{ ev.name }}</span>
             <span class="event-row-meta"
               >{{ ev.game }}{{ ev.format ? ' - ' + ev.format : '' }} &nbsp;•&nbsp;
-              {{ ev.date | date: 'MMM d, y' }}</span
+              {{ ev.date | dataEvento: ev.timezone : 'curto' }}</span
             >
             <span
               class="badge"

@@ -17,10 +17,21 @@ const boolish = blank(z.union([z.boolean(), z.enum(['true', 'false', '0', '1'])]
 const int = (min, max) => blank(z.coerce.number().int().min(min).max(max).optional());
 const str = (max) => z.string().max(max).optional();
 
+/**
+ * A data do evento é um **instante**, então o fuso vem junto: `...Z` ou `...-04:00`.
+ *
+ * Texto sem fuso ("2026-10-02T20:00:00") seria lido no fuso de quem processa — o
+ * servidor — e é essa ambiguidade que trocava a hora do torneio. Recusar aqui é o
+ * que garante que cliente e servidor falam do mesmo instante.
+ */
 const dateString = z
   .string()
   .min(1)
-  .refine((v) => !Number.isNaN(Date.parse(v)), 'must be a valid date');
+  .refine((v) => !Number.isNaN(Date.parse(v)), 'must be a valid date')
+  .refine(
+    (v) => /(?:Z|[+-]\d{2}:?\d{2})$/.test(v.trim()),
+    'a data precisa trazer o fuso (ex.: 2026-10-02T20:00:00-04:00 ou ...Z)',
+  );
 
 const PAIRING_METHODS = ['swiss', 'swiss-less-repetition', 'avoid-repetition', 'random'];
 const PLAYOFF_STRUCTURES = ['none', 'top4', 'top8', 'top16', 'clan2', 'clan4', 'partner2', 'partner4', 'partner8'];
@@ -31,6 +42,7 @@ const RESULTS = ['player1', 'player2', 'player3', 'player4', 'draw', 'bye'];
 // Mesma lista de lib/roles.js — importada de lá para não haver duas verdades
 // sobre quais papéis existem.
 const { PAPEIS: ROLES } = require('../lib/roles');
+const { fusoValido } = require('../lib/fusos');
 
 // Column widths mirror db/init/01-schema.sql — validating here is what turns a
 // raw "Data too long for column ..." driver error into a readable 400.
@@ -50,6 +62,9 @@ const eventFields = {
   confirm_players: boolish,
   qr_code_enabled: boolish,
   league_id: str(36),
+  // Nome IANA do fuso do torneio (America/Manaus). A lista é a do runtime, não
+  // uma escrita à mão: quem valida é o próprio Intl (lib/fusos.js).
+  timezone: blank(z.string().trim().max(64).refine(fusoValido, 'fuso horário desconhecido').optional()),
   pod_size: int(2, 4),
   round_minutes: int(5, 240),
   points_win: int(0, 10),
