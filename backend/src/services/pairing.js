@@ -297,6 +297,62 @@ function seedPlayoffPods(seededPlayers, podSize) {
   return groups.map(asPod);
 }
 
+/**
+ * Quem avança de uma fase do mata-mata para a seguinte.
+ *
+ * Em duelo, o vencedor de cada mesa e pronto: 8 → 4 → 2 → campeão, a conta fecha
+ * sozinha. Em mesa de quatro (Commander) não fecha — um Top 8 tem duas mesas,
+ * logo dois vencedores, e a fase seguinte virava uma mesa de **dois jogadores**,
+ * que não é Commander.
+ *
+ * Então, quando os vencedores não enchem a próxima mesa, ela é completada com
+ * quem jogou a fase atual e não venceu, na ordem da classificação oficial e
+ * pegando **um de cada mesa** antes de repetir mesa — assim as duas mesas do Top
+ * 8 mandam um segundo colocado cada, e a final tem quatro jogadores.
+ *
+ * A alternativa seria só o vencedor avançar e o Top 8 sumir da lista em formato
+ * de quatro; a loja preferiu manter o Top 8 e a mesa cheia.
+ *
+ * Quando os vencedores já enchem a próxima mesa, a lista sai **na ordem das
+ * mesas**, como sempre foi: é o caminho do chaveamento (quem venceu a mesa 1
+ * encontra quem venceu a mesa 2). Só quando é preciso completar é que a ordem
+ * passa a ser a da classificação, que é o critério de quem entrou e também
+ * distribui melhor a mesa nova.
+ *
+ * @param mesas          mesas da fase atual, cada uma com os ids dos assentos
+ * @param vencedores     ids de quem venceu, um por mesa, na ordem das mesas
+ * @param ordemOficial   ids na ordem da classificação (melhor primeiro)
+ * @param podSize        tamanho da mesa do evento
+ */
+function jogadoresQueAvancam({ mesas, vencedores, ordemOficial, podSize }) {
+  // Um vencedor só: acabou, é o campeão. Mesa de dois: o bracket já fecha.
+  if (vencedores.length <= 1 || podSize < 3 || vencedores.length >= podSize) return vencedores;
+
+  const posicao = new Map(ordemOficial.map((id, i) => [id, i]));
+  const daClassificacao = (a, b) => (posicao.get(a) ?? Infinity) - (posicao.get(b) ?? Infinity);
+
+  const perdedoresPorMesa = mesas.map((mesa) =>
+    [mesa.player1_id, mesa.player2_id, mesa.player3_id, mesa.player4_id]
+      .filter((id) => id && !vencedores.includes(id))
+      .sort(daClassificacao)
+  );
+
+  const extras = [];
+  const faltam = () => podSize - vencedores.length - extras.length;
+  for (let volta = 0; faltam() > 0; volta++) {
+    const antes = extras.length;
+    for (const fila of perdedoresPorMesa) {
+      if (faltam() === 0) break;
+      if (fila[volta]) extras.push(fila[volta]);
+    }
+    // Ninguém novo nesta volta: acabaram os candidatos (mesa incompleta é melhor
+    // que inventar jogador).
+    if (extras.length === antes) break;
+  }
+
+  return [...vencedores, ...extras].sort(daClassificacao);
+}
+
 /* ==========================================================================
    Clã Fronto — pareamento por clãs
    ========================================================================== */
@@ -574,6 +630,7 @@ function clanPairSeats(pairing, playersById) {
 module.exports = {
   generateSwissPairings,
   seedPlayoffPods,
+  jogadoresQueAvancam,
   generateClanPairings,
   generatePartnerPairings,
   seedClanPlayoffPods,

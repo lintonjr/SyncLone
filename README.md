@@ -49,6 +49,8 @@ Produção: **AWS** (CloudFront, ECS Fargate, RDS, ElastiCache Serverless), desc
 - Bracket de eliminação simples com seeding em "cobra" (snake) para pods multiplayer
 - Botão **Start Playoffs** ao fim da última rodada suíça; **Advance Playoffs** avança a fase seguinte (mesmo endpoint de início de rodada)
 - Empate em pod de playoff avança o jogador mais bem-seedado; bye avança sozinho
+- **Mesa cheia no mata-mata de pod** (Commander e afins): em mesa de 4, um Top 8 tem duas mesas e portanto dois vencedores — a fase seguinte saía com **dois** jogadores. Quando os vencedores não enchem a mesa seguinte, ela é completada com quem jogou a fase atual e não venceu, na ordem da classificação oficial e pegando um de cada mesa antes de repetir mesa. Assim o Top 8 vira uma final de quatro. Em duelo e no Top 16 (onde a conta já fecha) nada muda, e a ordem das mesas é preservada — é o caminho do chaveamento
+- **Botões que não somem**: iniciar rodada e iniciar mata-mata ficam visíveis e **desabilitados** enquanto a rodada atual tiver resultado pendente, com o motivo no toque e um aviso que leva à aba de pareamentos. Antes o botão do mata-mata desaparecia sem explicação e o de nova rodada só falhava depois do clique
 - Rótulo automático de fase: Final / Semifinals / Quarterfinals / Round of N
 - Banner de campeão ao final do bracket
 

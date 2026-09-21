@@ -14,6 +14,7 @@ const { sseHeartbeatMs } = require('../lib/config');
 const {
   generateSwissPairings, seedPlayoffPods,
   generateClanPairings, generatePartnerPairings, seedClanPlayoffPods,
+  jogadoresQueAvancam,
 } = require('../services/pairing');
 const { computeStandings, computeClanStandings, winningSide } = require('../services/standings');
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
@@ -1180,11 +1181,18 @@ router.post('/:id/rounds', auth, asyncHandler(async (req, res) => {
         };
       }
 
-      const advancingPlayers = await tx.query(
-        `SELECT * FROM event_players WHERE id IN (${advancers.map(() => '?').join(',')})`,
-        advancers
-      );
-      const orderedAdvancers = advancers.map((id) => advancingPlayers.find((p) => p.id === id));
+      // Mesa de quatro: dois vencedores não enchem a mesa seguinte. A regra de
+      // quem completa mora em services/pairing.js, com a classificação oficial
+      // como critério — ver `jogadoresQueAvancam`.
+      const elenco = await tx.query('SELECT * FROM event_players WHERE event_id = ?', [req.params.id]);
+      const classificacao = computeStandings(elenco, await eventPairings(tx, req.params.id), event);
+      const idsQueAvancam = jogadoresQueAvancam({
+        mesas: prevPairings,
+        vencedores: advancers,
+        ordemOficial: classificacao.map((p) => p.id),
+        podSize,
+      });
+      const orderedAdvancers = idsQueAvancam.map((id) => elenco.find((p) => p.id === id));
 
       const roundId = uuidv4();
       const stage = playoffStageLabel(orderedAdvancers.length, podSize);
