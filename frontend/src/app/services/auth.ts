@@ -11,6 +11,8 @@ export interface User {
   role: 'player' | 'organizer' | 'admin';
   /** Se o histórico entre eventos pode ser reunido numa página pública. */
   profile_public?: number;
+  /** Verdadeiro quando a senha atual é a temporária criada por um administrador. */
+  must_change_password?: boolean;
 }
 
 /** Um pedido para organizar, do ponto de vista de quem pediu. */
@@ -41,6 +43,15 @@ export class AuthService {
     const papel = this.currentUser()?.role;
     return papel === 'organizer' || papel === 'admin';
   });
+
+  /** Troca a própria senha. Com senha temporária, a atual não é exigida. */
+  trocarSenha(nova: string, atual = '') {
+    return this.http.put<{ ok: boolean }>(
+      `${this.USERS_API}/me/password`,
+      { nova_senha: nova, senha_atual: atual },
+      { headers: new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('token')}` }) },
+    );
+  }
 
   /** Reflete no usuário guardado uma mudança feita em outra tela. */
   patchCurrentUser(campos: Partial<User>) {

@@ -341,3 +341,77 @@
   margin: 16px auto 0;
   display: block;
 }
+
+/* Campos de edição, atividade e as ações de conta dentro da ficha. */
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+
+  input {
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+
+.lista-titulo {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 10px 0 6px;
+}
+
+.atividade {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  a {
+    color: var(--text);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .quando {
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+}
+
+/* A senha temporária aparece uma vez só: no banco existe apenas o hash. */
+.senha-temp {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  font-size: 12.5px;
+
+  code {
+    display: block;
+    margin-top: 6px;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+}
+
+.anonimizar {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

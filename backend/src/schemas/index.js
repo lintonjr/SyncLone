@@ -182,6 +182,30 @@ const schemas = {
     reason: blank(z.string().trim().max(1000).optional()),
   }),
 
+  // A senha atual só é exigida fora do caso de senha temporária (users.js).
+  changePassword: z.object({
+    senha_atual: blank(z.string().max(200).optional()),
+    nova_senha: z.string().min(6, 'must be at least 6 characters').max(200),
+  }),
+
+  editarUsuario: z.object({
+    display_name: blank(z.string().trim().min(1).max(100).optional()),
+    email: blank(z.email().max(255).optional()),
+    profile_public: boolish,
+    reason: blank(z.string().trim().max(1000).optional()),
+  }),
+
+  mudarEstadoDaConta: z.object({
+    status: z.enum(['ativa', 'desativada']),
+    reason: blank(z.string().trim().max(1000).optional()),
+  }),
+
+  confirmarAnonimizacao: z.object({
+    // A tela pede o nome da pessoa digitado à mão: anonimizar não tem volta.
+    confirmacao: z.string().trim().min(1).max(100),
+    reason: blank(z.string().trim().max(1000).optional()),
+  }),
+
   changeRole: z.object({
     role: z.enum(ROLES),
     // Fica no histórico da pessoa; opcional, como o motivo de uma decisão de fila.

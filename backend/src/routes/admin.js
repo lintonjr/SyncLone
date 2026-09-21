@@ -7,7 +7,39 @@ const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
 const { notifyUsers } = require('../services/notify');
 const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcryptjs');
 const { impedimentoParaDecidir, impedimentoParaTrocarPapel } = require('../lib/roles');
+const {
+  impedimentoParaEditar, impedimentoParaMudarEstado, impedimentoParaAnonimizar,
+  senhaTemporaria, dadosAnonimizados,
+} = require('../lib/contas');
+
+/** Uma linha no histórico da conta. Toda ação desta área passa por aqui. */
+const registrar = (tx, { usuario, acao, de, para, autor, motivo = null }) =>
+  tx.run(
+    'INSERT INTO user_history (id, user_id, acao, de, para, autor_id, motivo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [uuidv4(), usuario, acao, de ?? null, para ?? null, autor, motivo]
+  );
+
+/** Quantos outros administradores ativos existem — a trava do último admin. */
+const outrosAdminsAtivos = async (conn, exceto) => {
+  const linha = await conn.get(
+    "SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND status = 'ativa' AND id <> ?",
+    [exceto]
+  );
+  return linha.n;
+};
+
+/** O impedimento vira o código que a tela traduz, com o status certo. */
+const STATUS_DO_IMPEDIMENTO = {
+  'api.userNotFound': 404,
+  'api.emailInUse': 409,
+  'api.statusUnchanged': 409,
+};
+function barrar(impedimento) {
+  if (!impedimento) return;
+  throw new HttpError(STATUS_DO_IMPEDIMENTO[impedimento] ?? 400, 'This action is not allowed', impedimento);
+}
 
 /**
  * A mesa do dono da plataforma.
@@ -85,10 +117,10 @@ async function decidir(req, res, status) {
       // precisa ver como ela virou organizadora, tenha sido pela fila ou pela
       // área de usuários.
       if (promocao.affectedRows) {
-        await tx.run(
-          'INSERT INTO role_changes (id, user_id, de, para, autor_id, motivo) VALUES (?, ?, ?, ?, ?, ?)',
-          [uuidv4(), pedido.user_id, 'player', 'organizer', req.user.id, reason]
-        );
+        await registrar(tx, {
+          usuario: pedido.user_id, acao: 'papel', de: 'player', para: 'organizer',
+          autor: req.user.id, motivo: reason,
+        });
       }
     }
 
@@ -141,7 +173,7 @@ router.get('/users', asyncHandler(async (req, res) => {
 
   const [linhas, total] = await Promise.all([
     db.query(
-      `SELECT u.id, u.display_name, u.email, u.role, u.created_at,
+      `SELECT u.id, u.display_name, u.email, u.role, u.status, u.created_at,
               (SELECT COUNT(*) FROM event_players ep WHERE ep.user_id = u.id) AS events_played,
               (SELECT COUNT(*) FROM events e WHERE e.owner_id = u.id) AS events_owned,
               (SELECT COUNT(*) FROM leagues l WHERE l.owner_id = u.id) AS leagues_owned,
@@ -166,7 +198,8 @@ router.get('/users', asyncHandler(async (req, res) => {
  */
 router.get('/users/:id', asyncHandler(async (req, res) => {
   const usuario = await db.get(
-    `SELECT u.id, u.display_name, u.email, u.role, u.created_at, u.profile_public,
+    `SELECT u.id, u.display_name, u.email, u.role, u.status, u.created_at, u.profile_public,
+            u.must_change_password,
             (SELECT COUNT(*) FROM event_players ep WHERE ep.user_id = u.id) AS events_played,
             (SELECT COUNT(*) FROM events e WHERE e.owner_id = u.id) AS events_owned
      FROM users u WHERE u.id = ?`,
@@ -185,13 +218,165 @@ router.get('/users/:id', asyncHandler(async (req, res) => {
   );
 
   const historico = await db.query(
-    `SELECT rc.de, rc.para, rc.motivo, rc.created_at, a.display_name AS autor
-       FROM role_changes rc LEFT JOIN users a ON a.id = rc.autor_id
-      WHERE rc.user_id = ? ORDER BY rc.created_at DESC LIMIT 50`,
+    `SELECT h.acao, h.de, h.para, h.motivo, h.created_at, a.display_name AS autor
+       FROM user_history h LEFT JOIN users a ON a.id = h.autor_id
+      WHERE h.user_id = ? ORDER BY h.created_at DESC LIMIT 50`,
     [req.params.id]
   );
 
-  res.json({ ...usuario, leagues: ligas, role_history: historico });
+  // A atividade fica na própria ficha: antes era preciso sair para o perfil
+  // público para responder "essa pessoa joga mesmo aqui?".
+  const [jogados, organizados] = await Promise.all([
+    db.query(
+      `SELECT e.id, e.name, e.date, e.timezone, e.status, ep.status AS inscricao
+         FROM event_players ep JOIN events e ON e.id = ep.event_id
+        WHERE ep.user_id = ? ORDER BY e.date DESC LIMIT 10`,
+      [req.params.id]
+    ),
+    db.query(
+      `SELECT e.id, e.name, e.date, e.timezone, e.status
+         FROM events e WHERE e.owner_id = ? ORDER BY e.date DESC LIMIT 10`,
+      [req.params.id]
+    ),
+  ]);
+
+  // Booleano, igual ao que o login devolve: quem consome não precisa saber que
+  // no MySQL isso é um TINYINT.
+  res.json({
+    ...usuario,
+    must_change_password: !!usuario.must_change_password,
+    leagues: ligas,
+    role_history: historico,
+    jogados,
+    organizados,
+  });
+}));
+
+/**
+ * Editar nome, e-mail e visibilidade do perfil.
+ *
+ * O nome corrigido aparece em todo torneio que a pessoa jogou: a classificação lê
+ * o nome atual da conta, não uma cópia da época da inscrição. A visibilidade é
+ * preferência dela, então mudar por aqui **avisa** a pessoa.
+ */
+router.put('/users/:id', validate(schemas.editarUsuario), asyncHandler(async (req, res) => {
+  const alvo = await db.get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  barrar(impedimentoParaEditar({ alvo, autorId: req.user.id }));
+
+  const { display_name, email, profile_public, reason } = req.body;
+  const nome = display_name?.trim() || alvo.display_name;
+  const novoEmail = email?.trim().toLowerCase() || alvo.email;
+  const visivel = profile_public === undefined ? alvo.profile_public : (profile_public === true || profile_public === 'true' ? 1 : 0);
+
+  if (novoEmail !== alvo.email) {
+    const ocupado = await db.get('SELECT id FROM users WHERE email = ? AND id <> ?', [novoEmail, alvo.id]);
+    if (ocupado) barrar('api.emailInUse');
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.run('UPDATE users SET display_name = ?, email = ?, profile_public = ? WHERE id = ?',
+      [nome, novoEmail, visivel, alvo.id]);
+
+    const avisos = [];
+    if (nome !== alvo.display_name) {
+      await registrar(tx, { usuario: alvo.id, acao: 'nome', de: alvo.display_name, para: nome, autor: req.user.id, motivo: reason });
+    }
+    if (novoEmail !== alvo.email) {
+      await registrar(tx, { usuario: alvo.id, acao: 'email', de: alvo.email, para: novoEmail, autor: req.user.id, motivo: reason });
+      avisos.push('notif.dadosAtualizados');
+    }
+    if (visivel !== alvo.profile_public) {
+      await registrar(tx, {
+        usuario: alvo.id, acao: 'visibilidade',
+        de: alvo.profile_public ? 'publico' : 'privado', para: visivel ? 'publico' : 'privado',
+        autor: req.user.id, motivo: reason,
+      });
+      avisos.push(visivel ? 'notif.perfilPublico' : 'notif.perfilPrivado');
+    }
+    for (const codigo of avisos) await notifyUsers(tx, [alvo.id], codigo, null);
+  });
+
+  res.json(await db.get('SELECT id, display_name, email, role, status, profile_public FROM users WHERE id = ?', [alvo.id]));
+}));
+
+/**
+ * Redefinir a senha, gerando uma temporária.
+ *
+ * A senha volta **uma vez** na resposta, para o administrador repassar; no banco
+ * só existe o hash. `must_change_password` obriga a troca no primeiro acesso —
+ * senha que outra pessoa conhece não pode sobreviver a ele.
+ */
+router.post('/users/:id/reset-password', asyncHandler(async (req, res) => {
+  const alvo = await db.get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  barrar(impedimentoParaEditar({ alvo, autorId: req.user.id }));
+
+  const senha = senhaTemporaria();
+  const hash = await bcrypt.hash(senha, 10);
+
+  await db.transaction(async (tx) => {
+    await tx.run('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?', [hash, alvo.id]);
+    await registrar(tx, { usuario: alvo.id, acao: 'senha', para: 'temporaria', autor: req.user.id, motivo: req.body?.reason ?? null });
+    await notifyUsers(tx, [alvo.id], 'notif.senhaRedefinida', null);
+  });
+
+  res.json({ senha_temporaria: senha });
+}));
+
+/**
+ * Desativar ou reativar.
+ *
+ * Desativada, a conta não entra e o token que ela já tem para de valer no clique
+ * seguinte — a mesma regra da revogação de papel. O histórico dos torneios fica
+ * intacto: é dele que vivem as classificações de quem jogou com essa pessoa.
+ */
+router.post('/users/:id/status', validate(schemas.mudarEstadoDaConta), asyncHandler(async (req, res) => {
+  const alvo = await db.get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  const outros = alvo ? await outrosAdminsAtivos(db, alvo.id) : 0;
+  barrar(impedimentoParaMudarEstado({ alvo, autorId: req.user.id, novoEstado: req.body.status, outrosAdmins: outros }));
+
+  await db.transaction(async (tx) => {
+    await tx.run('UPDATE users SET status = ? WHERE id = ?', [req.body.status, alvo.id]);
+    await registrar(tx, {
+      usuario: alvo.id, acao: 'status', de: alvo.status, para: req.body.status,
+      autor: req.user.id, motivo: req.body.reason ?? null,
+    });
+    await notifyUsers(tx, [alvo.id],
+      req.body.status === 'desativada' ? 'notif.contaDesativada' : 'notif.contaReativada', null);
+  });
+
+  res.json({ id: alvo.id, status: req.body.status });
+}));
+
+/**
+ * Anonimizar: o "excluir" possível.
+ *
+ * Apagar a linha não é opção — inscrições, resultados, eventos criados e badges
+ * apontam para ela, e o histórico de torneios de outras pessoas depende disso.
+ * Aqui o nome e o e-mail somem, a senha vira lixo aleatório e a conta fica
+ * desativada para sempre. Irreversível, então exige que a conta já esteja
+ * desativada e que o administrador digite o nome dela.
+ */
+router.post('/users/:id/anonymize', validate(schemas.confirmarAnonimizacao), asyncHandler(async (req, res) => {
+  const alvo = await db.get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  const outros = alvo ? await outrosAdminsAtivos(db, alvo.id) : 0;
+  barrar(impedimentoParaAnonimizar({ alvo, autorId: req.user.id, outrosAdmins: outros }));
+  if (req.body.confirmacao.trim() !== alvo.display_name.trim()) barrar('api.confirmacaoNaoConfere');
+
+  const dados = dadosAnonimizados(alvo.id);
+  const hash = await bcrypt.hash(senhaTemporaria(24), 10);
+
+  await db.transaction(async (tx) => {
+    await tx.run(
+      'UPDATE users SET display_name = ?, email = ?, profile_public = ?, status = ?, password_hash = ?, must_change_password = 0 WHERE id = ?',
+      [dados.display_name, dados.email, dados.profile_public, dados.status, hash, alvo.id]
+    );
+    await registrar(tx, {
+      usuario: alvo.id, acao: 'status', de: alvo.status, para: 'anonimizada',
+      autor: req.user.id, motivo: req.body.reason ?? null,
+    });
+  });
+
+  res.json({ id: alvo.id, status: 'anonimizada' });
 }));
 
 /** Mantida para o quadro antigo; a área de usuários usa `/users?role=`. */
@@ -233,10 +418,10 @@ router.put('/users/:id/role', validate(schemas.changeRole), asyncHandler(async (
     // Quem mudou, de quê para quê e por quê. Sem isto, seis meses depois ninguém
     // responde "quem promoveu essa pessoa?" — e com mais de um administrador essa
     // é a primeira pergunta quando um acesso surpreende.
-    await tx.run(
-      'INSERT INTO role_changes (id, user_id, de, para, autor_id, motivo) VALUES (?, ?, ?, ?, ?, ?)',
-      [uuidv4(), alvo.id, alvo.role, novo, req.user.id, req.body.reason ?? null]
-    );
+    await registrar(tx, {
+      usuario: alvo.id, acao: 'papel', de: alvo.role, para: novo,
+      autor: req.user.id, motivo: req.body.reason ?? null,
+    });
 
     // A pessoa fica sabendo pelos dois lados: ganhar poder sem aviso confunde,
     // e perdê-lo sem aviso parece defeito do sistema na próxima vez que ela tenta

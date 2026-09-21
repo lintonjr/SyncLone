@@ -1,0 +1,38 @@
+<div class="senha-page">
+  <div class="card senha-card">
+    <h1>{{ i18n.t('senha.titulo') }}</h1>
+    <p class="sub">{{ i18n.t('senha.explicacao') }}</p>
+
+    <form (submit)="$event.preventDefault(); salvar()">
+      <div class="form-field">
+        <label for="nova">{{ i18n.t('senha.nova') }}</label>
+        <input
+          id="nova"
+          type="password"
+          autocomplete="new-password"
+          [value]="nova()"
+          (input)="nova.set($any($event.target).value)"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="repetida">{{ i18n.t('senha.repetir') }}</label>
+        <input
+          id="repetida"
+          type="password"
+          autocomplete="new-password"
+          [value]="repetida()"
+          (input)="repetida.set($any($event.target).value)"
+        />
+      </div>
+
+      @if (erro()) {
+        <div class="error-msg">{{ erro() }}</div>
+      }
+
+      <button type="submit" class="btn btn-primary" [disabled]="salvando()">
+        {{ i18n.t('senha.salvar') }}
+      </button>
+    </form>
+  </div>
+</div>

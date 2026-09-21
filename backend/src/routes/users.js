@@ -10,11 +10,24 @@ const { podePedirParaOrganizar } = require('../lib/roles');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { aproveitamento } = require('../lib/retrospecto');
+const bcrypt = require('bcryptjs');
 
+/**
+ * Quem eu sou **agora** — é daqui que a tela relê o papel a cada carregamento.
+ *
+ * O servidor já lia o papel do banco a cada requisição, mas a tela guardava o do
+ * login: uma pessoa promovida a admin continuava sem o menu, e uma rebaixada
+ * continuava vendo botões que o servidor recusaria. Por isso `must_change_password`
+ * também vem: uma senha redefinida no balcão enquanto a pessoa está logada tem de
+ * valer no recarregamento seguinte.
+ */
 router.get('/me', auth, asyncHandler(async (req, res) => {
-  const user = await db.get('SELECT id, display_name, email, role, profile_public FROM users WHERE id = ?', [req.user.id]);
+  const user = await db.get(
+    'SELECT id, display_name, email, role, profile_public, must_change_password FROM users WHERE id = ?',
+    [req.user.id]
+  );
   if (!user) throw new HttpError(404, 'User not found', 'api.userNotFound');
-  res.json(user);
+  res.json({ ...user, must_change_password: !!user.must_change_password });
 }));
 
 /**
@@ -91,6 +104,30 @@ router.put('/me/profile-visibility', auth, validate(schemas.profileVisibility), 
   const publico = req.body.profile_public ? 1 : 0;
   await db.run('UPDATE users SET profile_public = ? WHERE id = ?', [publico, req.user.id]);
   res.json({ profile_public: publico });
+}));
+
+/**
+ * Trocar a própria senha.
+ *
+ * Com `must_change_password` ligado — senha temporária criada por um
+ * administrador —, a senha atual **não** é pedida: a pessoa acabou de usá-la para
+ * entrar, e exigi-la de novo só faria ela voltar ao papel onde a anotou. Fora
+ * desse caso, a senha atual é obrigatória: um token roubado não pode virar troca
+ * de senha.
+ */
+router.put('/me/password', auth, validate(schemas.changePassword), asyncHandler(async (req, res) => {
+  const eu = await db.get('SELECT id, password_hash, must_change_password FROM users WHERE id = ?', [req.user.id]);
+
+  if (!eu.must_change_password) {
+    const atual = req.body.senha_atual ?? '';
+    if (!atual || !(await bcrypt.compare(atual, eu.password_hash))) {
+      throw new HttpError(400, 'Current password does not match', 'api.senhaAtualErrada');
+    }
+  }
+
+  const hash = await bcrypt.hash(req.body.nova_senha, 10);
+  await db.run('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?', [hash, req.user.id]);
+  res.json({ ok: true });
 }));
 
 /**

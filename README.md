@@ -12,7 +12,14 @@ Produção: **AWS** (CloudFront, ECS Fargate, RDS, ElastiCache Serverless), desc
 - Todo cadastro nasce com papel **player** — pode participar de eventos, mas não pode criar/organizar
 - **Organizar depende de aprovação.** Em `/profile` o jogador envia uma solicitação, com justificativa opcional; o dono da plataforma aprova ou recusa em `/admin`. Aprovado, vira `organizer` — que também participa como jogador em outros eventos (não é troca, é permissão a mais). Recusado, recebe o motivo e pode pedir de novo. Um pedido pendente por pessoa, garantido por índice único no banco, não por consulta prévia na rota
 - **O primeiro dono vem de `ADMIN_EMAIL`**: na subida, o backend promove a conta com esse e-mail a `admin` **somente se ainda não existir admin nenhum** (`lib/bootstrapAdmin.js`, nunca derruba o servidor). Sem essa trava, qualquer pessoa que se cadastrasse com o e-mail configurado viraria dona no próximo deploy, porque o cadastro não confirma e-mail. Daí em diante, um admin promove outros na aba **Organizadores** de `/admin`
-- **Área de usuários** (`/admin`, aba Usuários): a lista de todas as contas, com busca por nome ou e-mail, filtro por papel e paginação — tudo resolvido no servidor. Cada pessoa abre numa ficha com três blocos: **papel** (jogador, organizador ou administrador), **ligas** em que ela é dona ou está no time, e o **histórico de papel** (quem mudou, de quê para quê, quando e por quê — tabela `role_changes`, migration 018). O quadro de organizadores virou o filtro por papel desta lista: eram duas telas respondendo à mesma pergunta
+- **Área de usuários** (`/admin`, aba Usuários): a lista de todas as contas, com busca por nome ou e-mail, filtro por papel e paginação — tudo resolvido no servidor. Cada pessoa abre numa ficha: **papel** (jogador, organizador ou administrador), **ligas** em que ela é dona ou está no time, **dados** (nome e e-mail), **atividade** (últimos eventos jogados e criados, sem sair para o perfil público), **conta** (visibilidade, senha, estado) e o **histórico da conta** — quem mudou o quê, de quê para quê, quando e por quê (tabela `user_history`, migrations 018 e 019). O quadro de organizadores virou o filtro por papel desta lista: eram duas telas respondendo à mesma pergunta
+- **Administrar a conta de outra pessoa**, tudo pela ficha e tudo avisando quem foi afetado pelo sino:
+  - **Corrigir nome e e-mail.** O nome atual aparece em todo torneio que a pessoa jogou — a classificação lê a conta, não uma cópia da época da inscrição
+  - **Redefinir a senha.** O sistema sorteia uma temporária legível (`crypto.randomInt`, sem `0/O/1/l/I`, porque ela vai ser ditada no balcão), mostra **uma vez** — no banco só existe o hash — e marca `must_change_password`. No acesso seguinte a pessoa cai em `/nova-senha` e não sai de lá: nessa troca a senha atual não é pedida (ela é justamente a que outra pessoa conhece), e fora dela continua sendo
+  - **Desativar e reativar.** A conta desativada não loga e o token que ela já tinha para de valer no mesmo instante — o papel e o estado são lidos do banco a cada requisição. O histórico de torneios fica inteiro
+  - **Anonimizar**, para um pedido de remoção de dados: nome vira "Conta removida", o e-mail vira `removido+<id>@invalido.local`, o perfil fecha. É irreversível, exige a conta **já desativada** e a digitação do nome para confirmar; os resultados dos torneios continuam lá, agora sem apontar para ninguém
+  - **Forçar a visibilidade do perfil**, quando alguém pede para sumir da busca sem sair da plataforma
+  - As travas valem para todas essas ações: **ninguém se administra por aqui** (um admin que se desativasse perderia a tela que desfaria isso) e **o último administrador ativo não cai**. As regras ficam puras em `backend/src/lib/contas.js`, testadas fora da rota
 - **O administrador monta time de liga**: a regra do time passou de "só o dono da liga" para "o dono da liga **ou** o administrador da plataforma". Quem decide quem organiza consegue arrumar um time sem pedir ao dono de cada liga; um co-organizador continua sem poder convidar outros. Rebaixar alguém para jogador **mantém** os vínculos de time: o acesso já cai na hora (o papel é lido do banco), e promover de volta devolve as ligas sem o dono ter que remontar
 - **Revogação existe**: o dono rebaixa um organizador a player. Os eventos que a pessoa já criou continuam dela, com histórico e jogadores intactos — o que ela perde é criar novos e administrar os que tem. Ninguém altera o próprio papel, nos dois sentidos: um admin que se rebaixasse perderia a rota que desfaria isso
 - **O papel é lido do banco a cada requisição** (`middleware/auth.js`), não do JWT. O token dura 7 dias e o papel muda por decisão de outra pessoa: assim a aprovação vale no clique seguinte, sem relogar, e a revogação também — um organizador rebaixado não continua criando eventos por uma semana com o crachá velho no bolso
@@ -302,6 +309,7 @@ PUT    /api/notifications/read-all
 PUT    /api/notifications/:id/read
 
 GET    /api/users/me
+PUT    /api/users/me/password              # trocar a senha (a atual é exigida, salvo na troca forçada)
 POST   /api/users/me/organizer-request     # pedir para organizar (não promove ninguém)
 GET    /api/users/me/organizer-request     # o meu pedido mais recente, com o desfecho
 
@@ -309,7 +317,13 @@ GET    /api/admin/organizer-requests       # a fila e o histórico (só admin)
 POST   /api/admin/organizer-requests/:id/approve
 POST   /api/admin/organizer-requests/:id/reject
 GET    /api/admin/staff                    # quem é organizer ou admin hoje
+GET    /api/admin/users                    # lista com busca, filtro por papel e paginação
+GET    /api/admin/users/:id                # a ficha: ligas, atividade e histórico da conta
 PUT    /api/admin/users/:id/role           # promover ou rebaixar
+PUT    /api/admin/users/:id                # nome, e-mail e visibilidade do perfil
+POST   /api/admin/users/:id/reset-password # senha temporária, mostrada uma vez
+POST   /api/admin/users/:id/status         # desativar ou reativar
+POST   /api/admin/users/:id/anonymize      # irreversível, exige a conta desativada
 
 GET    /api/leagues
 GET    /api/leagues/mine
@@ -323,4 +337,4 @@ DELETE /api/leagues/:id
 
 - **Organizer Can Play** — dono se auto-registrar como jogador no próprio evento
 - Decklist real (busca de comandante + partner commander + link Moxfield) — hoje é só texto livre
-- Página de Perfil/Configurações — existe uma versão mínima (`/profile`: nome/e-mail/papel, visibilidade do perfil e a solicitação para organizar); falta o restante (editar nome/e-mail, trocar senha, preferências)
+- Página de Perfil/Configurações — existe uma versão mínima (`/profile`: nome/e-mail/papel, visibilidade do perfil e a solicitação para organizar); falta o restante (editar o próprio nome/e-mail, preferências). Trocar a própria senha já existe no servidor (`PUT /api/users/me/password`) e na tela de troca forçada, mas `/profile` ainda não oferece o formulário

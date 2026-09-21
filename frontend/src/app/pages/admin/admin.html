@@ -129,6 +129,9 @@
             >{{ i18n.t('role.' + u.role) }}</span
           >
           <a [routerLink]="['/player', u.id]" class="name">{{ u.display_name }}</a>
+          @if (u.status !== 'ativa') {
+            <span class="badge badge-red">{{ i18n.t('admin.status.' + u.status) }}</span>
+          }
           <span class="email">{{ u.email }}</span>
           <span class="meta">
             {{ i18n.t('admin.eventsPlayed', { n: u.events_played }) }}
@@ -237,6 +240,142 @@
               }
             </div>
 
+            <!-- Dados -->
+            <div class="ficha-bloco">
+              <h4>{{ i18n.t('admin.dataSection') }}</h4>
+              @if (ficha()!.status === 'anonimizada') {
+                <p class="vazio">{{ i18n.t('admin.anonymizedNote') }}</p>
+              } @else {
+                <div class="campos">
+                  <label>
+                    {{ i18n.t('admin.name') }}
+                    <input
+                      type="text"
+                      [value]="editNome()"
+                      (input)="editNome.set($any($event.target).value)"
+                    />
+                  </label>
+                  <label>
+                    {{ i18n.t('admin.email') }}
+                    <input
+                      type="email"
+                      [value]="editEmail()"
+                      (input)="editEmail.set($any($event.target).value)"
+                    />
+                  </label>
+                  <button
+                    class="btn btn-primary"
+                    [disabled]="decidindo() === u.id"
+                    (click)="salvarDados()"
+                  >
+                    {{ i18n.t('form.saveChanges') }}
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Atividade -->
+            <div class="ficha-bloco">
+              <h4>{{ i18n.t('admin.activitySection') }}</h4>
+              @if (!ficha()!.jogados.length && !ficha()!.organizados.length) {
+                <p class="vazio">{{ i18n.t('admin.noActivity') }}</p>
+              }
+              @if (ficha()!.jogados.length) {
+                <p class="lista-titulo">{{ i18n.t('admin.played') }}</p>
+                <ul class="atividade">
+                  @for (e of ficha()!.jogados; track e.id) {
+                    <li>
+                      <a [routerLink]="['/event', e.id]">{{ e.name }}</a>
+                      <span class="quando">{{ e.date | dataEvento: e.timezone : 'curto' }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+              @if (ficha()!.organizados.length) {
+                <p class="lista-titulo">{{ i18n.t('admin.organized') }}</p>
+                <ul class="atividade">
+                  @for (e of ficha()!.organizados; track e.id) {
+                    <li>
+                      <a [routerLink]="['/event', e.id]">{{ e.name }}</a>
+                      <span class="quando">{{ e.date | dataEvento: e.timezone : 'curto' }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+
+            <!-- Conta -->
+            <div class="ficha-bloco">
+              <h4>{{ i18n.t('admin.accountSection') }}</h4>
+              <div class="ficha-acoes">
+                @if (ficha()!.status !== 'anonimizada') {
+                  <button
+                    class="btn btn-ghost"
+                    [disabled]="decidindo() === u.id"
+                    (click)="alternarVisibilidade()"
+                  >
+                    {{ i18n.t(ficha()!.profile_public ? 'admin.makePrivate' : 'admin.makePublic') }}
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    [disabled]="decidindo() === u.id"
+                    (click)="redefinirSenha()"
+                  >
+                    {{ i18n.t('admin.resetPassword') }}
+                  </button>
+                }
+                @if (ficha()!.status === 'ativa') {
+                  <button
+                    class="btn btn-ghost danger"
+                    [disabled]="decidindo() === u.id"
+                    (click)="mudarEstado('desativada')"
+                  >
+                    {{ i18n.t('admin.deactivate') }}
+                  </button>
+                } @else if (ficha()!.status === 'desativada') {
+                  <button
+                    class="btn btn-ghost"
+                    [disabled]="decidindo() === u.id"
+                    (click)="mudarEstado('ativa')"
+                  >
+                    {{ i18n.t('admin.reactivate') }}
+                  </button>
+                }
+              </div>
+
+              @if (senhaTemporaria()) {
+                <div class="senha-temp">
+                  <p>{{ i18n.t('admin.tempPasswordShown') }}</p>
+                  <code>{{ senhaTemporaria() }}</code>
+                </div>
+              }
+
+              @if (ficha()!.must_change_password) {
+                <p class="vazio">{{ i18n.t('admin.mustChangePassword') }}</p>
+              }
+
+              @if (ficha()!.status === 'desativada') {
+                <div class="anonimizar">
+                  <p class="aviso-papel">{{ i18n.t('admin.anonymizeHelp') }}</p>
+                  <input
+                    type="text"
+                    [value]="confirmacaoAnonimizar()"
+                    (input)="confirmacaoAnonimizar.set($any($event.target).value)"
+                    [placeholder]="
+                      i18n.t('admin.typeNameToConfirm', { nome: ficha()!.display_name })
+                    "
+                  />
+                  <button
+                    class="btn btn-danger"
+                    [disabled]="decidindo() === u.id || !confirmacaoAnonimizar().trim()"
+                    (click)="anonimizar()"
+                  >
+                    {{ i18n.t('admin.anonymize') }}
+                  </button>
+                </div>
+              }
+            </div>
+
             <!-- Histórico -->
             <div class="ficha-bloco">
               <h4>{{ i18n.t('admin.roleHistory') }}</h4>
@@ -247,10 +386,11 @@
                   @for (h of ficha()!.role_history; track h.created_at) {
                     <li>
                       <span class="quando">{{ h.created_at | date: 'short' }}</span>
+                      <strong>{{ i18n.t('admin.acao.' + h.acao) }}</strong>
                       {{
                         i18n.t('admin.historyLine', {
-                          de: i18n.t('role.' + h.de),
-                          para: i18n.t('role.' + h.para),
+                          de: h.de ?? '—',
+                          para: h.para ?? '—',
                           quem: h.autor ?? i18n.t('admin.bySystem'),
                         })
                       }}

@@ -21,11 +21,14 @@ export interface OrganizerRequestRow {
 }
 
 /** Uma pessoa na área de usuários. */
+export type EstadoDaConta = 'ativa' | 'desativada' | 'anonimizada';
+
 export interface UserRow {
   id: string;
   display_name: string;
   email: string;
   role: 'player' | 'organizer' | 'admin';
+  status: EstadoDaConta;
   created_at: string;
   events_played: number;
   events_owned: number;
@@ -48,19 +51,33 @@ export interface UserLeague {
   vinculo: 'dona' | 'time';
 }
 
-/** Uma linha do histórico de papel. */
+/** Uma linha do histórico da conta: papel, nome, e-mail, senha, estado, visibilidade. */
 export interface RoleChange {
-  de: 'player' | 'organizer' | 'admin';
-  para: 'player' | 'organizer' | 'admin';
+  acao: 'papel' | 'nome' | 'email' | 'senha' | 'status' | 'visibilidade';
+  de: string | null;
+  para: string | null;
   motivo: string | null;
   created_at: string;
   autor: string | null;
 }
 
+/** Um torneio na atividade da pessoa, dentro da ficha. */
+export interface AtividadeDoUsuario {
+  id: string;
+  name: string;
+  date: string;
+  timezone?: string;
+  status: string;
+  inscricao?: string;
+}
+
 export interface UserDetail extends UserRow {
   profile_public: number;
+  must_change_password: boolean;
   leagues: UserLeague[];
   role_history: RoleChange[];
+  jogados: AtividadeDoUsuario[];
+  organizados: AtividadeDoUsuario[];
 }
 
 /** Quem tem poder na plataforma hoje. */
@@ -114,6 +131,40 @@ export class AdminService {
   /** A ficha: ligas em que a pessoa manda e o histórico do papel dela. */
   userDetail(id: string) {
     return this.http.get<UserDetail>(`${this.API}/users/${id}`, { headers: this.headers() });
+  }
+
+  /** Nome, e-mail e visibilidade do perfil. */
+  editarUsuario(
+    id: string,
+    dados: { display_name?: string; email?: string; profile_public?: boolean; reason?: string },
+  ) {
+    return this.http.put<UserRow>(`${this.API}/users/${id}`, dados, { headers: this.headers() });
+  }
+
+  /** Devolve a senha temporária uma única vez — no banco só existe o hash. */
+  resetarSenha(id: string) {
+    return this.http.post<{ senha_temporaria: string }>(
+      `${this.API}/users/${id}/reset-password`,
+      {},
+      { headers: this.headers() },
+    );
+  }
+
+  mudarEstado(id: string, status: 'ativa' | 'desativada', reason = '') {
+    return this.http.post<{ id: string; status: EstadoDaConta }>(
+      `${this.API}/users/${id}/status`,
+      { status, reason },
+      { headers: this.headers() },
+    );
+  }
+
+  /** Irreversível: exige o nome digitado à mão como confirmação. */
+  anonimizar(id: string, confirmacao: string, reason = '') {
+    return this.http.post<{ id: string; status: EstadoDaConta }>(
+      `${this.API}/users/${id}/anonymize`,
+      { confirmacao, reason },
+      { headers: this.headers() },
+    );
   }
 
   changeRole(userId: string, role: 'player' | 'organizer' | 'admin', reason = '') {

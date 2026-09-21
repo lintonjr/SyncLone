@@ -7,6 +7,8 @@ const usuarioPublico = (u) => ({
   email: u.email,
   role: u.role,
   profile_public: u.profile_public,
+  // Senha criada por um administrador: a tela manda trocar antes de seguir.
+  must_change_password: !!u.must_change_password,
 });
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -17,6 +19,7 @@ const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
 const { jwtSecret, jwtExpiresIn } = require('../lib/config');
+const { contaAtiva } = require('../lib/contas');
 const { obterClientes } = require('../lib/valkey');
 const { ValkeyStore } = require('../lib/rateLimitStore');
 
@@ -68,6 +71,9 @@ router.post('/login', credentialLimiter, validate(schemas.login), asyncHandler(a
   const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
   if (!user || !(await bcrypt.compare(password, user.password_hash)))
     throw new HttpError(401, 'Invalid credentials', 'api.invalidCredentials');
+  // Mensagem própria: "credenciais inválidas" faria a pessoa tentar de novo a
+  // noite inteira com a senha certa.
+  if (!contaAtiva(user.status)) throw new HttpError(401, 'This account is disabled', 'api.contaDesativada');
 
   const token = jwt.sign(
     { id: user.id, email: user.email, display_name: user.display_name, role: user.role },

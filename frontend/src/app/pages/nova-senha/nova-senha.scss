@@ -1,0 +1,28 @@
+.senha-page {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.senha-card {
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .sub {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+}

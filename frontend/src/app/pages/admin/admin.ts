@@ -9,6 +9,7 @@ import {
   UserDetail,
 } from '../../services/admin';
 import { LeagueService, League } from '../../services/league';
+import { DataEventoPipe } from '../../lib/data-evento.pipe';
 import { AuthService } from '../../services/auth';
 import { DialogService } from '../../services/dialog';
 import { I18nService, mensagemDeErro } from '../../i18n/i18n';
@@ -22,7 +23,7 @@ import { I18nService, mensagemDeErro } from '../../i18n/i18n';
  */
 @Component({
   selector: 'app-admin',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, DataEventoPipe],
   templateUrl: './admin.html',
   styleUrl: './admin.scss',
 })
@@ -58,6 +59,12 @@ export class AdminComponent implements OnInit {
   ligaEscolhida = signal('');
   private buscaTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly PAGINA = 25;
+
+  /** Edição de nome e e-mail, e a senha temporária recém-criada. */
+  editNome = signal('');
+  editEmail = signal('');
+  senhaTemporaria = signal('');
+  confirmacaoAnonimizar = signal('');
 
   pendentes = computed(() => this.requests().filter((r) => r.status === 'pending'));
   decididos = computed(() => this.requests().filter((r) => r.status !== 'pending'));
@@ -113,9 +120,119 @@ export class AdminComponent implements OnInit {
     }
     this.ficha.set(null);
     this.ligaEscolhida.set('');
+    this.senhaTemporaria.set('');
+    this.confirmacaoAnonimizar.set('');
     this.svc.userDetail(u.id).subscribe({
-      next: (d) => this.ficha.set(d),
+      next: (d) => {
+        this.ficha.set(d);
+        this.editNome.set(d.display_name);
+        this.editEmail.set(d.email);
+      },
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
+    });
+  }
+
+  /** Salva nome e e-mail; a visibilidade tem botão próprio. */
+  salvarDados() {
+    const f = this.ficha();
+    if (!f) return;
+    this.decidindo.set(f.id);
+    this.svc
+      .editarUsuario(f.id, { display_name: this.editNome().trim(), email: this.editEmail().trim() })
+      .subscribe({
+        next: () => {
+          this.decidindo.set(null);
+          this.recarregarFicha(f.id);
+          this.carregarUsuarios();
+        },
+        error: (err) => {
+          this.error.set(mensagemDeErro(this.i18n, err));
+          this.decidindo.set(null);
+        },
+      });
+  }
+
+  alternarVisibilidade() {
+    const f = this.ficha();
+    if (!f) return;
+    this.decidindo.set(f.id);
+    this.svc.editarUsuario(f.id, { profile_public: !f.profile_public }).subscribe({
+      next: () => {
+        this.decidindo.set(null);
+        this.recarregarFicha(f.id);
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.decidindo.set(null);
+      },
+    });
+  }
+
+  async redefinirSenha() {
+    const f = this.ficha();
+    if (!f) return;
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.resetPasswordTitle', { nome: f.display_name }),
+      mensagem: this.i18n.t('dialog.resetPasswordBody', { nome: f.display_name }),
+      confirmar: this.i18n.t('admin.resetPassword'),
+    });
+    if (!ok) return;
+    this.decidindo.set(f.id);
+    this.svc.resetarSenha(f.id).subscribe({
+      next: (r) => {
+        // Aparece uma vez só: no banco existe apenas o hash.
+        this.senhaTemporaria.set(r.senha_temporaria);
+        this.decidindo.set(null);
+        this.recarregarFicha(f.id);
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.decidindo.set(null);
+      },
+    });
+  }
+
+  async mudarEstado(novo: 'ativa' | 'desativada') {
+    const f = this.ficha();
+    if (!f) return;
+    const chave = novo === 'desativada' ? 'dialog.deactivate' : 'dialog.reactivate';
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t(`${chave}Title`, { nome: f.display_name }),
+      mensagem: this.i18n.t(`${chave}Body`, { nome: f.display_name }),
+      confirmar: this.i18n.t(novo === 'desativada' ? 'admin.deactivate' : 'admin.reactivate'),
+      perigo: novo === 'desativada',
+    });
+    if (!ok) return;
+    this.decidindo.set(f.id);
+    this.svc.mudarEstado(f.id, novo).subscribe({
+      next: () => {
+        this.decidindo.set(null);
+        this.recarregarFicha(f.id);
+        this.carregarUsuarios();
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.decidindo.set(null);
+      },
+    });
+  }
+
+  /** Irreversível: o servidor confere o nome digitado antes de apagar os dados. */
+  anonimizar() {
+    const f = this.ficha();
+    if (!f) return;
+    this.decidindo.set(f.id);
+    this.svc.anonimizar(f.id, this.confirmacaoAnonimizar().trim()).subscribe({
+      next: () => {
+        this.decidindo.set(null);
+        this.confirmacaoAnonimizar.set('');
+        this.recarregarFicha(f.id);
+        this.carregarUsuarios();
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.decidindo.set(null);
+      },
     });
   }
 

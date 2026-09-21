@@ -10,9 +10,15 @@ CREATE TABLE IF NOT EXISTS `users` (
   `display_name` varchar(100) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password_hash` text NOT NULL,
+  -- Senha temporária criada por um administrador não sobrevive ao primeiro
+  -- acesso: alguém além do dono a conhece (migrations/019).
+  `must_change_password` tinyint(1) NOT NULL DEFAULT 0,
   -- Papéis excludentes e hierárquicos: admin pode tudo que organizador pode.
   -- Quem cria conta nasce player; organizar depende de pedido aprovado.
   `role` enum('player','organizer','admin') NOT NULL DEFAULT 'player',
+  -- Desativar em vez de apagar: o histórico dos torneios aponta para a conta.
+  -- `anonimizada` é o "excluir" possível — nome e e-mail somem, o histórico fica.
+  `status` enum('ativa','desativada','anonimizada') NOT NULL DEFAULT 'ativa',
   `profile_public` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -217,17 +223,22 @@ CREATE TABLE IF NOT EXISTS `user_badges` (
   CONSTRAINT `user_badges_awarder_fk` FOREIGN KEY (`awarded_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Histórico de troca de papel: quem mudou o quê, quando e por quê (migrations/018).
-CREATE TABLE IF NOT EXISTS `role_changes` (
+-- Histórico da conta: papel, nome, e-mail, senha, estado e visibilidade — quem
+-- mudou o quê, quando e por quê (migrations/018 e 019).
+CREATE TABLE IF NOT EXISTS `user_history` (
   `id` varchar(36) NOT NULL,
   `user_id` varchar(36) NOT NULL,
-  `de` enum('player','organizer','admin') NOT NULL,
-  `para` enum('player','organizer','admin') NOT NULL,
+  `acao` enum('papel','nome','email','senha','status','visibilidade') NOT NULL DEFAULT 'papel',
+  `de` varchar(255) DEFAULT NULL,
+  `para` varchar(255) DEFAULT NULL,
   `autor_id` varchar(36) DEFAULT NULL,
   `motivo` text DEFAULT NULL,
   `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   KEY `por_usuario` (`user_id`, `created_at`),
+  -- As FKs mantêm o nome antigo de propósito: `RENAME TABLE` não renomeia
+  -- constraint, então é assim que o banco de quem veio da 018 se chama. Trocar
+  -- aqui faria o schema consolidado divergir do caminho de upgrade.
   CONSTRAINT `role_changes_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `role_changes_autor_fk` FOREIGN KEY (`autor_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

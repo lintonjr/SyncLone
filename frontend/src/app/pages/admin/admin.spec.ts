@@ -54,6 +54,21 @@ function umUsuario(over: Record<string, unknown> = {}) {
   };
 }
 
+/** A ficha completa, como a rota /admin/users/:id devolve. */
+function umaFicha(over: Record<string, unknown> = {}) {
+  return {
+    ...umUsuario(),
+    profile_public: 1,
+    must_change_password: false,
+    status: 'ativa',
+    leagues: [],
+    role_history: [],
+    jogados: [],
+    organizados: [],
+    ...over,
+  };
+}
+
 /** Abre a aba de usuários e responde a listagem que o teste declarar. */
 async function abrirUsuarios(
   fixture: { detectChanges: () => void; whenStable: () => Promise<unknown> },
@@ -196,12 +211,9 @@ describe('AdminComponent', () => {
     await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'a1', role: 'admin' })]);
 
     (html.querySelector('.usuario-row button') as HTMLButtonElement).click();
-    http.expectOne(`${environment.apiUrl}/admin/users/a1`).flush({
-      ...umUsuario({ id: 'a1', role: 'admin' }),
-      profile_public: 1,
-      leagues: [],
-      role_history: [],
-    });
+    http
+      .expectOne(`${environment.apiUrl}/admin/users/a1`)
+      .flush(umaFicha({ id: 'a1', role: 'admin' }));
     fixture.detectChanges();
 
     const acoes = [...html.querySelectorAll('.ficha-acoes button')].map((b) => b.textContent ?? '');
@@ -215,23 +227,26 @@ describe('AdminComponent', () => {
     await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'bia', role: 'organizer' })]);
 
     (html.querySelector('.usuario-row button') as HTMLButtonElement).click();
-    http.expectOne(`${environment.apiUrl}/admin/users/bia`).flush({
-      ...umUsuario({ id: 'bia', role: 'organizer' }),
-      profile_public: 1,
-      leagues: [
-        { id: 'l1', name: 'Liga de Sexta', vinculo: 'time' },
-        { id: 'l2', name: 'Liga Anual', vinculo: 'dona' },
-      ],
-      role_history: [
-        {
-          de: 'player',
-          para: 'organizer',
-          motivo: 'Organiza na loja',
-          created_at: '2026-09-01T12:00:00Z',
-          autor: 'Dono',
-        },
-      ],
-    });
+    http.expectOne(`${environment.apiUrl}/admin/users/bia`).flush(
+      umaFicha({
+        id: 'bia',
+        role: 'organizer',
+        leagues: [
+          { id: 'l1', name: 'Liga de Sexta', vinculo: 'time' },
+          { id: 'l2', name: 'Liga Anual', vinculo: 'dona' },
+        ],
+        role_history: [
+          {
+            acao: 'papel',
+            de: 'player',
+            para: 'organizer',
+            motivo: 'Organiza na loja',
+            created_at: '2026-09-01T12:00:00Z',
+            autor: 'Dono',
+          },
+        ],
+      }),
+    );
     fixture.detectChanges();
 
     const ficha = html.querySelector('.ficha')!;
@@ -241,6 +256,69 @@ describe('AdminComponent', () => {
     expect(ficha.querySelectorAll('.ligas li button').length).toBe(1);
     expect(ficha.textContent).toContain('Organiza na loja');
     expect(ficha.textContent).toContain('por Dono');
+  });
+
+  it('a senha temporária aparece uma vez, com o aviso de anotar', async () => {
+    const { fixture, http, html } = await montar();
+    TestBed.inject(DialogService).confirm = () => Promise.resolve(true);
+    await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'caio' })]);
+
+    (html.querySelector('.usuario-row button') as HTMLButtonElement).click();
+    http.expectOne(`${environment.apiUrl}/admin/users/caio`).flush(umaFicha({ id: 'caio' }));
+    fixture.detectChanges();
+
+    const botoes = [...html.querySelectorAll('.ficha-bloco button')] as HTMLButtonElement[];
+    botoes.find((b) => b.textContent?.includes('Redefinir senha'))!.click();
+    await fixture.whenStable();
+    http
+      .expectOne(`${environment.apiUrl}/admin/users/caio/reset-password`)
+      .flush({ senha_temporaria: 'Abc23Xyz78Qw' });
+    // A ficha recarrega para mostrar que a pessoa terá de trocar a senha.
+    http
+      .expectOne(`${environment.apiUrl}/admin/users/caio`)
+      .flush(umaFicha({ id: 'caio', must_change_password: true }));
+    fixture.detectChanges();
+
+    const caixa = html.querySelector('.senha-temp');
+    expect(caixa?.textContent).toContain('Abc23Xyz78Qw');
+    expect(caixa?.textContent).toContain('não aparece de novo');
+  });
+
+  it('conta desativada mostra o estado e libera a anonimização, que pede o nome', async () => {
+    const { fixture, http, html } = await montar();
+    await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'caio', status: 'desativada' })]);
+
+    // O estado aparece na própria linha da lista, antes de abrir a ficha.
+    expect(html.querySelector('.usuario-row')?.textContent).toContain('Desativada');
+
+    (html.querySelector('.usuario-row button') as HTMLButtonElement).click();
+    http
+      .expectOne(`${environment.apiUrl}/admin/users/caio`)
+      .flush(umaFicha({ id: 'caio', status: 'desativada' }));
+    fixture.detectChanges();
+
+    const anonimizar = html.querySelector('.anonimizar')!;
+    // Sem digitar o nome o botão fica travado: não tem volta.
+    expect((anonimizar.querySelector('button') as HTMLButtonElement).disabled).toBe(true);
+
+    const campo = anonimizar.querySelector('input') as HTMLInputElement;
+    campo.value = 'Pessoa';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect((anonimizar.querySelector('button') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('conta ativa não oferece anonimizar: desativar vem antes', async () => {
+    const { fixture, http, html } = await montar();
+    await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'caio' })]);
+
+    (html.querySelector('.usuario-row button') as HTMLButtonElement).click();
+    http.expectOne(`${environment.apiUrl}/admin/users/caio`).flush(umaFicha({ id: 'caio' }));
+    fixture.detectChanges();
+
+    expect(html.querySelector('.anonimizar')).toBeFalsy();
+    const acoes = [...html.querySelectorAll('.ficha-bloco button')].map((b) => b.textContent ?? '');
+    expect(acoes.some((t) => t.includes('Desativar conta'))).toBe(true);
   });
 
   it('busca e filtro vão para o servidor, não filtram no navegador', async () => {
