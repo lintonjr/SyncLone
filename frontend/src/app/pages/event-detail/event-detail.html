@@ -71,7 +71,8 @@
                     <button
                       class="btn btn-primary"
                       (click)="advancePlayoffs()"
-                      [disabled]="actionLoading()"
+                      [disabled]="actionLoading() || pendingInCurrentRound()"
+                      [title]="motivoTravado()"
                     >
                       {{ i18n.t('event.advancePlayoffs') }}
                     </button>
@@ -79,7 +80,8 @@
                     <button
                       class="btn btn-primary"
                       (click)="startRound()"
-                      [disabled]="actionLoading()"
+                      [disabled]="actionLoading() || pendingInCurrentRound()"
+                      [title]="motivoTravado()"
                     >
                       ▶ {{ i18n.t('event.startRoundN', { n: (event()?.current_round ?? 0) + 1 }) }}
                     </button>
@@ -88,8 +90,8 @@
                     <button
                       class="btn btn-ghost playoffs-btn"
                       (click)="startPlayoffs()"
-                      [disabled]="actionLoading()"
-                      [title]="i18n.t('event.startPlayoffs')"
+                      [disabled]="actionLoading() || pendingInCurrentRound()"
+                      [title]="motivoTravado() || i18n.t('event.startPlayoffs')"
                     >
                       🏆 {{ i18n.t('event.startPlayoffsN', { fase: playoffLabel() }) }}
                     </button>
@@ -104,6 +106,12 @@
                   </button>
                 } @else {
                   <span class="event-finished-badge">{{ i18n.t('event.finished') }}</span>
+                }
+                @if (motivoTravado()) {
+                  <!-- Antes o botão do mata-mata simplesmente sumia e ninguém sabia por quê. -->
+                  <button class="pendencia-aviso" (click)="tab.set('pairings')">
+                    ⚠ {{ motivoTravado() }}
+                  </button>
                 }
                 @if (isTeamFormat() && event()!.current_round === 0) {
                   <button

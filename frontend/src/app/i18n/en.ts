@@ -224,6 +224,7 @@ export const EN: Record<string, string> = {
   'event.exportClansPartner': '⬇ Pairs (CSV)',
   'event.exportPairings': '⬇ Pairings (CSV)',
   'event.exportStandings': '⬇ Standings (CSV)',
+  'event.faltamResultados': '{n} result(s) missing in round {rodada} — resolve them to advance',
   'event.finish': '✓ Finish',
   'event.finishHelp': 'Finish Event',
   'event.finished': '✓ Finished',
@@ -265,6 +266,7 @@ export const EN: Record<string, string> = {
   'form.city': 'City',
   'form.collaborativeDeck': 'Collaborative Deck Registering',
   'form.confirmPlayers': 'Confirm New Players',
+  'form.createEvent': 'Create event',
   'form.date': 'Date',
   'form.description': 'Description (Optional)',
   'form.descriptionHint': 'Event description (max 100 characters)',
@@ -315,6 +317,7 @@ export const EN: Record<string, string> = {
   'form.roundLength': 'Round Length (minutes)',
   'form.roundLengthHelp':
     'Counts down on the event page from the moment the organizer releases the timer.',
+  'form.saveChanges': 'Save changes',
   'form.scoring': 'Scoring',
   'form.selectFormat': 'Select a format',
   'form.selectGame': 'Select a game',

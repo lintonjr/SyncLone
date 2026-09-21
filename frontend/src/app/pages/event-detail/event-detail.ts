@@ -218,11 +218,31 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return { round: latest, pairings: (ev.pairings ?? []).filter((p) => p.round_id === latest.id) };
   });
 
-  pendingInCurrentRound = computed(() => {
+  pendingInCurrentRound = computed(() => this.resultadosPendentes() > 0);
+
+  /** Quantas mesas da rodada atual ainda não têm resultado confirmado. */
+  resultadosPendentes = computed(() => {
     const current = this.currentRoundPairings();
     return current
-      ? current.pairings.some((p) => !p.result || p.result_status === 'pending')
-      : false;
+      ? current.pairings.filter((p) => !p.result || p.result_status === 'pending').length
+      : 0;
+  });
+
+  /**
+   * Por que os botões de avançar estão travados, ou vazio se não estão.
+   *
+   * O botão do mata-mata sumia da tela quando faltava resultado, e o de iniciar a
+   * próxima rodada ficava habilitado sem funcionar: o organizador via só um
+   * caminho, clicava, e levava um erro. Agora os dois ficam visíveis, desabilitados,
+   * e dizem o que falta.
+   */
+  motivoTravado = computed(() => {
+    const faltam = this.resultadosPendentes();
+    if (!faltam) return '';
+    return this.i18n.t('event.faltamResultados', {
+      n: faltam,
+      rodada: this.event()?.current_round ?? 0,
+    });
   });
 
   hasPlayoffRound = computed(() => (this.event()?.rounds ?? []).some((r) => r.is_playoff));
@@ -251,23 +271,22 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return chave ? this.i18n.t(chave) : 'Playoffs';
   });
 
+  /**
+   * O botão do mata-mata aparece quando o evento tem estrutura configurada e a
+   * chave ainda não começou. Resultado pendente **não** esconde mais o botão: ele
+   * fica desabilitado com o motivo (`motivoTravado`).
+   */
   canStartPlayoffs = computed(() => {
     const ev = this.event();
     if (!ev || ev.status === 'completed') return false;
     if (!ev.playoff_structure || ev.playoff_structure === 'none') return false;
-    if (this.hasPlayoffRound()) return false;
-    return !this.pendingInCurrentRound();
+    return !this.hasPlayoffRound();
   });
 
   showAdvancePlayoffs = computed(() => {
     const ev = this.event();
     const current = this.currentRoundPairings();
-    return !!(
-      ev &&
-      ev.status !== 'completed' &&
-      current?.round.is_playoff &&
-      !this.pendingInCurrentRound()
-    );
+    return !!(ev && ev.status !== 'completed' && current?.round.is_playoff);
   });
 
   championName = computed(() => {

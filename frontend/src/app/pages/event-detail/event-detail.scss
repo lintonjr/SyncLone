@@ -455,3 +455,20 @@
     color: #fbbf24;
   }
 }
+
+/* Aviso do que trava o avanço da rodada (mesas sem resultado). É um botão porque
+   leva direto à aba onde a pendência se resolve. */
+.pendencia-aviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  border-radius: 8px;
+  background: rgba(234, 179, 8, 0.12);
+  color: #fbbf24;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}

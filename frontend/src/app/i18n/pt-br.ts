@@ -226,6 +226,7 @@ export const PT_BR: Record<string, string> = {
   'event.exportClansPartner': '⬇ Duplas (CSV)',
   'event.exportPairings': '⬇ Pareamentos (CSV)',
   'event.exportStandings': '⬇ Classificação (CSV)',
+  'event.faltamResultados': 'Faltam {n} resultado(s) na rodada {rodada} — resolva para avançar',
   'event.finish': '✓ Encerrar',
   'event.finishHelp': 'Encerrar evento',
   'event.finished': '✓ Finalizado',
@@ -267,6 +268,7 @@ export const PT_BR: Record<string, string> = {
   'form.city': 'Cidade',
   'form.collaborativeDeck': 'Registro colaborativo de decks',
   'form.confirmPlayers': 'Aprovar novas inscrições',
+  'form.createEvent': 'Criar torneio',
   'form.date': 'Data',
   'form.description': 'Descrição (opcional)',
   'form.descriptionHint': 'Descrição do evento (até 100 caracteres)',
@@ -316,6 +318,7 @@ export const PT_BR: Record<string, string> = {
   'form.roundLength': 'Duração da rodada (minutos)',
   'form.roundLengthHelp':
     'Conta na página do evento a partir do momento em que o organizador solta o tempo.',
+  'form.saveChanges': 'Salvar alterações',
   'form.scoring': 'Pontuação',
   'form.selectFormat': 'Escolha um formato',
   'form.selectGame': 'Escolha um jogo',
