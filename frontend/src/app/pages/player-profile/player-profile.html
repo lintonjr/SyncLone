@@ -142,8 +142,26 @@
       <section class="profile-section">
         <h2 class="section-h">{{ i18n.t('profilePub.decks') }}</h2>
         <div class="deck-list">
-          @for (d of decks(); track d) {
-            <span class="deck-badge-static">{{ d }}</span>
+          @for (d of decks(); track d.deck) {
+            <span
+              class="deck-ficha"
+              [title]="
+                i18n.t('profilePub.deckDetalhe', {
+                  v: d.wins,
+                  d: d.losses,
+                  e: d.draws,
+                  n: d.eventos,
+                })
+              "
+            >
+              <span class="deck-nome">{{ d.deck }}</span>
+              <span class="deck-taxa" [class.sem-partida]="d.win_rate === null">{{
+                percentual(d.win_rate)
+              }}</span>
+              <span class="deck-amostra">{{
+                i18n.t('profilePub.deckAmostra', { n: d.eventos, partidas: d.matches })
+              }}</span>
+            </span>
           }
         </div>
       </section>

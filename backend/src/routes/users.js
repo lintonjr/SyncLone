@@ -9,6 +9,7 @@ const { notifyUsers, adminUserIds } = require('../services/notify');
 const { podePedirParaOrganizar } = require('../lib/roles');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
+const { aproveitamento } = require('../lib/retrospecto');
 
 router.get('/me', auth, asyncHandler(async (req, res) => {
   const user = await db.get('SELECT id, display_name, email, role, profile_public FROM users WHERE id = ?', [req.user.id]);
@@ -294,9 +295,9 @@ function somar(eventos) {
     losses: soma('losses'),
     draws: soma('draws'),
     matches: partidas,
-    // Aproveitamento no estilo MTR: empate vale meia vitória. `null` quando a
-    // pessoa ainda não jogou nada, para a tela mostrar "—" em vez de 0%.
-    win_rate: partidas ? (soma('wins') + soma('draws') / 2) / partidas : null,
+    // A conta mora em lib/retrospecto.js: a mesma que o perfil usa por deck e a
+    // liga usa no ranking de decks.
+    win_rate: aproveitamento({ wins: soma('wins'), draws: soma('draws'), matches: partidas }),
     titles: eventos.filter((e) => e.champion).length,
   };
 }

@@ -7,6 +7,7 @@ const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
 const { computeStandings } = require('../services/standings');
+const { agruparDecks } = require('../lib/retrospecto');
 const { notifyUsers } = require('../services/notify');
 const { podeOrganizar } = require('../lib/roles');
 const {
@@ -53,7 +54,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
 
   const events = await db.query(
-    'SELECT id, name, date, timezone, status, thumbnail, game, format, points_win, points_draw, points_loss FROM events WHERE league_id = ? ORDER BY date',
+    `SELECT id, name, date, timezone, status, thumbnail, game, format, champion_id,
+            points_win, points_draw, points_loss
+       FROM events WHERE league_id = ? ORDER BY date`,
     [req.params.id]
   );
 
@@ -118,11 +121,32 @@ router.get('/:id', asyncHandler(async (req, res) => {
   //
   // Era a quarta aparição do mesmo defeito: dois lugares respondendo à mesma
   // pergunta. Aqui a resposta passou a vir de onde ela já era certa.
+  // Decks da liga: o retrato do metagame da loja. Sai das mesmas listas já
+  // carregadas — nenhuma consulta a mais — e segue o mesmo interruptor de
+  // mata-mata da classificação, para a página não ter dois critérios.
+  //
+  // Diferente da classificação, conta convidado sem conta e quem deu drop: um
+  // deck não depende de quem o pilotou ter cadastro, e as partidas jogadas por
+  // quem saiu aconteceram.
+  const participacoes = [];
+
   for (const ev of events) {
     const players = playersByEvent.get(ev.id) ?? [];
     if (players.length === 0) continue;
 
     const ranked = computeStandings(players, pairingsByEvent.get(ev.id) ?? [], ev);
+    for (const p of ranked) {
+      if (p.deck_name) {
+        participacoes.push({
+          deck_name: p.deck_name,
+          wins: p.wins,
+          losses: p.losses,
+          draws: p.draws,
+          campeao: ev.champion_id === p.id,
+          jogador: p.user_id ?? p.id,
+        });
+      }
+    }
     for (const p of ranked) {
       // Convidado sem conta existe só dentro do próprio torneio: não há a quem
       // creditar entre eventos diferentes. Quem deu drop também fica de fora —
@@ -138,7 +162,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   // O time da liga, sem e-mail: esta rota é pública.
   const organizers = await coOrganizadores(db, req.params.id);
 
-  res.json({ ...league, events, standings, organizers });
+  res.json({ ...league, events, standings, organizers, decks: agruparDecks(participacoes) });
 }));
 
 // Auth: create league (organizer only)

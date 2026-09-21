@@ -40,11 +40,27 @@ export interface LeagueEvent {
   format?: string;
 }
 
+/** Uma linha do ranking de decks da liga — o metagame da loja. */
+export interface LeagueDeck {
+  deck: string;
+  participacoes: number;
+  jogadores: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  matches: number;
+  /** `null` quando o deck foi registrado mas não jogou partida. */
+  win_rate: number | null;
+  titulos: number;
+}
+
 export interface LeagueDetail extends League {
   events: LeagueEvent[];
   standings: LeagueStanding[];
   // Co-organizadores: o time que cuida da liga e de todos os eventos dela.
   organizers: LeagueOrganizer[];
+  // Decks jogados na liga, do mais jogado para o menos.
+  decks: LeagueDeck[];
 }
 
 @Injectable({ providedIn: 'root' })

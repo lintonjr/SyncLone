@@ -111,18 +111,42 @@ describe('PlayerProfileComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Decks');
   });
 
-  it('mostra os decks distintos quando existem', async () => {
+  it('mostra cada deck com o aproveitamento e o tamanho da amostra', async () => {
     const fixture = montar(
       umPerfil({
         events: [
-          umEventoDoPerfil({ event_id: 'e1', deck_name: 'Atraxa' }),
-          umEventoDoPerfil({ event_id: 'e2', deck_name: 'Atraxa' }),
-          umEventoDoPerfil({ event_id: 'e3', deck_name: 'Krenko' }),
+          umEventoDoPerfil({ event_id: 'e1', deck_name: 'Atraxa', wins: 3, losses: 1, draws: 0 }),
+          umEventoDoPerfil({ event_id: 'e2', deck_name: 'atraxa ', wins: 3, losses: 1, draws: 0 }),
+          umEventoDoPerfil({ event_id: 'e3', deck_name: 'Krenko', wins: 1, losses: 2, draws: 1 }),
         ],
       }),
     );
     await fixture.whenStable();
-    expect(fixture.componentInstance.decks()).toEqual(['Atraxa', 'Krenko']);
+
+    const decks = fixture.componentInstance.decks();
+    // Grafia diferente é o mesmo deck, e vence a mais usada.
+    expect(decks.map((d) => d.deck)).toEqual(['Atraxa', 'Krenko']);
+    // Empate vale meia vitória, como no aproveitamento geral do perfil.
+    expect(decks[0]).toMatchObject({ eventos: 2, wins: 6, losses: 2, matches: 8, win_rate: 0.75 });
+    expect(decks[1].win_rate).toBeCloseTo(0.375, 5);
+
+    const html = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(html).toContain('75.0%');
+    expect(html).toContain('Atraxa');
+  });
+
+  it('deck registrado sem partida aparece com "—", não com 0%', async () => {
+    const fixture = montar(
+      umPerfil({
+        events: [umEventoDoPerfil({ deck_name: 'Só inscreveu', wins: 0, losses: 0, draws: 0 })],
+      }),
+    );
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.decks()[0].win_rate).toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.deck-taxa')?.textContent?.trim(),
+    ).toBe('—');
   });
 
   it('quem saiu no meio não recebe colocação', async () => {

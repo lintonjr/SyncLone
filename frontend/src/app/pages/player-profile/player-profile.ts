@@ -7,6 +7,7 @@ import { BadgeService } from '../../services/badge';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
 import { DataEventoPipe } from '../../lib/data-evento.pipe';
+import { agruparDecks, formatarAproveitamento } from '../../lib/retrospecto';
 
 /**
  * Perfil público de um jogador: o que ele jogou e como se saiu.
@@ -146,18 +147,19 @@ export class PlayerProfileComponent implements OnInit {
   }
 
   /** Aproveitamento como percentual, ou "—" enquanto não houver partida. */
-  aproveitamento = computed(() => {
-    const r = this.emFoco().win_rate;
-    return r === null || r === undefined ? '—' : `${(r * 100).toFixed(1)}%`;
-  });
+  aproveitamento = computed(() => formatarAproveitamento(this.emFoco().win_rate));
 
-  /** Decks só aparecem quando alguém de fato registrou algum. */
-  decks = computed(() => {
-    const nomes = this.eventosEmFoco()
-      .map((e) => e.deck_name)
-      .filter((d): d is string => !!d && d.trim().length > 0);
-    return [...new Set(nomes)];
-  });
+  /** Como mostrar o aproveitamento de um deck na ficha. */
+  percentual = (valor: number | null) => formatarAproveitamento(valor);
+
+  /**
+   * Os decks do recorte em foco, com o retrospecto de cada um.
+   *
+   * Sai do que já veio no perfil (cada participação traz deck e V/D/E), então
+   * acompanha o recorte de liga sem nenhuma ida ao servidor. A conta é a mesma do
+   * aproveitamento geral — lib/retrospecto.ts.
+   */
+  decks = computed(() => agruparDecks(this.eventosEmFoco()));
 
   /** Só as três primeiras colocações ganham destaque, como na tabela do evento. */
   medalha(e: ProfileEvent): string {

@@ -136,6 +136,41 @@
       }
     </div>
 
+    @if (league()!.decks?.length) {
+      <h2 class="section-title">{{ i18n.t('league.decks') }}</h2>
+      <p class="decks-ajuda">{{ i18n.t('league.decksHelp') }}</p>
+      <div class="decks-table card">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ i18n.t('league.deck') }}</th>
+              <th class="col-num">{{ i18n.t('league.deckMatches') }}</th>
+              <th class="col-num">{{ i18n.t('league.deckPlayers') }}</th>
+              <th class="col-num">V</th>
+              <th class="col-num">D</th>
+              <th class="col-num">E</th>
+              <th class="col-num">{{ i18n.t('profilePub.winRate') }}</th>
+              <th class="col-num">{{ i18n.t('profilePub.titlesShort') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of league()!.decks; track d.deck) {
+              <tr>
+                <td class="deck-cell">{{ d.deck }}</td>
+                <td class="col-num" data-rotulo="Partidas">{{ d.matches }}</td>
+                <td class="col-num" data-rotulo="Jogadores">{{ d.jogadores }}</td>
+                <td class="col-num" data-rotulo="V">{{ d.wins }}</td>
+                <td class="col-num" data-rotulo="D">{{ d.losses }}</td>
+                <td class="col-num" data-rotulo="E">{{ d.draws }}</td>
+                <td class="col-num taxa" data-rotulo="%">{{ percentual(d.win_rate) }}</td>
+                <td class="col-num" data-rotulo="Títulos">{{ d.titulos || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
     <h2 class="section-title">{{ i18n.t('league.tournaments') }}</h2>
     @if (league()!.events.length === 0) {
       <p class="empty">{{ i18n.t('league.noTournaments') }}</p>

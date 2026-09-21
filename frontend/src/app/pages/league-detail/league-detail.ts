@@ -4,6 +4,7 @@ import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { LeagueService, LeagueDetail, LeagueOrganizer } from '../../services/league';
+import { formatarAproveitamento } from '../../lib/retrospecto';
 import { AuthService } from '../../services/auth';
 import { DataEventoPipe } from '../../lib/data-evento.pipe';
 
@@ -107,6 +108,9 @@ export class LeagueDetailComponent implements OnInit {
       error: () => this.loading.set(false),
     });
   }
+
+  /** Aproveitamento do deck, ou travessão quando ele ainda não jogou partida. */
+  percentual = (valor: number | null) => formatarAproveitamento(valor);
 
   ordinal(n: number): string {
     const s = ['th', 'st', 'nd', 'rd'];
