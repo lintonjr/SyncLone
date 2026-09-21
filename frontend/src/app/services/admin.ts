@@ -20,6 +20,49 @@ export interface OrganizerRequestRow {
   events_played: number;
 }
 
+/** Uma pessoa na área de usuários. */
+export interface UserRow {
+  id: string;
+  display_name: string;
+  email: string;
+  role: 'player' | 'organizer' | 'admin';
+  created_at: string;
+  events_played: number;
+  events_owned: number;
+  /** Ligas de que é dona e ligas em que está no time. */
+  leagues_owned: number;
+  leagues_team: number;
+}
+
+export interface UsersPage {
+  users: UserRow[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** Uma liga na ficha da pessoa: ela é dona ou está no time. */
+export interface UserLeague {
+  id: string;
+  name: string;
+  vinculo: 'dona' | 'time';
+}
+
+/** Uma linha do histórico de papel. */
+export interface RoleChange {
+  de: 'player' | 'organizer' | 'admin';
+  para: 'player' | 'organizer' | 'admin';
+  motivo: string | null;
+  created_at: string;
+  autor: string | null;
+}
+
+export interface UserDetail extends UserRow {
+  profile_public: number;
+  leagues: UserLeague[];
+  role_history: RoleChange[];
+}
+
 /** Quem tem poder na plataforma hoje. */
 export interface StaffRow {
   id: string;
@@ -58,10 +101,25 @@ export class AdminService {
     return this.http.get<StaffRow[]>(`${this.API}/staff`, { headers: this.headers() });
   }
 
-  changeRole(userId: string, role: 'player' | 'organizer' | 'admin') {
+  /** A lista da área de usuários: busca e filtro são resolvidos no servidor. */
+  users(params: { q?: string; role?: string; limit?: number; offset?: number } = {}) {
+    const query = new URLSearchParams();
+    if (params.q) query.set('q', params.q);
+    if (params.role) query.set('role', params.role);
+    query.set('limit', String(params.limit ?? 25));
+    query.set('offset', String(params.offset ?? 0));
+    return this.http.get<UsersPage>(`${this.API}/users?${query}`, { headers: this.headers() });
+  }
+
+  /** A ficha: ligas em que a pessoa manda e o histórico do papel dela. */
+  userDetail(id: string) {
+    return this.http.get<UserDetail>(`${this.API}/users/${id}`, { headers: this.headers() });
+  }
+
+  changeRole(userId: string, role: 'player' | 'organizer' | 'admin', reason = '') {
     return this.http.put<StaffRow>(
       `${this.API}/users/${userId}/role`,
-      { role },
+      { role, reason },
       { headers: this.headers() },
     );
   }

@@ -1,4 +1,4 @@
-const { podeOrganizar } = require('./roles');
+const { podeOrganizar, ehAdmin } = require('./roles');
 
 /**
  * Quem gerencia o quê numa liga e nos eventos dela.
@@ -57,8 +57,19 @@ const respondePeloEvento = (papel) => papel === 'dono' || papel === 'dono-liga';
 /** Editar nome e regras da liga, e vincular eventos a ela. */
 const gerenciaLiga = (papel) => papel !== null;
 
-/** Apagar a liga e escolher quem está no time. */
+/** Apagar a liga: só de quem é dono dela. */
 const ehDonoDaLiga = (papel) => papel === 'dono';
+
+/**
+ * Quem escolhe o time da liga: o dono dela e o administrador da plataforma.
+ *
+ * O admin entra porque é ele quem decide **quem organiza** na plataforma inteira,
+ * e a área de usuários é onde ele arruma um time sem precisar pedir ao dono de
+ * cada liga. Quem já organiza a liga sem ser dono continua de fora: entrar no
+ * time é convite, não porta que quem está dentro abre para os outros.
+ */
+const podeEscolherOTime = ({ papelNaLiga, papelNaPlataforma }) =>
+  ehDonoDaLiga(papelNaLiga) || ehAdmin(papelNaPlataforma);
 
 /**
  * Por que esta pessoa não pode entrar no time, ou null se pode.
@@ -77,8 +88,10 @@ function impedimentoParaAdicionar({ liga, alvo, jaNoTime }) {
  * Remover alguém do time: o dono remove qualquer um, e cada co-organizador pode
  * sair por conta própria.
  */
-function podeRemoverDoTime({ papelDeQuemPede, quemPedeId, alvoId }) {
-  return papelDeQuemPede === 'dono' || (papelDeQuemPede === 'equipe' && quemPedeId === alvoId);
+function podeRemoverDoTime({ papelDeQuemPede, quemPedeId, alvoId, papelNaPlataforma }) {
+  if (podeEscolherOTime({ papelNaLiga: papelDeQuemPede, papelNaPlataforma })) return true;
+  // Cada co-organizador pode sair por conta própria.
+  return papelDeQuemPede === 'equipe' && quemPedeId === alvoId;
 }
 
 // --- Consultas ---
@@ -143,6 +156,7 @@ module.exports = {
   respondePeloEvento,
   gerenciaLiga,
   ehDonoDaLiga,
+  podeEscolherOTime,
   impedimentoParaAdicionar,
   podeRemoverDoTime,
   papelDoUsuarioNoEvento,

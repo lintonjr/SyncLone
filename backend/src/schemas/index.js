@@ -184,6 +184,8 @@ const schemas = {
 
   changeRole: z.object({
     role: z.enum(ROLES),
+    // Fica no histórico da pessoa; opcional, como o motivo de uma decisão de fila.
+    reason: blank(z.string().trim().max(1000).optional()),
   }),
 
   createLeague: z.object({

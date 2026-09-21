@@ -11,7 +11,7 @@ const { agruparDecks } = require('../lib/retrospecto');
 const { notifyUsers } = require('../services/notify');
 const { podeOrganizar } = require('../lib/roles');
 const {
-  gerenciaLiga, ehDonoDaLiga, impedimentoParaAdicionar, podeRemoverDoTime,
+  gerenciaLiga, podeEscolherOTime, impedimentoParaAdicionar, podeRemoverDoTime,
   papelDoUsuarioNaLiga, coOrganizadores,
 } = require('../lib/equipeLiga');
 
@@ -180,7 +180,8 @@ router.post('/', auth, requireOrganizer, validate(schemas.createLeague), asyncHa
 router.put('/:id', auth, validate(schemas.updateLeague), asyncHandler(async (req, res) => {
   const league = await db.get('SELECT * FROM leagues WHERE id = ?', [req.params.id]);
   if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
-  if (!gerenciaLiga(await papelDoUsuarioNaLiga(db, league, req.user.id))) {
+  const papelNaLiga = await papelDoUsuarioNaLiga(db, league, req.user.id);
+  if (!gerenciaLiga(papelNaLiga) && !podeEscolherOTime({ papelNaLiga, papelNaPlataforma: req.user.role })) {
     throw new HttpError(403, 'Forbidden', 'api.forbidden');
   }
 
@@ -214,7 +215,8 @@ router.post('/:id/organizers', auth, validate(schemas.addLeagueOrganizer), async
   const organizers = await db.transaction(async (tx) => {
     const league = await tx.get('SELECT * FROM leagues WHERE id = ?', [req.params.id]);
     if (!league) throw new HttpError(404, 'League not found', 'api.leagueNotFound');
-    if (!ehDonoDaLiga(await papelDoUsuarioNaLiga(tx, league, req.user.id))) {
+    const papelNaLiga = await papelDoUsuarioNaLiga(tx, league, req.user.id);
+    if (!podeEscolherOTime({ papelNaLiga, papelNaPlataforma: req.user.role })) {
       throw new HttpError(403, 'Only the league owner can manage its organizers', 'api.leagueOwnerOnly');
     }
 
@@ -254,7 +256,12 @@ router.delete('/:id/organizers/:userId', auth, asyncHandler(async (req, res) => 
       [league.id, req.user.id]
     );
     const papelDeQuemPede = league.owner_id === req.user.id ? 'dono' : (linhaDeQuemPede ? 'equipe' : null);
-    if (!podeRemoverDoTime({ papelDeQuemPede, quemPedeId: req.user.id, alvoId: req.params.userId })) {
+    if (!podeRemoverDoTime({
+      papelDeQuemPede,
+      quemPedeId: req.user.id,
+      alvoId: req.params.userId,
+      papelNaPlataforma: req.user.role,
+    })) {
       throw new HttpError(403, 'Only the league owner can manage its organizers', 'api.leagueOwnerOnly');
     }
 

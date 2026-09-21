@@ -39,6 +39,40 @@ function umStaff(over: Record<string, unknown> = {}) {
   };
 }
 
+function umUsuario(over: Record<string, unknown> = {}) {
+  return {
+    id: 'u1',
+    display_name: 'Pessoa',
+    email: 'pessoa@t.local',
+    role: 'player',
+    created_at: '2026-01-01T00:00:00.000Z',
+    events_played: 3,
+    events_owned: 0,
+    leagues_owned: 0,
+    leagues_team: 0,
+    ...over,
+  };
+}
+
+/** Abre a aba de usuários e responde a listagem que o teste declarar. */
+async function abrirUsuarios(
+  fixture: { detectChanges: () => void; whenStable: () => Promise<unknown> },
+  http: HttpTestingController,
+  html: HTMLElement,
+  usuarios: Record<string, unknown>[],
+) {
+  (html.querySelector('.tabs button:last-child') as HTMLButtonElement).click();
+  fixture.detectChanges();
+  http
+    .expectOne((r) => r.url.includes('/admin/users'))
+    .flush({ users: usuarios, total: usuarios.length, limit: 25, offset: 0 });
+  http.expectOne(`${environment.apiUrl}/leagues`).flush([{ id: 'l9', name: 'Liga Livre' }]);
+  fixture.detectChanges();
+  await fixture.whenStable();
+  fixture.detectChanges();
+  return [...html.querySelectorAll('.usuario-row')];
+}
+
 /** Monta a tela já respondida, com a fila e o quadro que o teste declarar. */
 async function montar(
   pedidos: Record<string, unknown>[] = [],
@@ -138,31 +172,89 @@ describe('AdminComponent', () => {
   it('não oferece ao dono botão para mexer no próprio papel', async () => {
     // O servidor recusa (api.cannotChangeOwnRole); a tela não deve nem oferecer
     // — um admin que se rebaixa perde a rota que desfaria isso.
-    const { fixture, html } = await montar([], [umStaff({ id: 'eu', role: 'admin' }), umStaff()]);
+    const { fixture, http, html } = await montar();
     TestBed.inject(AuthService).currentUser.set({
       id: 'eu',
       display_name: 'Dono',
       email: 'dono@t.local',
       role: 'admin',
     });
-    (html.querySelector('.tabs button:last-child') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    const usuarios = await abrirUsuarios(fixture, http, html, [
+      umUsuario({ id: 'eu', role: 'admin', display_name: 'Dono' }),
+      umUsuario({ id: 'bia', role: 'organizer', display_name: 'Bia' }),
+    ]);
 
-    const linhas = html.querySelectorAll('.staff-row');
-    expect(linhas.length).toBe(2);
-    expect(linhas[0].querySelector('.staff-actions')).toBeFalsy();
-    expect(linhas[0].textContent).toContain('Você');
-    // A outra conta continua com as duas ações disponíveis.
-    expect(linhas[1].querySelectorAll('.staff-actions button').length).toBe(2);
+    expect(usuarios.length).toBe(2);
+    expect(usuarios[0].textContent).toContain('Você');
+    expect(usuarios[0].querySelector('button')).toBeFalsy();
+    // A outra conta tem o botão que abre a ficha.
+    expect(usuarios[1].querySelector('button')?.textContent).toContain('Gerenciar');
   });
 
-  it('só oferece "tornar administrador" a quem ainda não é', async () => {
-    const { fixture, html } = await montar([], [umStaff({ id: 'a1', role: 'admin' })]);
-    (html.querySelector('.tabs button:last-child') as HTMLButtonElement).click();
+  it('a ficha só oferece os papéis que a pessoa ainda não tem', async () => {
+    const { fixture, http, html } = await montar();
+    await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'a1', role: 'admin' })]);
+
+    (html.querySelector('.usuario-row button') as HTMLButtonElement).click();
+    http.expectOne(`${environment.apiUrl}/admin/users/a1`).flush({
+      ...umUsuario({ id: 'a1', role: 'admin' }),
+      profile_public: 1,
+      leagues: [],
+      role_history: [],
+    });
     fixture.detectChanges();
 
-    const botoes = [...html.querySelectorAll('.staff-actions button')].map((b) => b.textContent);
-    expect(botoes.some((t) => t?.includes('Tornar administrador'))).toBe(false);
-    expect(botoes.some((t) => t?.includes('Remover acesso'))).toBe(true);
+    const acoes = [...html.querySelectorAll('.ficha-acoes button')].map((b) => b.textContent ?? '');
+    expect(acoes.some((t) => t.includes('Tornar administrador'))).toBe(false);
+    expect(acoes.some((t) => t.includes('Tornar organizador'))).toBe(true);
+    expect(acoes.some((t) => t.includes('Rebaixar para jogador'))).toBe(true);
+  });
+
+  it('a ficha mostra as ligas da pessoa e o histórico de papel', async () => {
+    const { fixture, http, html } = await montar();
+    await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'bia', role: 'organizer' })]);
+
+    (html.querySelector('.usuario-row button') as HTMLButtonElement).click();
+    http.expectOne(`${environment.apiUrl}/admin/users/bia`).flush({
+      ...umUsuario({ id: 'bia', role: 'organizer' }),
+      profile_public: 1,
+      leagues: [
+        { id: 'l1', name: 'Liga de Sexta', vinculo: 'time' },
+        { id: 'l2', name: 'Liga Anual', vinculo: 'dona' },
+      ],
+      role_history: [
+        {
+          de: 'player',
+          para: 'organizer',
+          motivo: 'Organiza na loja',
+          created_at: '2026-09-01T12:00:00Z',
+          autor: 'Dono',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const ficha = html.querySelector('.ficha')!;
+    expect(ficha.textContent).toContain('Liga de Sexta');
+    expect(ficha.textContent).toContain('Liga Anual');
+    // De dona ninguém a remove; do time, sim.
+    expect(ficha.querySelectorAll('.ligas li button').length).toBe(1);
+    expect(ficha.textContent).toContain('Organiza na loja');
+    expect(ficha.textContent).toContain('por Dono');
+  });
+
+  it('busca e filtro vão para o servidor, não filtram no navegador', async () => {
+    const { fixture, http, html } = await montar();
+    await abrirUsuarios(fixture, http, html, [umUsuario()]);
+
+    const select = html.querySelector('.filtros select') as HTMLSelectElement;
+    select.value = 'organizer';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    // A query vai montada na URL: é o servidor que busca e filtra, não a tela.
+    const req = http.expectOne((r) => r.url.includes('role=organizer'));
+    expect(req.request.url).toContain('limit=25');
+    req.flush({ users: [], total: 0, limit: 25, offset: 0 });
   });
 });

@@ -206,3 +206,138 @@
     }
   }
 }
+
+/* ── Área de usuários ──
+   A lista é longa (centenas de contas), então a linha é enxuta e o detalhe abre
+   embaixo: uma ficha por vez, sem tirar a pessoa da lista. */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+
+  .busca {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+
+  .total {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.usuarios {
+  padding: 0;
+}
+
+.usuario-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+
+  .name {
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .email,
+  .meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .meta {
+    flex: 1 1 auto;
+  }
+}
+
+.ficha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+
+  h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .vazio,
+  .aviso-papel {
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .aviso-papel {
+    margin-bottom: 8px;
+  }
+}
+
+.ficha-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ligas,
+.historico {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+
+  li {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  a {
+    color: var(--text);
+    font-weight: 600;
+  }
+}
+
+.historico {
+  .quando {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .motivo {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+}
+
+.add-liga {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+
+  select {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+}
+
+.carregar-mais {
+  margin: 16px auto 0;
+  display: block;
+}

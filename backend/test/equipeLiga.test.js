@@ -123,3 +123,30 @@ test('time: dono remove qualquer um; co-organizador só sai por conta própria',
   assert.equal(podeRemoverDoTime({ papelDeQuemPede: 'equipe', quemPedeId: 'bia', alvoId: 'davi' }), false);
   assert.equal(podeRemoverDoTime({ papelDeQuemPede: null, quemPedeId: 'caio', alvoId: 'caio' }), false);
 });
+
+// --- Administrador da plataforma no time da liga (área de usuários) ---
+
+const { podeEscolherOTime } = require('../src/lib/equipeLiga');
+
+test('time: o administrador da plataforma escolhe o time de qualquer liga', () => {
+  // É ele quem decide quem organiza; arrumar um time sem pedir ao dono de cada
+  // liga é o que a área de usuários precisa.
+  assert.equal(podeEscolherOTime({ papelNaLiga: null, papelNaPlataforma: 'admin' }), true);
+  assert.equal(podeEscolherOTime({ papelNaLiga: 'equipe', papelNaPlataforma: 'admin' }), true);
+});
+
+test('time: dono da liga escolhe o dela, e mais ninguém', () => {
+  assert.equal(podeEscolherOTime({ papelNaLiga: 'dono', papelNaPlataforma: 'organizer' }), true);
+  assert.equal(podeEscolherOTime({ papelNaLiga: 'equipe', papelNaPlataforma: 'organizer' }), false);
+  assert.equal(podeEscolherOTime({ papelNaLiga: null, papelNaPlataforma: 'organizer' }), false);
+  assert.equal(podeEscolherOTime({ papelNaLiga: null, papelNaPlataforma: 'player' }), false);
+});
+
+test('time: admin remove qualquer um; co-organizador continua só podendo sair', () => {
+  const comoAdmin = { papelDeQuemPede: null, quemPedeId: 'admin1', alvoId: 'bia', papelNaPlataforma: 'admin' };
+  assert.equal(podeRemoverDoTime(comoAdmin), true);
+
+  const coOrg = { papelDeQuemPede: 'equipe', quemPedeId: 'bia', papelNaPlataforma: 'organizer' };
+  assert.equal(podeRemoverDoTime({ ...coOrg, alvoId: 'bia' }), true);
+  assert.equal(podeRemoverDoTime({ ...coOrg, alvoId: 'davi' }), false);
+});

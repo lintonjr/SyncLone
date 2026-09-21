@@ -217,6 +217,21 @@ CREATE TABLE IF NOT EXISTS `user_badges` (
   CONSTRAINT `user_badges_awarder_fk` FOREIGN KEY (`awarded_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Histórico de troca de papel: quem mudou o quê, quando e por quê (migrations/018).
+CREATE TABLE IF NOT EXISTS `role_changes` (
+  `id` varchar(36) NOT NULL,
+  `user_id` varchar(36) NOT NULL,
+  `de` enum('player','organizer','admin') NOT NULL,
+  `para` enum('player','organizer','admin') NOT NULL,
+  `autor_id` varchar(36) DEFAULT NULL,
+  `motivo` text DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `por_usuario` (`user_id`, `created_at`),
+  CONSTRAINT `role_changes_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `role_changes_autor_fk` FOREIGN KEY (`autor_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Pedidos para virar organizador.
 --
 -- Organizar não é self-service: o jogador pede, o dono da plataforma decide. A

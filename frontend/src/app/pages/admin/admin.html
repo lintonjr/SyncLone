@@ -11,8 +11,8 @@
         <span class="count">{{ pendentes().length }}</span>
       }
     </button>
-    <button class="tab" [class.active]="aba() === 'staff'" (click)="aba.set('staff')">
-      {{ i18n.t('admin.tabStaff') }}
+    <button class="tab" [class.active]="aba() === 'usuarios'" (click)="abrirAbaUsuarios()">
+      {{ i18n.t('admin.tabUsers') }}
     </button>
   </div>
 
@@ -92,44 +92,189 @@
       </div>
     }
   } @else {
-    <div class="card staff">
-      @for (s of staff(); track s.id) {
-        <div class="staff-row">
+    <!-- Área de usuários: a lista de organizadores virou o filtro por papel desta. -->
+    <div class="filtros">
+      <input
+        type="search"
+        class="busca"
+        [value]="busca()"
+        (input)="aoBuscar($any($event.target).value)"
+        [placeholder]="i18n.t('admin.searchPlaceholder')"
+        [attr.aria-label]="i18n.t('admin.searchPlaceholder')"
+      />
+      <select
+        [value]="filtroPapel()"
+        (change)="filtrarPorPapel($any($event.target).value)"
+        [attr.aria-label]="i18n.t('admin.filterRole')"
+      >
+        <option value="">{{ i18n.t('admin.allRoles') }}</option>
+        <option value="player">{{ i18n.t('role.player') }}</option>
+        <option value="organizer">{{ i18n.t('role.organizer') }}</option>
+        <option value="admin">{{ i18n.t('role.admin') }}</option>
+      </select>
+      <span class="total">{{ i18n.t('admin.results', { n: totalUsuarios() }) }}</span>
+    </div>
+
+    @if (usuarios().length === 0 && !carregandoUsuarios()) {
+      <div class="card empty">{{ i18n.t('admin.noUsers') }}</div>
+    }
+
+    <div class="card usuarios">
+      @for (u of usuarios(); track u.id) {
+        <div class="usuario-row">
           <span
             class="badge"
-            [class.badge-purple]="s.role === 'admin'"
-            [class.badge-green]="s.role === 'organizer'"
+            [class.badge-purple]="u.role === 'admin'"
+            [class.badge-green]="u.role === 'organizer'"
+            >{{ i18n.t('role.' + u.role) }}</span
           >
-            {{ i18n.t('role.' + s.role) }}
+          <a [routerLink]="['/player', u.id]" class="name">{{ u.display_name }}</a>
+          <span class="email">{{ u.email }}</span>
+          <span class="meta">
+            {{ i18n.t('admin.eventsPlayed', { n: u.events_played }) }}
+            @if (u.events_owned) {
+              · {{ i18n.t('admin.eventsOwned', { n: u.events_owned }) }}
+            }
+            @if (u.leagues_owned + u.leagues_team) {
+              · {{ i18n.t('admin.leaguesCount', { n: u.leagues_owned + u.leagues_team }) }}
+            }
           </span>
-          <a [routerLink]="['/player', s.id]" class="name">{{ s.display_name }}</a>
-          <span class="email">{{ s.email }}</span>
-          <span class="owned">{{ i18n.t('admin.eventsOwned', { n: s.events_owned }) }}</span>
-
-          @if (souEu(s.id)) {
+          @if (souEu(u.id)) {
             <span class="you">{{ i18n.t('admin.you') }}</span>
           } @else {
-            <div class="staff-actions">
-              @if (s.role === 'organizer') {
-                <button
-                  class="btn btn-ghost"
-                  [disabled]="decidindo() === s.id"
-                  (click)="trocarPapel(s, 'admin')"
-                >
-                  {{ i18n.t('admin.promote') }}
-                </button>
-              }
-              <button
-                class="btn btn-ghost danger"
-                [disabled]="decidindo() === s.id"
-                (click)="trocarPapel(s, 'player')"
-              >
-                {{ i18n.t('admin.revoke') }}
-              </button>
-            </div>
+            <button class="btn btn-ghost" (click)="abrirFicha(u)">
+              {{ ficha()?.id === u.id ? i18n.t('admin.close') : i18n.t('admin.manage') }}
+            </button>
           }
         </div>
+
+        @if (ficha()?.id === u.id) {
+          <div class="ficha">
+            <!-- Papel -->
+            <div class="ficha-bloco">
+              <h4>{{ i18n.t('admin.roleSection') }}</h4>
+              <div class="ficha-acoes">
+                @if (u.role !== 'organizer') {
+                  <button
+                    class="btn btn-ghost"
+                    [disabled]="decidindo() === u.id"
+                    (click)="trocarPapelDoUsuario(u, 'organizer')"
+                  >
+                    {{ i18n.t('admin.makeOrganizer') }}
+                  </button>
+                }
+                @if (u.role !== 'admin') {
+                  <button
+                    class="btn btn-ghost"
+                    [disabled]="decidindo() === u.id"
+                    (click)="trocarPapelDoUsuario(u, 'admin')"
+                  >
+                    {{ i18n.t('admin.promote') }}
+                  </button>
+                }
+                @if (u.role !== 'player') {
+                  <button
+                    class="btn btn-ghost danger"
+                    [disabled]="decidindo() === u.id"
+                    (click)="trocarPapelDoUsuario(u, 'player')"
+                  >
+                    {{ i18n.t('admin.makePlayer') }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Ligas -->
+            <div class="ficha-bloco">
+              <h4>{{ i18n.t('admin.leaguesSection') }}</h4>
+              @if (u.role === 'player') {
+                <p class="aviso-papel">{{ i18n.t('admin.teamNoEffect') }}</p>
+              }
+              @if (ficha()!.leagues.length === 0) {
+                <p class="vazio">{{ i18n.t('admin.noLeagues') }}</p>
+              } @else {
+                <ul class="ligas">
+                  @for (l of ficha()!.leagues; track l.id + l.vinculo) {
+                    <li>
+                      <a [routerLink]="['/leagues', l.id]">{{ l.name }}</a>
+                      <span class="badge" [class.badge-purple]="l.vinculo === 'dona'">{{
+                        i18n.t(l.vinculo === 'dona' ? 'admin.leagueOwner' : 'admin.leagueTeam')
+                      }}</span>
+                      @if (l.vinculo === 'time') {
+                        <button
+                          class="btn btn-ghost"
+                          [disabled]="decidindo() === u.id"
+                          (click)="removerDoTime(l.id, l.name)"
+                        >
+                          {{ i18n.t('league.removeOrganizer') }}
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+
+              @if (u.role !== 'player' && ligasDisponiveis().length) {
+                <div class="add-liga">
+                  <select
+                    [value]="ligaEscolhida()"
+                    (change)="ligaEscolhida.set($any($event.target).value)"
+                    [attr.aria-label]="i18n.t('admin.chooseLeague')"
+                  >
+                    <option value="">{{ i18n.t('admin.chooseLeague') }}</option>
+                    @for (l of ligasDisponiveis(); track l.id) {
+                      <option [value]="l.id">{{ l.name }}</option>
+                    }
+                  </select>
+                  <button
+                    class="btn btn-primary"
+                    [disabled]="!ligaEscolhida() || decidindo() === u.id"
+                    (click)="adicionarNoTime()"
+                  >
+                    {{ i18n.t('admin.addToTeam') }}
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Histórico -->
+            <div class="ficha-bloco">
+              <h4>{{ i18n.t('admin.roleHistory') }}</h4>
+              @if (ficha()!.role_history.length === 0) {
+                <p class="vazio">{{ i18n.t('admin.noHistory') }}</p>
+              } @else {
+                <ul class="historico">
+                  @for (h of ficha()!.role_history; track h.created_at) {
+                    <li>
+                      <span class="quando">{{ h.created_at | date: 'short' }}</span>
+                      {{
+                        i18n.t('admin.historyLine', {
+                          de: i18n.t('role.' + h.de),
+                          para: i18n.t('role.' + h.para),
+                          quem: h.autor ?? i18n.t('admin.bySystem'),
+                        })
+                      }}
+                      @if (h.motivo) {
+                        <span class="motivo">— {{ h.motivo }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </div>
+        }
       }
     </div>
+
+    @if (temMais()) {
+      <button
+        class="btn btn-ghost carregar-mais"
+        [disabled]="carregandoUsuarios()"
+        (click)="carregarUsuarios(true)"
+      >
+        {{ i18n.t('admin.loadMore') }}
+      </button>
+    }
   }
 </div>
