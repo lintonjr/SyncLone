@@ -132,6 +132,9 @@
           @if (u.status !== 'ativa') {
             <span class="badge badge-red">{{ i18n.t('admin.status.' + u.status) }}</span>
           }
+          @if (u.avaliador) {
+            <span class="badge">{{ i18n.t('admin.avaliador') }}</span>
+          }
           <span class="email">{{ u.email }}</span>
           <span class="meta">
             {{ i18n.t('admin.eventsPlayed', { n: u.events_played }) }}
@@ -322,6 +325,13 @@
                     (click)="redefinirSenha()"
                   >
                     {{ i18n.t('admin.resetPassword') }}
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    [disabled]="decidindo() === u.id"
+                    (click)="alternarAvaliador()"
+                  >
+                    {{ i18n.t(ficha()!.avaliador ? 'admin.avaliadorOff' : 'admin.avaliadorOn') }}
                   </button>
                 }
                 @if (ficha()!.status === 'ativa') {

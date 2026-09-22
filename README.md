@@ -23,6 +23,19 @@ Produção: **AWS** (CloudFront, ECS Fargate, RDS, ElastiCache Serverless), desc
 - **O administrador monta time de liga**: a regra do time passou de "só o dono da liga" para "o dono da liga **ou** o administrador da plataforma". Quem decide quem organiza consegue arrumar um time sem pedir ao dono de cada liga; um co-organizador continua sem poder convidar outros. Rebaixar alguém para jogador **mantém** os vínculos de time: o acesso já cai na hora (o papel é lido do banco), e promover de volta devolve as ligas sem o dono ter que remontar
 - **Revogação existe**: o dono rebaixa um organizador a player. Os eventos que a pessoa já criou continuam dela, com histórico e jogadores intactos — o que ela perde é criar novos e administrar os que tem. Ninguém altera o próprio papel, nos dois sentidos: um admin que se rebaixasse perderia a rota que desfaria isso
 - **O papel é lido do banco a cada requisição** (`middleware/auth.js`), não do JWT. O token dura 7 dias e o papel muda por decisão de outra pessoa: assim a aprovação vale no clique seguinte, sem relogar, e a revogação também — um organizador rebaixado não continua criando eventos por uma semana com o crachá velho no bolso
+## Avaliação de coleção (OS do balcão)
+
+Um fluxo que não é torneio: a loja recebe uma coleção, avalia, propõe um valor e paga. A outra ponta é uma pessoa **sem conta** — ela recebe um link e responde por ele.
+
+- **Permissão, não papel.** `users.avaliador` é uma marca ao lado de `role`, ligada na ficha da área de usuários (migration 020). Quem avalia coleção costuma ser o mesmo que organiza o torneio de sexta, e os papéis são excludentes na coluna; um quarto papel obrigaria a escolher entre as duas coisas. Admin entra por definição. A marca é lida do banco a cada requisição, então retirá-la vale no clique seguinte
+- **Número da OS**: oito caracteres sorteados de um alfabeto sem `0/O/1/l/I` (`K7M4-Q2X9`), porque é ditado no balcão. Aleatório e não sequencial: não revela o volume da loja a quem recebe o link, e não exige contador com trava. A busca aceita com hífen ou sem, em qualquer caixa
+- **O fluxo**: `Para avaliar` → `Avaliado` → `A pagar` → `Para guardar` → `Para inserir` → `Inserido`, com `Recusada` como saída terminal a partir de `Avaliado`. Avaliar exige link e valor; confirmar pagamento exige o comprovante (imagem, mesmo caminho de upload das capas de evento); os dois últimos passos são de prateleira
+- **Voltar** é um passo por vez, sempre com motivo, registrado no histórico. Voltar de `Avaliado` **troca o token público** — a proposta antiga pode estar encaminhada num grupo, e duas propostas abertas ao mesmo tempo não podem existir. Voltar de `A pagar` reabre a decisão do cliente. `Recusada` não volta: retomar é abrir OS nova
+- **Os valores são congelados na linha**: o bruto, os percentuais vigentes (60% crédito, 50% pix) e os dois resultados já calculados. Mudar a política no ano que vem não reescreve o que foi oferecido hoje. Contas em centavos inteiros, com arredondamento meio-para-cima — R$ 33,33 a 50% dá R$ 16,67, e a diferença fica com o cliente
+- **A página do cliente** (`/avaliacao/<token>`, 32 caracteres de `crypto.randomBytes`) mostra **só** nome, telefone, os dois valores e os comentários — nunca o e-mail, o valor bruto ou o link interno. A lista do que pode sair é montada em `lib/avaliacao.js#dadosPublicos`, e não num `SELECT *`. Sem barra de navegação, com `noindex`, com limite de requisições por IP, e sem rota que liste por token. Depois de respondida, vira leitura: um link encaminhado não muda a decisão de quem já decidiu
+- **O histórico diz quem fez e quando.** A ação do cliente entra com `autor_id` nulo e aparece como "pelo cliente": ele responde sem conta, não há a quem atribuir, e não guardamos o IP dele para inventar um identificador
+- Aceitar ou recusar **avisa a equipe inteira** (admins e avaliadores ativos) pelo sino — quem avaliou não é necessariamente quem paga
+
 - `POST /api/events` (criação de evento) exige `organizer` ou `admin` (middleware `requireOrganizer`); as rotas de `/api/admin` exigem `admin` (`requireAdmin`, aplicado no router inteiro). A UI esconde os CTAs conforme o papel, mas quem barra é o servidor
 
 ### Eventos
@@ -324,6 +337,18 @@ PUT    /api/admin/users/:id                # nome, e-mail e visibilidade do perf
 POST   /api/admin/users/:id/reset-password # senha temporária, mostrada uma vez
 POST   /api/admin/users/:id/status         # desativar ou reativar
 POST   /api/admin/users/:id/anonymize      # irreversível, exige a conta desativada
+POST   /api/admin/users/:id/avaliador      # liga/desliga a permissão de avaliar coleção
+
+GET    /api/avaliacoes                     # lista com busca (nome, e-mail, código) e contadores
+POST   /api/avaliacoes                     # abre a OS e sorteia o código
+GET    /api/avaliacoes/:id                 # ficha + histórico
+PUT    /api/avaliacoes/:id                 # corrige o contato
+POST   /api/avaliacoes/:id/avaliar         # link + valor; cria o link público
+POST   /api/avaliacoes/:id/pagamento       # comprovante (imagem)
+POST   /api/avaliacoes/:id/avancar         # guardar → inserir → inserido
+POST   /api/avaliacoes/:id/voltar          # um passo, com motivo
+GET    /api/avaliacoes/publica/:token      # a proposta, sem login
+POST   /api/avaliacoes/publica/:token      # aceitar (crédito/pix) ou recusar
 
 GET    /api/leagues
 GET    /api/leagues/mine

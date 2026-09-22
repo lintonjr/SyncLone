@@ -1,0 +1,135 @@
+<div class="container">
+  <div class="cabecalho">
+    <div>
+      <h2>{{ i18n.t('avaliacoes.title') }}</h2>
+      <p class="sub">{{ i18n.t('avaliacoes.subtitle') }}</p>
+    </div>
+    @if (!criando()) {
+      <button class="btn btn-primary" (click)="abrirCadastro()">
+        {{ i18n.t('avaliacoes.new') }}
+      </button>
+    }
+  </div>
+
+  @if (erro()) {
+    <div class="alert alert-error">{{ erro() }}</div>
+  }
+
+  @if (criando()) {
+    <form class="cadastro" (submit)="$event.preventDefault(); criar()">
+      <h3>{{ i18n.t('avaliacoes.new') }}</h3>
+      <div class="campos">
+        <label>
+          {{ i18n.t('avaliacoes.name') }}
+          <input
+            id="os-nome"
+            type="text"
+            [value]="nome()"
+            (input)="nome.set($any($event.target).value)"
+            required
+          />
+        </label>
+        <label>
+          {{ i18n.t('avaliacoes.phone') }}
+          <input
+            id="os-telefone"
+            type="tel"
+            [value]="telefone()"
+            (input)="telefone.set($any($event.target).value)"
+            required
+          />
+        </label>
+        <label>
+          {{ i18n.t('avaliacoes.email') }}
+          <input
+            id="os-email"
+            type="email"
+            [value]="email()"
+            (input)="email.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <label class="largo">
+        {{ i18n.t('avaliacoes.comments') }}
+        <textarea
+          id="os-comentarios"
+          rows="3"
+          [value]="comentarios()"
+          (input)="comentarios.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <p class="dica">{{ i18n.t('avaliacoes.commentsHelp') }}</p>
+      <div class="acoes">
+        <button type="button" class="btn btn-ghost" (click)="cancelarCadastro()">
+          {{ i18n.t('common.cancel') }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="salvando() || !nome().trim() || !telefone().trim()"
+        >
+          {{ i18n.t('avaliacoes.create') }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="filtros">
+    <input
+      id="os-busca"
+      type="search"
+      [value]="busca()"
+      (input)="busca.set($any($event.target).value)"
+      (keyup.enter)="carregar()"
+      [placeholder]="i18n.t('avaliacoes.searchPlaceholder')"
+    />
+    <button class="btn btn-ghost" (click)="carregar()">{{ i18n.t('common.search') }}</button>
+    <span class="contagem">{{ i18n.t('avaliacoes.count', { n: total() }) }}</span>
+  </div>
+
+  <div class="abas">
+    <button [class.ativa]="filtro() === ''" (click)="filtrar('')">
+      {{ i18n.t('avaliacoes.all') }}
+    </button>
+    @for (estado of estados; track estado) {
+      <button [class.ativa]="filtro() === estado" (click)="filtrar(estado)">
+        {{ i18n.t('avaliacoes.status.' + estado) }}
+        <span class="badge">{{ contar(estado) }}</span>
+      </button>
+    }
+  </div>
+
+  @if (carregando()) {
+    <p class="vazio">{{ i18n.t('common.loading') }}</p>
+  } @else if (!avaliacoes().length) {
+    <p class="vazio">{{ i18n.t('avaliacoes.empty') }}</p>
+  } @else {
+    <ul class="lista">
+      @for (os of avaliacoes(); track os.id) {
+        <li class="os-row">
+          <a class="codigo" [routerLink]="['/avaliacoes', os.id]">{{ os.codigo }}</a>
+          <div class="pessoa">
+            <strong>{{ os.nome }}</strong>
+            <span>{{ os.telefone }}</span>
+            @if (os.email) {
+              <span class="email">{{ os.email }}</span>
+            }
+          </div>
+          <span class="estado" [attr.data-status]="os.status">
+            {{ i18n.t('avaliacoes.status.' + os.status) }}
+          </span>
+          <span class="valor">
+            @if (os.valor_bruto) {
+              {{ i18n.t('avaliacoes.grossShort', { valor: os.valor_bruto }) }}
+            } @else {
+              —
+            }
+          </span>
+          <a class="btn btn-ghost" [routerLink]="['/avaliacoes', os.id]">
+            {{ i18n.t('avaliacoes.open') }}
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>

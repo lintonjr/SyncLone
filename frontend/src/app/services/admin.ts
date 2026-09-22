@@ -28,6 +28,8 @@ export interface UserRow {
   display_name: string;
   email: string;
   role: 'player' | 'organizer' | 'admin';
+  /** Permissão de avaliar coleção; independe do papel. */
+  avaliador?: number;
   status: EstadoDaConta;
   created_at: string;
   events_played: number;
@@ -53,7 +55,7 @@ export interface UserLeague {
 
 /** Uma linha do histórico da conta: papel, nome, e-mail, senha, estado, visibilidade. */
 export interface RoleChange {
-  acao: 'papel' | 'nome' | 'email' | 'senha' | 'status' | 'visibilidade';
+  acao: 'papel' | 'nome' | 'email' | 'senha' | 'status' | 'visibilidade' | 'avaliador';
   de: string | null;
   para: string | null;
   motivo: string | null;
@@ -163,6 +165,15 @@ export class AdminService {
     return this.http.post<{ id: string; status: EstadoDaConta }>(
       `${this.API}/users/${id}/anonymize`,
       { confirmacao, reason },
+      { headers: this.headers() },
+    );
+  }
+
+  /** Liga e desliga a permissão de avaliar coleção — marca ao lado do papel. */
+  marcarAvaliador(id: string, avaliador: boolean, reason = '') {
+    return this.http.post<{ id: string; avaliador: number }>(
+      `${this.API}/users/${id}/avaliador`,
+      { avaliador, reason },
       { headers: this.headers() },
     );
   }

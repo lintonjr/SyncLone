@@ -3,6 +3,7 @@ import { authGuard } from './guards/auth-guard';
 import { organizerGuard } from './guards/organizer-guard';
 import { adminGuard } from './guards/admin-guard';
 import { senhaTemporariaGuard } from './guards/senha-guard';
+import { avaliadorGuard } from './guards/avaliador-guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./pages/home/home').then((m) => m.HomeComponent) },
@@ -47,6 +48,28 @@ export const routes: Routes = [
     path: 'admin',
     loadComponent: () => import('./pages/admin/admin').then((m) => m.AdminComponent),
     canActivate: [authGuard, senhaTemporariaGuard, adminGuard],
+  },
+  {
+    // A fila do balcão: admin ou quem tem a marca de avaliador.
+    path: 'avaliacoes',
+    loadComponent: () => import('./pages/avaliacoes/avaliacoes').then((m) => m.AvaliacoesComponent),
+    canActivate: [authGuard, senhaTemporariaGuard, avaliadorGuard],
+  },
+  {
+    path: 'avaliacoes/:id',
+    loadComponent: () =>
+      import('./pages/avaliacao-detalhe/avaliacao-detalhe').then(
+        (m) => m.AvaliacaoDetalheComponent,
+      ),
+    canActivate: [authGuard, senhaTemporariaGuard, avaliadorGuard],
+  },
+  {
+    // A proposta, para quem recebeu o link. Sem conta, de propósito.
+    path: 'avaliacao/:token',
+    loadComponent: () =>
+      import('./pages/avaliacao-publica/avaliacao-publica').then(
+        (m) => m.AvaliacaoPublicaComponent,
+      ),
   },
   {
     path: 'events',

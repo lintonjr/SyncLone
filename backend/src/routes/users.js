@@ -23,11 +23,11 @@ const bcrypt = require('bcryptjs');
  */
 router.get('/me', auth, asyncHandler(async (req, res) => {
   const user = await db.get(
-    'SELECT id, display_name, email, role, profile_public, must_change_password FROM users WHERE id = ?',
+    'SELECT id, display_name, email, role, avaliador, profile_public, must_change_password FROM users WHERE id = ?',
     [req.user.id]
   );
   if (!user) throw new HttpError(404, 'User not found', 'api.userNotFound');
-  res.json({ ...user, must_change_password: !!user.must_change_password });
+  res.json({ ...user, avaliador: !!user.avaliador, must_change_password: !!user.must_change_password });
 }));
 
 /**

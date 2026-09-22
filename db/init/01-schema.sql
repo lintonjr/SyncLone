@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   -- Papéis excludentes e hierárquicos: admin pode tudo que organizador pode.
   -- Quem cria conta nasce player; organizar depende de pedido aprovado.
   `role` enum('player','organizer','admin') NOT NULL DEFAULT 'player',
+  -- Permissão, não papel: quem avalia coleção no balcão costuma ser o mesmo que
+  -- organiza o torneio de sexta, e os papéis são excludentes (migrations/020).
+  `avaliador` tinyint(1) NOT NULL DEFAULT 0,
   -- Desativar em vez de apagar: o histórico dos torneios aponta para a conta.
   -- `anonimizada` é o "excluir" possível — nome e e-mail somem, o histórico fica.
   `status` enum('ativa','desativada','anonimizada') NOT NULL DEFAULT 'ativa',
@@ -228,7 +231,7 @@ CREATE TABLE IF NOT EXISTS `user_badges` (
 CREATE TABLE IF NOT EXISTS `user_history` (
   `id` varchar(36) NOT NULL,
   `user_id` varchar(36) NOT NULL,
-  `acao` enum('papel','nome','email','senha','status','visibilidade') NOT NULL DEFAULT 'papel',
+  `acao` enum('papel','nome','email','senha','status','visibilidade','avaliador') NOT NULL DEFAULT 'papel',
   `de` varchar(255) DEFAULT NULL,
   `para` varchar(255) DEFAULT NULL,
   `autor_id` varchar(36) DEFAULT NULL,
@@ -270,3 +273,56 @@ CREATE TABLE IF NOT EXISTS `organizer_requests` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- Avaliação de coleção: a ordem de serviço do balcão (migrations/020).
+--
+-- O contato é dado da OS e não de `users`: quem vende a coleção pode nunca ter
+-- jogado aqui. Os valores ficam congelados na linha — bruto, percentuais e os
+-- dois resultados — porque a OS é uma proposta comercial de uma data, não um
+-- cálculo refeito a cada abertura de tela.
+CREATE TABLE IF NOT EXISTS `avaliacoes` (
+  `id` varchar(36) NOT NULL,
+  `codigo` varchar(12) NOT NULL,
+  `nome` varchar(120) NOT NULL,
+  `telefone` varchar(30) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `comentarios` text DEFAULT NULL,
+  `status` enum('para_avaliar','avaliado','recusada','a_pagar','para_guardar','para_inserir','inserido') NOT NULL DEFAULT 'para_avaliar',
+  `link_avaliacao` varchar(500) DEFAULT NULL,
+  `valor_bruto` decimal(10,2) DEFAULT NULL,
+  `percentual_credito` tinyint unsigned NOT NULL DEFAULT 60,
+  `percentual_pix` tinyint unsigned NOT NULL DEFAULT 50,
+  `valor_credito` decimal(10,2) DEFAULT NULL,
+  `valor_pix` decimal(10,2) DEFAULT NULL,
+  -- Trinta e dois caracteres aleatórios seguram a página sem login: não existe
+  -- rota que liste por token, então quem não recebeu o link não acha a OS.
+  `token_publico` char(32) DEFAULT NULL,
+  `escolha` enum('credito','pix') DEFAULT NULL,
+  `chave_pix` varchar(140) DEFAULT NULL,
+  `comprovante` varchar(255) DEFAULT NULL,
+  `criada_por` varchar(36) DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `codigo` (`codigo`),
+  UNIQUE KEY `token_publico` (`token_publico`),
+  KEY `por_status` (`status`, `created_at`),
+  CONSTRAINT `avaliacoes_criador_fk` FOREIGN KEY (`criada_por`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- `autor_id` nulo é o cliente: ele responde por um link sem login, então não há
+-- a quem atribuir a ação — e é assim que deve ficar.
+CREATE TABLE IF NOT EXISTS `avaliacao_historico` (
+  `id` varchar(36) NOT NULL,
+  `avaliacao_id` varchar(36) NOT NULL,
+  `acao` enum('criada','editada','avaliada','aceita','recusada','pagamento','avanco','retorno') NOT NULL,
+  `de` varchar(255) DEFAULT NULL,
+  `para` varchar(255) DEFAULT NULL,
+  `autor_id` varchar(36) DEFAULT NULL,
+  `motivo` text DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `por_avaliacao` (`avaliacao_id`, `created_at`),
+  CONSTRAINT `avaliacao_historico_os_fk` FOREIGN KEY (`avaliacao_id`) REFERENCES `avaliacoes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `avaliacao_historico_autor_fk` FOREIGN KEY (`autor_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -200,6 +200,48 @@ const schemas = {
     reason: blank(z.string().trim().max(1000).optional()),
   }),
 
+  marcarAvaliador: z.object({
+    avaliador: z.union([z.boolean(), z.enum(['true', 'false', '0', '1'])]),
+    reason: blank(z.string().trim().max(1000).optional()),
+  }),
+
+  // --- Avaliação de coleção ---
+
+  criarAvaliacao: z.object({
+    nome: z.string().trim().min(1).max(120),
+    // Texto livre e não um formato: o balcão anota como a pessoa ditou, com
+    // DDD, com espaço, com nono dígito ou sem.
+    telefone: z.string().trim().min(8).max(30),
+    email: blank(z.email().max(255).optional()),
+    comentarios: blank(z.string().trim().max(2000).optional()),
+  }),
+
+  editarAvaliacao: z.object({
+    nome: blank(z.string().trim().min(1).max(120).optional()),
+    telefone: blank(z.string().trim().min(8).max(30).optional()),
+    email: blank(z.email().max(255).optional()),
+    comentarios: blank(z.string().trim().max(2000).optional()),
+  }),
+
+  avaliarOS: z.object({
+    link_avaliacao: z.url().max(500),
+    // Texto e não número: "1234,50" digitado no balcão chega como veio, e a
+    // conversão para centavos é feita em um lugar só (lib/avaliacao.js).
+    valor: z.union([z.string().trim().min(1).max(20), z.number()]),
+  }),
+
+  responderAvaliacao: z.object({
+    resposta: z.enum(['aceitar', 'recusar']),
+    escolha: blank(z.enum(['credito', 'pix']).optional()),
+    chave_pix: blank(z.string().trim().max(140).optional()),
+  }),
+
+  voltarAvaliacao: z.object({
+    // Voltar é sempre correção de erro: daqui a um mês alguém vai perguntar
+    // por que esta OS andou para trás.
+    motivo: z.string().trim().min(1).max(1000),
+  }),
+
   confirmarAnonimizacao: z.object({
     // A tela pede o nome da pessoa digitado à mão: anonimizar não tem volta.
     confirmacao: z.string().trim().min(1).max(100),

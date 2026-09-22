@@ -308,6 +308,33 @@ describe('AdminComponent', () => {
     expect((anonimizar.querySelector('button') as HTMLButtonElement).disabled).toBe(false);
   });
 
+  it('a permissão de avaliar liga pela ficha, sem mexer no papel', async () => {
+    const { fixture, http, html } = await montar();
+    await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'bia', role: 'organizer' })]);
+    (html.querySelector('.usuario-row button') as HTMLButtonElement).click();
+    http
+      .expectOne(`${environment.apiUrl}/admin/users/bia`)
+      .flush(umaFicha({ id: 'bia', role: 'organizer' }));
+    fixture.detectChanges();
+
+    const ligar = [...html.querySelectorAll('.ficha-bloco button')].find((b) =>
+      b.textContent?.includes('Permitir avaliar'),
+    ) as HTMLButtonElement;
+    ligar.click();
+
+    const req = http.expectOne(`${environment.apiUrl}/admin/users/bia/avaliador`);
+    expect(req.request.body).toEqual({ avaliador: true, reason: '' });
+    req.flush({ id: 'bia', avaliador: 1 });
+    // A ficha recarrega: quem manda no estado é o servidor.
+    http
+      .expectOne(`${environment.apiUrl}/admin/users/bia`)
+      .flush(umaFicha({ id: 'bia', role: 'organizer', avaliador: 1 }));
+    fixture.detectChanges();
+
+    const acoes = [...html.querySelectorAll('.ficha-bloco button')].map((b) => b.textContent ?? '');
+    expect(acoes.some((t) => t.includes('Retirar permissão de avaliar'))).toBe(true);
+  });
+
   it('conta ativa não oferece anonimizar: desativar vem antes', async () => {
     const { fixture, http, html } = await montar();
     await abrirUsuarios(fixture, http, html, [umUsuario({ id: 'caio' })]);

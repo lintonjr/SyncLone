@@ -1,0 +1,115 @@
+<div class="pagina">
+  @if (carregando()) {
+    <p class="vazio">{{ i18n.t('common.loading') }}</p>
+  } @else if (erro() && !proposta()) {
+    <div class="cartao">
+      <h1>{{ i18n.t('publica.notFoundTitle') }}</h1>
+      <p>{{ i18n.t('publica.notFoundBody') }}</p>
+    </div>
+  } @else if (proposta(); as p) {
+    <div class="cartao">
+      <p class="codigo">{{ p.codigo }}</p>
+      <h1>{{ i18n.t('publica.title', { nome: p.nome }) }}</h1>
+      <p class="telefone">{{ p.telefone }}</p>
+
+      @if (erro()) {
+        <div class="alert alert-error">{{ erro() }}</div>
+      }
+
+      @if (!p.respondida) {
+        <p class="intro">{{ i18n.t('publica.intro') }}</p>
+
+        <div class="opcoes">
+          <button
+            class="opcao"
+            [class.marcada]="escolha() === 'credito'"
+            (click)="escolha.set('credito')"
+          >
+            <span class="rotulo">{{ i18n.t('publica.credit') }}</span>
+            <strong class="valor">{{
+              i18n.t('avaliacoes.currency', { valor: p.valor_credito })
+            }}</strong>
+          </button>
+          <button class="opcao" [class.marcada]="escolha() === 'pix'" (click)="escolha.set('pix')">
+            <span class="rotulo">{{ i18n.t('publica.pix') }}</span>
+            <strong class="valor">{{
+              i18n.t('avaliacoes.currency', { valor: p.valor_pix })
+            }}</strong>
+          </button>
+        </div>
+
+        @if (escolha() === 'pix') {
+          <label class="chave">
+            {{ i18n.t('publica.pixKey') }}
+            <input
+              id="chave-pix"
+              type="text"
+              [value]="chavePix()"
+              (input)="chavePix.set($any($event.target).value)"
+              [placeholder]="i18n.t('publica.pixKeyPlaceholder')"
+            />
+          </label>
+        }
+
+        @if (p.comentarios) {
+          <div class="comentarios">
+            <h2>{{ i18n.t('publica.comments') }}</h2>
+            <p>{{ p.comentarios }}</p>
+          </div>
+        }
+
+        <div class="acoes">
+          <button
+            class="btn btn-primary"
+            [disabled]="enviando() || !escolha() || (escolha() === 'pix' && !chavePix().trim())"
+            (click)="aceitar()"
+          >
+            {{ i18n.t('publica.accept') }}
+          </button>
+          @if (!confirmandoRecusa()) {
+            <button
+              class="btn btn-ghost"
+              [disabled]="enviando()"
+              (click)="confirmandoRecusa.set(true)"
+            >
+              {{ i18n.t('publica.refuse') }}
+            </button>
+          }
+        </div>
+
+        @if (confirmandoRecusa()) {
+          <div class="recusa">
+            <!-- Recusar encerra a proposta: vale perguntar duas vezes. -->
+            <p>{{ i18n.t('publica.refuseConfirm') }}</p>
+            <div class="acoes">
+              <button class="btn btn-ghost" (click)="confirmandoRecusa.set(false)">
+                {{ i18n.t('common.cancel') }}
+              </button>
+              <button class="btn btn-danger" [disabled]="enviando()" (click)="recusar()">
+                {{ i18n.t('publica.refuse') }}
+              </button>
+            </div>
+          </div>
+        }
+      } @else {
+        <!-- Já respondida: a página vira comprovante do que foi decidido. -->
+        <div class="resposta">
+          @if (p.status === 'recusada') {
+            <h2>{{ i18n.t('publica.refusedTitle') }}</h2>
+            <p>{{ i18n.t('publica.refusedBody') }}</p>
+          } @else {
+            <h2>{{ i18n.t('publica.acceptedTitle') }}</h2>
+            <p>
+              {{
+                i18n.t('publica.acceptedBody', {
+                  opcao: p.escolha === 'pix' ? i18n.t('publica.pix') : i18n.t('publica.credit'),
+                  valor: p.escolha === 'pix' ? p.valor_pix : p.valor_credito,
+                })
+              }}
+            </p>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

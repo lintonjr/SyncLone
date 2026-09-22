@@ -62,6 +62,7 @@ app.use('/api/badges', require('./routes/badges'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/leagues', require('./routes/leagues'));
+app.use('/api/avaliacoes', require('./routes/avaliacoes'));
 app.use('/api/admin', require('./routes/admin'));
 
 app.use(errorHandler);

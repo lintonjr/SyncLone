@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
-import { RouterOutlet, RouterLink } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterOutlet, RouterLink } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { NavbarComponent } from './components/navbar/navbar';
 import { DialogComponent } from './components/dialog/dialog';
 import { AuthService } from './services/auth';
@@ -8,17 +9,21 @@ import { AuthService } from './services/auth';
   selector: 'app-root',
   imports: [RouterOutlet, NavbarComponent, RouterLink, DialogComponent],
   template: `
-    <app-navbar />
-    <main>
+    @if (!paginaDeConvidado()) {
+      <app-navbar />
+    }
+    <main [class.sem-navbar]="paginaDeConvidado()">
       <router-outlet />
     </main>
-    <footer class="footer">
-      <div class="footer-inner">
-        <span>© 2025 Mercadia</span>
-        <a routerLink="/terms-of-service">Terms of Service</a>
-        <a routerLink="/privacy-policy">Privacy Policy</a>
-      </div>
-    </footer>
+    @if (!paginaDeConvidado()) {
+      <footer class="footer">
+        <div class="footer-inner">
+          <span>© 2025 Mercadia</span>
+          <a routerLink="/terms-of-service">Terms of Service</a>
+          <a routerLink="/privacy-policy">Privacy Policy</a>
+        </div>
+      </footer>
+    }
 
     <!-- Montado uma vez e invisível até alguém perguntar algo. Fica por último
          para ficar por cima de tudo sem depender só do z-index. -->
@@ -29,6 +34,9 @@ import { AuthService } from './services/auth';
       main {
         min-height: calc(100vh - 64px);
         padding-top: 64px;
+      }
+      main.sem-navbar {
+        padding-top: 0;
       }
       .footer {
         border-top: 1px solid var(--border);
@@ -56,8 +64,26 @@ import { AuthService } from './services/auth';
 })
 export class App {
   private auth = inject(AuthService);
+  private router = inject(Router);
+
+  /**
+   * A proposta de avaliação é para quem não tem conta aqui.
+   *
+   * Mostrar a barra da loja — "Meus eventos", "Ligas", um botão de entrar —
+   * para quem só quer responder sim ou não transforma uma página de uma
+   * pergunta numa visita guiada que ninguém pediu.
+   */
+  paginaDeConvidado = signal(this.ehConvidado(location.pathname));
+
+  private ehConvidado(url: string) {
+    return url.startsWith('/avaliacao/');
+  }
 
   constructor() {
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => this.paginaDeConvidado.set(this.ehConvidado(e.urlAfterRedirects)));
+
     // O papel guardado no navegador foi escrito no login e hoje muda por decisão
     // de outra pessoa: uma aprovação ou uma revogação acontece com a aba aberta.
     // Uma leitura por carregamento basta para a interface não ficar oferecendo o

@@ -13,6 +13,8 @@ export interface User {
   profile_public?: number;
   /** Verdadeiro quando a senha atual é a temporária criada por um administrador. */
   must_change_password?: boolean;
+  /** Permissão de avaliar coleção. É marca ao lado do papel, não um papel novo. */
+  avaliador?: boolean;
 }
 
 /** Um pedido para organizar, do ponto de vista de quem pediu. */
@@ -42,6 +44,15 @@ export class AuthService {
   podeOrganizar = computed(() => {
     const papel = this.currentUser()?.role;
     return papel === 'organizer' || papel === 'admin';
+  });
+
+  /**
+   * Avaliar coleção é permissão, não papel: o admin tem por definição, e quem
+   * atende o balcão ganha a marca sem deixar de ser organizador.
+   */
+  podeAvaliar = computed(() => {
+    const eu = this.currentUser();
+    return eu?.role === 'admin' || !!eu?.avaliador;
   });
 
   /** Troca a própria senha. Com senha temporária, a atual não é exigida. */

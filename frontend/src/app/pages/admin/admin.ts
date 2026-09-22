@@ -152,6 +152,23 @@ export class AdminComponent implements OnInit {
       });
   }
 
+  /** A permissão de avaliar: some da ficha de conta anonimizada, como o resto. */
+  alternarAvaliador() {
+    const f = this.ficha();
+    if (!f) return;
+    this.decidindo.set(f.id);
+    this.svc.marcarAvaliador(f.id, !f.avaliador).subscribe({
+      next: () => {
+        this.decidindo.set(null);
+        this.recarregarFicha(f.id);
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.decidindo.set(null);
+      },
+    });
+  }
+
   alternarVisibilidade() {
     const f = this.ficha();
     if (!f) return;

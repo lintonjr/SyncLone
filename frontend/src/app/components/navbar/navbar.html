@@ -14,6 +14,9 @@
           <a routerLink="/create" routerLinkActive="active">{{ i18n.t('nav.createEvent') }}</a>
           <a routerLink="/badges" routerLinkActive="active">{{ i18n.t('nav.badges') }}</a>
         }
+        @if (auth.podeAvaliar()) {
+          <a routerLink="/avaliacoes" routerLinkActive="active">{{ i18n.t('nav.avaliacoes') }}</a>
+        }
         @if (auth.currentUser()?.role === 'admin') {
           <a routerLink="/admin" routerLinkActive="active">{{ i18n.t('nav.admin') }}</a>
         }

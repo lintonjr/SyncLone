@@ -6,6 +6,8 @@ const usuarioPublico = (u) => ({
   display_name: u.display_name,
   email: u.email,
   role: u.role,
+  // Permissão de avaliar coleção; o papel dela continua sendo o da coluna.
+  avaliador: !!u.avaliador,
   profile_public: u.profile_public,
   // Senha criada por um administrador: a tela manda trocar antes de seguir.
   must_change_password: !!u.must_change_password,

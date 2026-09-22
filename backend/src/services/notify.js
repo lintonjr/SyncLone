@@ -70,6 +70,22 @@ async function adminUserIds(conn) {
   return rows.map((r) => r.id);
 }
 
+/**
+ * Quem cuida das avaliações: o dono da plataforma e quem tem a marca de
+ * avaliador.
+ *
+ * Contas desativadas ficam de fora — a notificação encheria uma caixa que
+ * ninguém vai abrir. O aviso vai para a equipe inteira porque quem avaliou não é
+ * necessariamente quem paga: sem isso, alguém teria de recarregar a lista para
+ * descobrir que um cliente aceitou.
+ */
+async function equipeDeAvaliacaoIds(conn) {
+  const rows = await conn.query(
+    "SELECT id FROM users WHERE (role = 'admin' OR avaliador = 1) AND status = 'ativa'"
+  );
+  return rows.map((r) => r.id);
+}
+
 // Todos os jogadores ativos de um evento que têm conta.
 async function activeEventUserIds(conn, eventId) {
   const rows = await conn.query(
@@ -90,4 +106,11 @@ async function pairingUserIds(conn, pairing) {
   return rows.map((r) => r.user_id);
 }
 
-module.exports = { notifyUsers, activeEventUserIds, pairingUserIds, adminUserIds, TETO_POR_USUARIO };
+module.exports = {
+  notifyUsers,
+  activeEventUserIds,
+  pairingUserIds,
+  adminUserIds,
+  equipeDeAvaliacaoIds,
+  TETO_POR_USUARIO,
+};

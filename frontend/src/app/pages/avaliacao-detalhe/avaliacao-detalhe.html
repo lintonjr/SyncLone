@@ -1,0 +1,267 @@
+<div class="container">
+  <a class="voltar-lista" routerLink="/avaliacoes">{{ i18n.t('avaliacoes.backToList') }}</a>
+
+  @if (erro()) {
+    <div class="alert alert-error">{{ erro() }}</div>
+  }
+
+  @if (carregando()) {
+    <p class="vazio">{{ i18n.t('common.loading') }}</p>
+  } @else if (os(); as a) {
+    <div class="cabecalho">
+      <div>
+        <h2>{{ a.codigo }}</h2>
+        <p class="sub">{{ i18n.t('avaliacoes.openedBy', { nome: a.criada_por_nome || '—' }) }}</p>
+      </div>
+      <span class="estado" [attr.data-status]="a.status">
+        {{ i18n.t('avaliacoes.status.' + a.status) }}
+      </span>
+    </div>
+
+    <!-- Contato -->
+    <section class="bloco">
+      <h3>{{ i18n.t('avaliacoes.contact') }}</h3>
+      @if (!editando()) {
+        <dl class="dados">
+          <div>
+            <dt>{{ i18n.t('avaliacoes.name') }}</dt>
+            <dd>{{ a.nome }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('avaliacoes.phone') }}</dt>
+            <dd>{{ a.telefone }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('avaliacoes.email') }}</dt>
+            <dd>{{ a.email || '—' }}</dd>
+          </div>
+        </dl>
+        @if (a.comentarios) {
+          <p class="comentarios">{{ a.comentarios }}</p>
+        }
+        <button class="btn btn-ghost" (click)="editando.set(true)">
+          {{ i18n.t('avaliacoes.edit') }}
+        </button>
+      } @else {
+        <div class="campos">
+          <label>
+            {{ i18n.t('avaliacoes.name') }}
+            <input
+              id="ed-nome"
+              type="text"
+              [value]="nome()"
+              (input)="nome.set($any($event.target).value)"
+            />
+          </label>
+          <label>
+            {{ i18n.t('avaliacoes.phone') }}
+            <input
+              id="ed-telefone"
+              type="tel"
+              [value]="telefone()"
+              (input)="telefone.set($any($event.target).value)"
+            />
+          </label>
+          <label>
+            {{ i18n.t('avaliacoes.email') }}
+            <input
+              id="ed-email"
+              type="email"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <label class="largo">
+          {{ i18n.t('avaliacoes.comments') }}
+          <textarea
+            id="ed-comentarios"
+            rows="3"
+            [value]="comentarios()"
+            (input)="comentarios.set($any($event.target).value)"
+          ></textarea>
+        </label>
+        <div class="acoes">
+          <button class="btn btn-ghost" (click)="editando.set(false)">
+            {{ i18n.t('common.cancel') }}
+          </button>
+          <button class="btn btn-primary" [disabled]="ocupado()" (click)="salvarContato()">
+            {{ i18n.t('common.save') }}
+          </button>
+        </div>
+      }
+    </section>
+
+    <!-- Avaliar -->
+    @if (a.status === 'para_avaliar') {
+      <section class="bloco">
+        <h3>{{ i18n.t('avaliacoes.evaluate') }}</h3>
+        <p class="dica">{{ i18n.t('avaliacoes.evaluateHelp') }}</p>
+        <div class="campos">
+          <label>
+            {{ i18n.t('avaliacoes.link') }}
+            <input
+              id="av-link"
+              type="url"
+              [value]="link()"
+              (input)="link.set($any($event.target).value)"
+              placeholder="https://"
+            />
+          </label>
+          <label>
+            {{ i18n.t('avaliacoes.grossValue') }}
+            <input
+              id="av-valor"
+              type="text"
+              inputmode="decimal"
+              [value]="valor()"
+              (input)="valor.set($any($event.target).value)"
+              placeholder="0,00"
+            />
+          </label>
+        </div>
+        <div class="acoes">
+          <button
+            class="btn btn-primary"
+            [disabled]="ocupado() || !link().trim() || !valor().trim()"
+            (click)="avaliar()"
+          >
+            {{ i18n.t('avaliacoes.evaluateConfirm') }}
+          </button>
+        </div>
+      </section>
+    } @else {
+      <!-- Proposta -->
+      <section class="bloco">
+        <h3>{{ i18n.t('avaliacoes.proposal') }}</h3>
+        <dl class="dados">
+          <div>
+            <dt>{{ i18n.t('avaliacoes.grossValue') }}</dt>
+            <dd class="numero">
+              {{ i18n.t('avaliacoes.currency', { valor: a.valor_bruto ?? '' }) }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('avaliacoes.credit', { pct: a.percentual_credito }) }}</dt>
+            <dd class="numero">
+              {{ i18n.t('avaliacoes.currency', { valor: a.valor_credito ?? '' }) }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('avaliacoes.pix', { pct: a.percentual_pix }) }}</dt>
+            <dd class="numero">
+              {{ i18n.t('avaliacoes.currency', { valor: a.valor_pix ?? '' }) }}
+            </dd>
+          </div>
+        </dl>
+        @if (a.link_avaliacao) {
+          <p class="interno">
+            <a [href]="a.link_avaliacao" target="_blank" rel="noopener noreferrer">
+              {{ i18n.t('avaliacoes.openList') }}
+            </a>
+            <span class="dica">{{ i18n.t('avaliacoes.linkInternal') }}</span>
+          </p>
+        }
+        @if (a.escolha) {
+          <p class="escolha">
+            {{ i18n.t('avaliacoes.chose', { opcao: i18n.t('avaliacoes.' + a.escolha + 'Short') }) }}
+            @if (a.chave_pix) {
+              <code>{{ a.chave_pix }}</code>
+            }
+          </p>
+        }
+      </section>
+    }
+
+    <!-- Link para o cliente -->
+    @if (a.token_publico && a.status === 'avaliado') {
+      <section class="bloco">
+        <h3>{{ i18n.t('avaliacoes.publicLink') }}</h3>
+        <p class="dica">{{ i18n.t('avaliacoes.publicLinkHelp') }}</p>
+        <div class="link-publico">
+          <code>{{ linkPublico() }}</code>
+          <button class="btn btn-ghost" (click)="copiarLink()">
+            {{ copiado() ? i18n.t('common.copied') : i18n.t('common.copy') }}
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- Pagamento -->
+    @if (a.status === 'a_pagar') {
+      <section class="bloco">
+        <h3>{{ i18n.t('avaliacoes.payment') }}</h3>
+        <p class="dica">{{ i18n.t('avaliacoes.paymentHelp') }}</p>
+        <input
+          id="comprovante"
+          type="file"
+          accept="image/*"
+          (change)="enviarComprovante($event)"
+          [disabled]="ocupado()"
+        />
+      </section>
+    }
+    @if (a.comprovante) {
+      <section class="bloco">
+        <h3>{{ i18n.t('avaliacoes.receipt') }}</h3>
+        <a [href]="a.comprovante" target="_blank" rel="noopener noreferrer">
+          {{ i18n.t('avaliacoes.openReceipt') }}
+        </a>
+      </section>
+    }
+
+    <!-- Prateleira -->
+    @if (podeAvancar() || podeVoltar()) {
+      <section class="bloco">
+        <h3>{{ i18n.t('avaliacoes.moveTitle') }}</h3>
+        <div class="acoes">
+          @if (podeVoltar()) {
+            <button class="btn btn-ghost danger" [disabled]="ocupado()" (click)="voltar()">
+              {{ i18n.t('avaliacoes.back') }}
+            </button>
+          }
+          @if (podeAvancar()) {
+            <button class="btn btn-primary" [disabled]="ocupado()" (click)="avancar()">
+              {{
+                a.status === 'para_guardar'
+                  ? i18n.t('avaliacoes.toInsert')
+                  : i18n.t('avaliacoes.inserted')
+              }}
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Histórico -->
+    <section class="bloco">
+      <h3>{{ i18n.t('avaliacoes.history') }}</h3>
+      <ul class="historico">
+        @for (h of a.historico; track h.created_at + h.acao) {
+          <li>
+            <span class="acao">{{ i18n.t('avaliacoes.acao.' + h.acao) }}</span>
+            <!-- Numa edição, de/para são o valor do campo; no resto, são status. -->
+            @if (h.acao === 'editada') {
+              <span class="mudanca">{{ h.motivo }}: {{ h.de || '—' }} → {{ h.para || '—' }}</span>
+            } @else {
+              @if (h.de && h.para) {
+                <span class="mudanca">
+                  {{ i18n.t('avaliacoes.status.' + h.de) }} →
+                  {{ i18n.t('avaliacoes.status.' + h.para) }}
+                </span>
+              }
+              @if (h.motivo) {
+                <span class="motivo">{{ h.motivo }}</span>
+              }
+            }
+            <span class="quando">{{ h.created_at | date: 'short' }}</span>
+            <!-- Sem autor é o cliente: ele responde por um link, sem conta. -->
+            <span class="autor">{{
+              h.autor ? i18n.t('avaliacoes.by', { nome: h.autor }) : i18n.t('avaliacoes.byClient')
+            }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>

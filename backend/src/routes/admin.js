@@ -173,7 +173,7 @@ router.get('/users', asyncHandler(async (req, res) => {
 
   const [linhas, total] = await Promise.all([
     db.query(
-      `SELECT u.id, u.display_name, u.email, u.role, u.status, u.created_at,
+      `SELECT u.id, u.display_name, u.email, u.role, u.avaliador, u.status, u.created_at,
               (SELECT COUNT(*) FROM event_players ep WHERE ep.user_id = u.id) AS events_played,
               (SELECT COUNT(*) FROM events e WHERE e.owner_id = u.id) AS events_owned,
               (SELECT COUNT(*) FROM leagues l WHERE l.owner_id = u.id) AS leagues_owned,
@@ -200,6 +200,7 @@ router.get('/users/:id', asyncHandler(async (req, res) => {
   const usuario = await db.get(
     `SELECT u.id, u.display_name, u.email, u.role, u.status, u.created_at, u.profile_public,
             u.must_change_password,
+            u.avaliador,
             (SELECT COUNT(*) FROM event_players ep WHERE ep.user_id = u.id) AS events_played,
             (SELECT COUNT(*) FROM events e WHERE e.owner_id = u.id) AS events_owned
      FROM users u WHERE u.id = ?`,
@@ -345,6 +346,34 @@ router.post('/users/:id/status', validate(schemas.mudarEstadoDaConta), asyncHand
   });
 
   res.json({ id: alvo.id, status: req.body.status });
+}));
+
+/**
+ * Liga e desliga a permissão de avaliar coleção.
+ *
+ * Permissão e não papel: quem avalia no balcão costuma ser o mesmo que organiza
+ * o torneio de sexta, e `role` é excludente. Fica ao lado do papel na ficha, com
+ * a mesma linha do tempo e o mesmo aviso à pessoa — ganhar acesso a dado de
+ * cliente não pode ser algo que se descobre por acaso.
+ */
+router.post('/users/:id/avaliador', validate(schemas.marcarAvaliador), asyncHandler(async (req, res) => {
+  const alvo = await db.get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  barrar(impedimentoParaEditar({ alvo, autorId: req.user.id }));
+
+  const ligar = req.body.avaliador === true || req.body.avaliador === 'true' || req.body.avaliador === '1';
+  const valor = ligar ? 1 : 0;
+  if (Number(alvo.avaliador) === valor) barrar('api.statusUnchanged');
+
+  await db.transaction(async (tx) => {
+    await tx.run('UPDATE users SET avaliador = ? WHERE id = ?', [valor, alvo.id]);
+    await registrar(tx, {
+      usuario: alvo.id, acao: 'avaliador', de: alvo.avaliador ? 'sim' : 'nao', para: ligar ? 'sim' : 'nao',
+      autor: req.user.id, motivo: req.body.reason ?? null,
+    });
+    await notifyUsers(tx, [alvo.id], ligar ? 'notif.avaliadorLigado' : 'notif.avaliadorDesligado', null);
+  });
+
+  res.json({ id: alvo.id, avaliador: valor });
 }));
 
 /**
