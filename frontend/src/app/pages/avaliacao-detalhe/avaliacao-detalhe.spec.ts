@@ -111,26 +111,56 @@ describe('AvaliacaoDetalheComponent', () => {
     expect(html.querySelector('.interno')?.textContent).toContain('não aparece para o cliente');
   });
 
-  it('a pagar: pede comprovante, e só aí some o campo', async () => {
+  it('pix: com comprovante anexado, confirma direto', async () => {
     const { fixture, http, html } = await montar(
       avaliada({ status: 'a_pagar', escolha: 'pix', chave_pix: 'marina@t.local' }),
     );
 
     expect(html.textContent).toContain('marina@t.local');
     const campo = html.querySelector('#comprovante') as HTMLInputElement;
-    expect(campo).toBeTruthy();
-
     const arquivo = new File(['x'], 'comprovante.png', { type: 'image/png' });
     Object.defineProperty(campo, 'files', { value: [arquivo] });
     campo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    botao(html, 'Confirmar pagamento').click();
+    await fixture.whenStable();
 
     const req = http.expectOne(`${environment.apiUrl}/avaliacoes/os1/pagamento`);
-    expect(req.request.body instanceof FormData).toBe(true);
+    expect((req.request.body as FormData).get('comprovante')).toBeTruthy();
     req.flush(avaliada({ status: 'para_guardar', comprovante: '/uploads/c.png' }));
     fixture.detectChanges();
 
     expect(html.querySelector('#comprovante')).toBeFalsy();
     expect(html.textContent).toContain('Ver comprovante');
+  });
+
+  it('crédito: confirma sem comprovante, depois de perguntar', async () => {
+    const { fixture, http, html } = await montar(
+      avaliada({ status: 'a_pagar', escolha: 'credito' }),
+    );
+    TestBed.inject(DialogService).confirm = () => Promise.resolve(true);
+
+    botao(html, 'Confirmar crédito lançado').click();
+    await fixture.whenStable();
+
+    const req = http.expectOne(`${environment.apiUrl}/avaliacoes/os1/pagamento`);
+    // Vai um formulário vazio: o comprovante é anexo, não requisito.
+    expect((req.request.body as FormData).get('comprovante')).toBeNull();
+    req.flush(avaliada({ status: 'para_guardar' }));
+    fixture.detectChanges();
+
+    expect(html.textContent).toContain('Marcar para inserir');
+  });
+
+  it('sem comprovante, cancelar o diálogo não confirma nada', async () => {
+    const { fixture, http, html } = await montar(avaliada({ status: 'a_pagar', escolha: 'pix' }));
+    TestBed.inject(DialogService).confirm = () => Promise.resolve(false);
+
+    botao(html, 'Confirmar pagamento').click();
+    await fixture.whenStable();
+
+    http.expectNone(`${environment.apiUrl}/avaliacoes/os1/pagamento`);
   });
 
   it('prateleira: avançar leva de guardar para inserir', async () => {

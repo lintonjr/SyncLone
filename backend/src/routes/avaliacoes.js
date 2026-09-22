@@ -267,7 +267,10 @@ router.post('/:id/avaliar', auth, requireAvaliador, validate(schemas.avaliarOS),
   res.json(await fichaCompleta(os.id));
 }));
 
-/** Confirmar pagamento, com o comprovante anexado. */
+/**
+ * Confirmar o pagamento. O comprovante é opcional nos dois caminhos: no crédito
+ * não há transferência a comprovar, e no pix a prova que vale está no extrato.
+ */
 router.post('/:id/pagamento', auth, requireAvaliador, upload.single('comprovante'),
   asyncHandler(async (req, res) => {
     const os = await buscar(db, req.params.id);
@@ -286,7 +289,10 @@ router.post('/:id/pagamento', auth, requireAvaliador, upload.single('comprovante
         [arquivo, os.id]
       );
       await registrar(tx, {
-        avaliacaoId: os.id, acao: 'pagamento', de: os.status, para: 'para_guardar', autor: req.user.id,
+        avaliacaoId: os.id, acao: 'pagamento', de: os.status, para: 'para_guardar',
+        autor: req.user.id,
+        // Com dois jeitos de pagar, "pagamento" sozinho não diz o que houve.
+        motivo: os.escolha,
       });
     });
 

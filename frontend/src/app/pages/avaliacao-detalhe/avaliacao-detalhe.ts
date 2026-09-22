@@ -34,6 +34,9 @@ export class AvaliacaoDetalheComponent implements OnInit {
   link = signal('');
   valor = signal('');
 
+  /** O comprovante escolhido, se houver: ele é anexo, não requisito. */
+  comprovante = signal<File | null>(null);
+
   // Editar contato
   editando = signal(false);
   nome = signal('');
@@ -84,6 +87,7 @@ export class AvaliacaoDetalheComponent implements OnInit {
     this.carregando.set(false);
     this.ocupado.set(false);
     this.editando.set(false);
+    this.comprovante.set(null);
   }
 
   private falhou(err: unknown) {
@@ -117,13 +121,44 @@ export class AvaliacaoDetalheComponent implements OnInit {
     });
   }
 
-  enviarComprovante(evento: Event) {
+  escolherComprovante(evento: Event) {
+    this.comprovante.set((evento.target as HTMLInputElement).files?.[0] ?? null);
+  }
+
+  /**
+   * Confirma o pagamento — com ou sem comprovante.
+   *
+   * Sem imagem anexada, pergunta antes: nada além do clique sustenta a
+   * afirmação de que o dinheiro saiu ou de que o crédito foi lançado. Com o
+   * comprovante em mãos, confirma direto; uma pergunta a mais no balcão cheio
+   * só atrasa quem já fez o que tinha de fazer.
+   */
+  async confirmarPagamento() {
     const os = this.os();
-    const arquivo = (evento.target as HTMLInputElement).files?.[0];
-    if (!os || !arquivo) return;
+    if (!os) return;
+    const arquivo = this.comprovante();
+
+    if (!arquivo) {
+      const credito = os.escolha === 'credito';
+      const ok = await this.dialog.confirm({
+        titulo: this.i18n.t(
+          credito ? 'avaliacoes.confirmCreditTitle' : 'avaliacoes.confirmPaymentTitle',
+        ),
+        mensagem: this.i18n.t(
+          credito ? 'avaliacoes.confirmCreditBody' : 'avaliacoes.confirmPaymentBody',
+          {
+            valor: (credito ? os.valor_credito : os.valor_pix) ?? '',
+            nome: os.nome,
+          },
+        ),
+        confirmar: this.i18n.t(credito ? 'avaliacoes.confirmCredit' : 'avaliacoes.confirmPayment'),
+      });
+      if (!ok) return;
+    }
+
     this.ocupado.set(true);
     this.erro.set('');
-    this.svc.confirmarPagamento(os.id, arquivo).subscribe({
+    this.svc.confirmarPagamento(os.id, arquivo ?? undefined).subscribe({
       next: (novo) => this.receber(novo),
       error: (err) => this.falhou(err),
     });

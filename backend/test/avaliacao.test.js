@@ -149,22 +149,31 @@ test('cliente: recusar encerra, e ninguém responde duas vezes', () => {
 
 // --- Pagamento e prateleira ---
 
-test('pagamento: só em "a pagar", e só com comprovante', () => {
-  assert.equal(impedimentoParaPagamento({ os: os({ status: 'a_pagar' }), comprovante: 'x.png' }), null);
-  assert.equal(
-    impedimentoParaPagamento({ os: os({ status: 'a_pagar' }) }),
-    'api.comprovanteObrigatorio',
-  );
+test('pagamento: o comprovante é anexo, não tranca — nos dois caminhos', () => {
+  // Crédito não tem transferência a comprovar, e no pix a prova que vale está no
+  // extrato do banco. Confirmar passa com ou sem imagem.
+  for (const escolha of ['credito', 'pix']) {
+    assert.equal(impedimentoParaPagamento({ os: os({ status: 'a_pagar', escolha }) }), null, escolha);
+    assert.equal(
+      impedimentoParaPagamento({ os: os({ status: 'a_pagar', escolha }), comprovante: 'x.png' }),
+      null,
+      escolha,
+    );
+  }
+});
+
+test('pagamento: só vale em "a pagar"', () => {
   assert.equal(
     impedimentoParaPagamento({ os: os({ status: 'avaliado' }), comprovante: 'x.png' }),
     'api.statusInvalido',
   );
+  assert.equal(impedimentoParaPagamento({ os: null }), 'api.avaliacaoNaoEncontrada');
 });
 
 test('avançar: vale de guardar para inserir, e de inserir para inserido', () => {
   assert.equal(impedimentoParaAvancar({ os: os({ status: 'para_guardar' }) }), null);
   assert.equal(impedimentoParaAvancar({ os: os({ status: 'para_inserir' }) }), null);
-  // O avanço que depende do cliente ou do comprovante tem rota própria.
+  // O avanço que depende do cliente ou do pagamento tem rota própria.
   assert.equal(impedimentoParaAvancar({ os: os({ status: 'avaliado' }) }), 'api.statusInvalido');
   assert.equal(impedimentoParaAvancar({ os: os({ status: 'inserido' }) }), 'api.statusInvalido');
 });

@@ -162,11 +162,19 @@ function impedimentoParaResponder({ os, resposta, escolha, chavePix }) {
   return null;
 }
 
-/** Confirmar pagamento exige o comprovante: é o que prova a transferência. */
-function impedimentoParaPagamento({ os, comprovante }) {
+/**
+ * Por que o pagamento não pode ser confirmado, ou null.
+ *
+ * O comprovante é **anexo, não tranca**. Ele já foi obrigatório aqui, e estava
+ * errado por dois motivos: no crédito da loja não existe transferência para
+ * comprovar — o crédito é lançado no sistema da casa —, e mesmo no pix a prova
+ * que importa está no extrato do banco, não numa imagem que qualquer um anexa.
+ * Como o resto do fluxo, este passo anda pela palavra de quem clica, com nome e
+ * data no histórico.
+ */
+function impedimentoParaPagamento({ os }) {
   if (!os) return 'api.avaliacaoNaoEncontrada';
   if (os.status !== 'a_pagar') return 'api.statusInvalido';
-  if (!comprovante) return 'api.comprovanteObrigatorio';
   return null;
 }
 

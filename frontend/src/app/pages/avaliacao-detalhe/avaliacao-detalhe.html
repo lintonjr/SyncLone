@@ -190,15 +190,31 @@
     <!-- Pagamento -->
     @if (a.status === 'a_pagar') {
       <section class="bloco">
-        <h3>{{ i18n.t('avaliacoes.payment') }}</h3>
-        <p class="dica">{{ i18n.t('avaliacoes.paymentHelp') }}</p>
+        <h3>{{ i18n.t(a.escolha === 'credito' ? 'avaliacoes.credit2' : 'avaliacoes.payment') }}</h3>
+        <p class="dica">
+          {{
+            i18n.t(a.escolha === 'credito' ? 'avaliacoes.creditHelp' : 'avaliacoes.paymentHelp', {
+              valor: (a.escolha === 'credito' ? a.valor_credito : a.valor_pix) ?? '',
+            })
+          }}
+        </p>
         <input
           id="comprovante"
           type="file"
           accept="image/*"
-          (change)="enviarComprovante($event)"
+          (change)="escolherComprovante($event)"
           [disabled]="ocupado()"
         />
+        <p class="dica">{{ i18n.t('avaliacoes.receiptOptional') }}</p>
+        <div class="acoes">
+          <button class="btn btn-primary" [disabled]="ocupado()" (click)="confirmarPagamento()">
+            {{
+              i18n.t(
+                a.escolha === 'credito' ? 'avaliacoes.confirmCredit' : 'avaliacoes.confirmPayment'
+              )
+            }}
+          </button>
+        </div>
       </section>
     }
     @if (a.comprovante) {

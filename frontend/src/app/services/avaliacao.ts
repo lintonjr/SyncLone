@@ -125,9 +125,10 @@ export class AvaliacaoService {
     );
   }
 
-  confirmarPagamento(id: string, comprovante: File) {
+  /** O comprovante é opcional: sem ele, vai um formulário vazio mesmo. */
+  confirmarPagamento(id: string, comprovante?: File) {
     const form = new FormData();
-    form.append('comprovante', comprovante);
+    if (comprovante) form.append('comprovante', comprovante);
     return this.http.post<AvaliacaoDetalhe>(`${this.API}/${id}/pagamento`, form, {
       headers: this.headers(),
     });
