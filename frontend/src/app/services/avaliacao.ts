@@ -116,11 +116,21 @@ export class AvaliacaoService {
     return this.http.put<AvaliacaoDetalhe>(`${this.API}/${id}`, dados, { headers: this.headers() });
   }
 
-  /** Link e valor juntos: é o par que vira proposta e cria o endereço público. */
-  avaliar(id: string, link_avaliacao: string, valor: string) {
+  /**
+   * Link, valor e percentuais juntos: é o que vira proposta e cria o endereço
+   * público. Conclui a avaliação. Os percentuais vão junto porque são negociados por OS —
+   * o servidor recalcula tudo a partir deles e congela o resultado na linha.
+   */
+  avaliar(
+    id: string,
+    link_avaliacao: string,
+    valor: string,
+    percentual_credito: number,
+    percentual_pix: number,
+  ) {
     return this.http.post<AvaliacaoDetalhe>(
       `${this.API}/${id}/avaliar`,
-      { link_avaliacao, valor },
+      { link_avaliacao, valor, percentual_credito, percentual_pix },
       { headers: this.headers() },
     );
   }

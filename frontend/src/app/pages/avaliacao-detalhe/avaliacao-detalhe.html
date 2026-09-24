@@ -120,10 +120,63 @@
             />
           </label>
         </div>
+
+        <!-- Os percentuais: vêm no padrão da loja e são negociáveis por OS. A
+             prévia ao lado evita confirmar uma proposta sem ver quanto ela paga. -->
+        <p class="dica">{{ i18n.t('avaliacoes.percentHelp') }}</p>
+        <div class="campos percentuais">
+          <label>
+            {{ i18n.t('avaliacoes.creditPercent') }}
+            <span class="com-sufixo">
+              <input
+                id="av-pct-credito"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                max="100"
+                step="1"
+                [value]="pctCredito()"
+                (input)="pctCredito.set($any($event.target).value)"
+              />
+              <span class="sufixo" aria-hidden="true">%</span>
+            </span>
+            <small class="previa">
+              @if (previaCredito()) {
+                {{ i18n.t('avaliacoes.currency', { valor: previaCredito() }) }}
+              } @else {
+                &nbsp;
+              }
+            </small>
+          </label>
+          <label>
+            {{ i18n.t('avaliacoes.pixPercent') }}
+            <span class="com-sufixo">
+              <input
+                id="av-pct-pix"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                max="100"
+                step="1"
+                [value]="pctPix()"
+                (input)="pctPix.set($any($event.target).value)"
+              />
+              <span class="sufixo" aria-hidden="true">%</span>
+            </span>
+            <small class="previa">
+              @if (previaPix()) {
+                {{ i18n.t('avaliacoes.currency', { valor: previaPix() }) }}
+              } @else {
+                &nbsp;
+              }
+            </small>
+          </label>
+        </div>
+
         <div class="acoes">
           <button
             class="btn btn-primary"
-            [disabled]="ocupado() || !link().trim() || !valor().trim()"
+            [disabled]="ocupado() || !podeAvaliar()"
             (click)="avaliar()"
           >
             {{ i18n.t('avaliacoes.evaluateConfirm') }}

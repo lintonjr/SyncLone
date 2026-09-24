@@ -109,6 +109,45 @@ label {
   margin-top: 12px;
 }
 
+/**
+ * Os percentuais são campos curtos: dois números de até três dígitos não
+ * precisam dos 200px mínimos do resto do formulário, e lado a lado eles se leem
+ * como o par que são — 60 e 50, crédito e pix.
+ */
+.percentuais {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  margin-top: 4px;
+
+  .com-sufixo {
+    position: relative;
+    display: block;
+
+    input {
+      padding-right: 28px;
+    }
+  }
+
+  .sufixo {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(calc(-50% + 2px));
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  /* A prévia fica reservada mesmo vazia (`&nbsp;`) para o formulário não pular
+     de altura a cada tecla digitada no valor. */
+  .previa {
+    display: block;
+    min-height: 16px;
+    margin-top: 4px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+}
+
 .acoes {
   display: flex;
   flex-wrap: wrap;

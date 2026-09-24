@@ -231,3 +231,36 @@ test('público: depois de respondida, a página vira leitura', () => {
   assert.equal(dadosPublicos(os({ status: 'recusada' })).respondida, true);
   assert.equal(dadosPublicos(null), null);
 });
+
+// --- O percentual negociado por OS ---
+
+test('proposta: os extremos aceitos, 1% e 100%', () => {
+  assert.equal(valoresDaProposta(300, { credito: 100, pix: 1 }).valor_credito, '300.00');
+  assert.equal(valoresDaProposta(300, { credito: 100, pix: 1 }).valor_pix, '3.00');
+});
+
+test('avaliarOS: o percentual é opcional e vai de 1 a 100', () => {
+  const { avaliarOS } = require('../src/schemas');
+  const base = { link_avaliacao: 'https://planilha.local/os1', valor: '300' };
+
+  // Sem percentual: a rota cai no padrão da loja, que vem na linha da OS.
+  const semPct = avaliarOS.parse(base);
+  assert.equal(semPct.percentual_credito, undefined);
+  assert.equal(semPct.percentual_pix, undefined);
+
+  // Com percentual: chega como número, mesmo vindo string de um formulário.
+  const comPct = avaliarOS.parse({ ...base, percentual_credito: '55', percentual_pix: 45 });
+  assert.equal(comPct.percentual_credito, 55);
+  assert.equal(comPct.percentual_pix, 45);
+
+  // Campo vazio é "não mandei", não "zero": `blank` trata isso antes do número.
+  assert.equal(avaliarOS.parse({ ...base, percentual_credito: '' }).percentual_credito, undefined);
+
+  for (const ruim of [0, 101, -5, 60.5, 'metade']) {
+    assert.equal(
+      avaliarOS.safeParse({ ...base, percentual_credito: ruim }).success,
+      false,
+      `percentual ${ruim} não deveria passar`,
+    );
+  }
+});

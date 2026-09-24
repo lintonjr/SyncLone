@@ -228,6 +228,11 @@ const schemas = {
     // Texto e não número: "1234,50" digitado no balcão chega como veio, e a
     // conversão para centavos é feita em um lugar só (lib/avaliacao.js).
     valor: z.union([z.string().trim().min(1).max(20), z.number()]),
+    // Os percentuais da proposta. Opcionais: quem não mandar fica com o padrão
+    // da loja, que é o DEFAULT da coluna (60 e 50). Inteiros de 1 a 100 porque
+    // 0% não é proposta e acima de 100 a loja pagaria mais do que avaliou.
+    percentual_credito: int(1, 100),
+    percentual_pix: int(1, 100),
   }),
 
   responderAvaliacao: z.object({

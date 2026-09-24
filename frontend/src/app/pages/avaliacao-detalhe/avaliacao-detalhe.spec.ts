@@ -88,17 +88,81 @@ describe('AvaliacaoDetalheComponent', () => {
     valor.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
+    // Os percentuais já vêm preenchidos com o padrão que veio na OS, e a prévia
+    // mostra quanto cada forma paga antes de alguém confirmar.
+    const pctCredito = html.querySelector('#av-pct-credito') as HTMLInputElement;
+    const pctPix = html.querySelector('#av-pct-pix') as HTMLInputElement;
+    expect(pctCredito.value).toBe('60');
+    expect(pctPix.value).toBe('50');
+    const previas = [...html.querySelectorAll('.previa')].map((e) => e.textContent?.trim());
+    expect(previas).toEqual(['R$ 180.00', 'R$ 150.00']);
+
     botao(html, 'Concluir avaliação').click();
     const req = http.expectOne(`${environment.apiUrl}/avaliacoes/os1/avaliar`);
     expect(req.request.body).toEqual({
       link_avaliacao: 'https://planilha.local/os1',
       valor: '300',
+      percentual_credito: 60,
+      percentual_pix: 50,
     });
     req.flush(avaliada());
     fixture.detectChanges();
 
     // Agora sim existe endereço para mandar para a pessoa.
     expect(html.querySelector('.link-publico')?.textContent).toContain('b'.repeat(32));
+  });
+
+  it('percentual negociado: a prévia acompanha e é ele que vai para o servidor', async () => {
+    const { fixture, http, html } = await montar();
+
+    const link = html.querySelector('#av-link') as HTMLInputElement;
+    link.value = 'https://planilha.local/os1';
+    link.dispatchEvent(new Event('input'));
+    const valor = html.querySelector('#av-valor') as HTMLInputElement;
+    valor.value = '200';
+    valor.dispatchEvent(new Event('input'));
+    const pctCredito = html.querySelector('#av-pct-credito') as HTMLInputElement;
+    pctCredito.value = '55';
+    pctCredito.dispatchEvent(new Event('input'));
+    const pctPix = html.querySelector('#av-pct-pix') as HTMLInputElement;
+    pctPix.value = '45';
+    pctPix.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const previas = [...html.querySelectorAll('.previa')].map((e) => e.textContent?.trim());
+    expect(previas).toEqual(['R$ 110.00', 'R$ 90.00']);
+
+    botao(html, 'Concluir avaliação').click();
+    expect(
+      http.expectOne(`${environment.apiUrl}/avaliacoes/os1/avaliar`).request.body,
+    ).toEqual({
+      link_avaliacao: 'https://planilha.local/os1',
+      valor: '200',
+      percentual_credito: 55,
+      percentual_pix: 45,
+    });
+  });
+
+  it('percentual fora de 1–100 tranca o botão: nada sai pela metade', async () => {
+    const { fixture, http, html } = await montar();
+
+    const link = html.querySelector('#av-link') as HTMLInputElement;
+    link.value = 'https://planilha.local/os1';
+    link.dispatchEvent(new Event('input'));
+    const valor = html.querySelector('#av-valor') as HTMLInputElement;
+    valor.value = '300';
+    valor.dispatchEvent(new Event('input'));
+    const pctPix = html.querySelector('#av-pct-pix') as HTMLInputElement;
+
+    // O valor entra no par avaliado para o motivo da falha aparecer no relatório:
+    // "['101', false]" diz qual percentual destrancou; "false" sozinho não.
+    for (const ruim of ['0', '101', '', 'abc']) {
+      pctPix.value = ruim;
+      pctPix.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect([ruim, botao(html, 'Concluir avaliação').disabled]).toEqual([ruim, true]);
+    }
+    http.expectNone(`${environment.apiUrl}/avaliacoes/os1/avaliar`);
   });
 
   it('avaliada: mostra os dois valores e o link interno, separado do do cliente', async () => {

@@ -240,12 +240,15 @@ router.put('/:id', auth, requireAvaliador, validate(schemas.editarAvaliacao), as
  */
 router.post('/:id/avaliar', auth, requireAvaliador, validate(schemas.avaliarOS), asyncHandler(async (req, res) => {
   const os = await buscar(db, req.params.id);
-  const { link_avaliacao, valor } = req.body;
+  const { link_avaliacao, valor, percentual_credito, percentual_pix } = req.body;
   barrar(impedimentoParaAvaliar({ os, link: link_avaliacao, valor }));
 
+  // O percentual é negociado por OS. Quem não manda nada fica com o padrão da
+  // loja, que chega na linha pelo DEFAULT da coluna — e é ele, não uma constante
+  // repetida aqui, que define o que é "o normal".
   const v = valoresDaProposta(valor, {
-    credito: os.percentual_credito,
-    pix: os.percentual_pix,
+    credito: percentual_credito ?? os.percentual_credito,
+    pix: percentual_pix ?? os.percentual_pix,
   });
   // Uma OS que voltou para "para avaliar" perdeu o token; aqui ela ganha outro.
   const token = os.token_publico ?? tokenPublico();
@@ -253,14 +256,21 @@ router.post('/:id/avaliar', auth, requireAvaliador, validate(schemas.avaliarOS),
   await db.transaction(async (tx) => {
     await tx.run(
       `UPDATE avaliacoes
-          SET link_avaliacao = ?, valor_bruto = ?, valor_credito = ?, valor_pix = ?,
+          SET link_avaliacao = ?, valor_bruto = ?,
+              percentual_credito = ?, percentual_pix = ?,
+              valor_credito = ?, valor_pix = ?,
               token_publico = ?, status = 'avaliado'
         WHERE id = ?`,
-      [link_avaliacao.trim(), v.valor_bruto, v.valor_credito, v.valor_pix, token, os.id]
+      [link_avaliacao.trim(), v.valor_bruto,
+       v.percentual_credito, v.percentual_pix,
+       v.valor_credito, v.valor_pix, token, os.id]
     );
     await registrar(tx, {
       avaliacaoId: os.id, acao: 'avaliada', de: os.status, para: 'avaliado',
-      autor: req.user.id, motivo: `R$ ${v.valor_bruto}`,
+      // Com percentual negociável, o valor bruto sozinho não responde à pergunta
+      // que aparece meses depois: "por que esta OS pagou 55%?".
+      autor: req.user.id,
+      motivo: `R$ ${v.valor_bruto} · ${v.percentual_credito}% / ${v.percentual_pix}%`,
     });
   });
 

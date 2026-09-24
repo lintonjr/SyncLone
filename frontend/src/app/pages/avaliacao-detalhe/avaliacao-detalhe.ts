@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AvaliacaoService, AvaliacaoDetalhe } from '../../services/avaliacao';
 import { DialogService } from '../../services/dialog';
 import { I18nService, mensagemDeErro } from '../../i18n/i18n';
+import { parteDaProposta } from '../../lib/proposta';
 
 /**
  * A ficha de uma OS: onde ela está, o que falta e por onde passou.
@@ -33,6 +34,45 @@ export class AvaliacaoDetalheComponent implements OnInit {
   // Avaliar
   link = signal('');
   valor = signal('');
+
+  /**
+   * Os percentuais da proposta, como texto: o campo fica vazio por um instante
+   * enquanto se apaga para redigitar, e `signal(60)` viraria `NaN` nesse instante.
+   *
+   * O valor inicial vem da OS, não de uma constante repetida aqui — numa OS
+   * ainda por avaliar são os 60/50 padrão da loja (o DEFAULT da coluna), e numa
+   * que voltou para correção são os que foram usados da última vez.
+   */
+  pctCredito = signal('');
+  pctPix = signal('');
+
+  /** O percentual como número, ou null enquanto não for um inteiro de 1 a 100. */
+  private inteiro = (texto: string): number | null => {
+    if (!/^\d{1,3}$/.test(texto.trim())) return null;
+    const n = Number(texto.trim());
+    return n >= 1 && n <= 100 ? n : null;
+  };
+
+  creditoValido = computed(() => this.inteiro(this.pctCredito()));
+  pixValido = computed(() => this.inteiro(this.pctPix()));
+
+  /**
+   * A prévia dos dois valores enquanto se digita.
+   *
+   * O número que vale continua sendo o que o servidor grava; isto existe para
+   * ninguém confirmar uma proposta sem ver quanto ela paga. Vazio quando a conta
+   * ainda não fecha — melhor não mostrar nada do que mostrar um número errado.
+   */
+  previaCredito = computed(() => parteDaProposta(this.valor(), this.creditoValido()));
+  previaPix = computed(() => parteDaProposta(this.valor(), this.pixValido()));
+
+  /** Só dá para concluir com link, valor e os dois percentuais em pé. */
+  podeAvaliar = computed(
+    () =>
+      !!this.link().trim() &&
+      !!this.previaCredito() &&
+      !!this.previaPix(),
+  );
 
   /** O comprovante escolhido, se houver: ele é anexo, não requisito. */
   comprovante = signal<File | null>(null);
@@ -84,6 +124,8 @@ export class AvaliacaoDetalheComponent implements OnInit {
     this.email.set(os.email ?? '');
     this.comentarios.set(os.comentarios ?? '');
     this.link.set(os.link_avaliacao ?? '');
+    this.pctCredito.set(String(os.percentual_credito));
+    this.pctPix.set(String(os.percentual_pix));
     this.carregando.set(false);
     this.ocupado.set(false);
     this.editando.set(false);
@@ -112,10 +154,12 @@ export class AvaliacaoDetalheComponent implements OnInit {
 
   avaliar() {
     const os = this.os();
-    if (!os || !this.link().trim() || !this.valor().trim()) return;
+    const credito = this.creditoValido();
+    const pix = this.pixValido();
+    if (!os || !this.podeAvaliar() || credito === null || pix === null) return;
     this.ocupado.set(true);
     this.erro.set('');
-    this.svc.avaliar(os.id, this.link().trim(), this.valor().trim()).subscribe({
+    this.svc.avaliar(os.id, this.link().trim(), this.valor().trim(), credito, pix).subscribe({
       next: (novo) => this.receber(novo),
       error: (err) => this.falhou(err),
     });
