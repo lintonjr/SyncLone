@@ -202,6 +202,64 @@ function impedimentoParaVoltar({ os, motivo }) {
 const statusAnterior = (status) => ANTES[status] ?? null;
 
 /**
+ * Os status em que apagar a OS ainda é apagar um papel, não uma transação.
+ *
+ * `a_pagar` é a fronteira: dali em diante a loja se comprometeu a pagar, pagou,
+ * ou já colocou as cartas na prateleira. Apagar isso seria sumir com a prova de
+ * um negócio fechado — e o caminho certo para desfazê-lo já existe, um `voltar`
+ * por vez, cada passo com motivo no histórico.
+ */
+const EXCLUIVEIS = ['para_avaliar', 'avaliado', 'recusada'];
+
+/** Nestes, sumir com a OS some também com uma proposta que alguém recebeu. */
+const EXIGEM_MOTIVO = ['avaliado', 'recusada'];
+
+/**
+ * Por que esta OS não pode ser excluída, ou null.
+ *
+ * Excluir é o único ato do módulo que não deixa a OS para trás, e por isso é o
+ * mais travado dos sete: fora de `para_avaliar` cobra motivo, e sempre cobra o
+ * código digitado à mão — o mesmo pedágio que anonimizar uma conta cobra com o
+ * nome da pessoa. Um clique errado numa lista não pode apagar a coleção de
+ * ninguém.
+ *
+ * O que sobra da OS não mora aqui: é a linha em `avaliacao_exclusoes` que a rota
+ * grava antes de apagar. Esta função só decide se pode.
+ */
+function impedimentoParaExcluir({ os, confirmacao, motivo }) {
+  if (!os) return 'api.avaliacaoNaoEncontrada';
+  if (!EXCLUIVEIS.includes(os.status)) return 'api.excluirDepoisDoPagamento';
+  if (EXIGEM_MOTIVO.includes(os.status) && !String(motivo ?? '').trim()) {
+    return 'api.motivoDaExclusao';
+  }
+  if (normalizarCodigo(confirmacao) !== normalizarCodigo(os.codigo)) {
+    return 'api.codigoNaoConfere';
+  }
+  return null;
+}
+
+/**
+ * O que fica registrado de uma OS apagada.
+ *
+ * Nem tudo: o e-mail, o link da planilha e a chave pix do cliente vão embora com
+ * a linha, porque guardar dado pessoal de um negócio que a loja decidiu apagar
+ * seria o contrário do que apagar significa. Fica o que responde "o que houve
+ * com a OS K7M4-Q2X9?" — código, contato mínimo, em que pé estava e quanto valia.
+ */
+function dadosDaExclusao(os) {
+  return {
+    codigo: os.codigo,
+    nome: os.nome,
+    telefone: os.telefone,
+    status_na_exclusao: os.status,
+    valor_bruto: os.valor_bruto,
+    percentual_credito: os.percentual_credito,
+    percentual_pix: os.percentual_pix,
+    escolha: os.escolha,
+  };
+}
+
+/**
  * Voltar de `avaliado` para `para_avaliar` invalida o link.
  *
  * O cliente pode já ter recebido a proposta — e encaminhado. Se o valor vai ser
@@ -248,6 +306,8 @@ module.exports = {
   impedimentoParaPagamento,
   impedimentoParaAvancar,
   impedimentoParaVoltar,
+  impedimentoParaExcluir,
+  dadosDaExclusao,
   statusAnterior,
   trocaOToken,
   dadosPublicos,

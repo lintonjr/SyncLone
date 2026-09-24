@@ -332,5 +332,69 @@
         }
       </ul>
     </section>
+
+    <!-- Excluir: fora do fluxo de propósito, no fim e em vermelho. É o único
+         ato que não deixa a OS para trás. -->
+    @if (ehAdmin()) {
+      <section class="bloco perigo">
+        <h3>{{ i18n.t('avaliacoes.deleteTitle') }}</h3>
+
+        @if (excluirBloqueado()) {
+          <!-- Depois do pagamento a saída já existe, e é melhor dizer qual é do
+               que só desabilitar um botão e deixar a pessoa adivinhando. -->
+          <p class="dica">{{ i18n.t('avaliacoes.deleteAfterPayment') }}</p>
+        } @else if (!excluindo()) {
+          <p class="dica">{{ i18n.t('avaliacoes.deleteHelp') }}</p>
+          <div class="acoes">
+            <button class="btn btn-danger" (click)="alternarExclusao(true)">
+              {{ i18n.t('avaliacoes.delete') }}
+            </button>
+          </div>
+        } @else {
+          <p class="dica">
+            {{ i18n.t(a.status === 'para_avaliar' ? 'avaliacoes.deleteBody' : 'avaliacoes.deleteBodySent') }}
+          </p>
+          <div class="campos">
+            <label>
+              {{ i18n.t('avaliacoes.deleteConfirmLabel', { codigo: a.codigo }) }}
+              <input
+                id="av-confirmacao"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                [value]="confirmacao()"
+                (input)="confirmacao.set($any($event.target).value)"
+                [placeholder]="a.codigo"
+              />
+            </label>
+            @if (exigeMotivo()) {
+              <label>
+                {{ i18n.t('avaliacoes.deleteReason') }}
+                <input
+                  id="av-motivo-exclusao"
+                  type="text"
+                  maxlength="1000"
+                  [value]="motivoExclusao()"
+                  (input)="motivoExclusao.set($any($event.target).value)"
+                  [placeholder]="i18n.t('avaliacoes.deleteReasonPlaceholder')"
+                />
+              </label>
+            }
+          </div>
+          <div class="acoes">
+            <button class="btn btn-ghost" (click)="alternarExclusao(false)" [disabled]="ocupado()">
+              {{ i18n.t('common.cancel') }}
+            </button>
+            <button
+              class="btn btn-danger"
+              [disabled]="ocupado() || !podeConfirmarExclusao()"
+              (click)="excluir()"
+            >
+              {{ i18n.t('avaliacoes.deleteConfirm') }}
+            </button>
+          </div>
+        }
+      </section>
+    }
   }
 </div>

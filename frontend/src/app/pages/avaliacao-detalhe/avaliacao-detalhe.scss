@@ -240,3 +240,18 @@ label {
   color: var(--text-muted);
   font-size: 14px;
 }
+
+/**
+ * O bloco de excluir.
+ *
+ * Fica no fim e com a borda em vermelho porque é o único ato da ficha que não
+ * deixa a OS para trás — ele não deve parecer mais um passo do fluxo, que é
+ * justamente o que aconteceria com o mesmo cartão dos outros.
+ */
+.bloco.perigo {
+  border-color: var(--danger);
+
+  h3 {
+    color: var(--danger);
+  }
+}

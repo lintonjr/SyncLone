@@ -117,10 +117,13 @@ export const EN: Record<string, string> = {
   'api.coOrganizerAlready': 'This person is already on the league team',
   'api.coOrganizerMustOrganize': 'Only organizers can join a league team',
   'api.coOrganizerNotFound': 'This person is not on the league team',
+  'api.codigoNaoConfere': "The code you typed does not match this ticket's.",
   'api.confirmacaoNaoConfere': 'The name you typed does not match',
   'api.contaDesativada': 'This account is disabled. Talk to the store staff.',
   'api.deactivateFirst': 'Disable the account before anonymizing it',
   'api.emailInUse': 'Email already in use',
+  'api.excluirDepoisDoPagamento':
+    'This ticket is already past payment. Move the status back, one step at a time, before deleting.',
   'api.escolhaInvalida': 'Choose store credit or pix.',
   'api.eventDeleteOwnerOnly': 'Only the event creator or the league owner can delete this event',
   'api.eventFinished': 'This event has already finished',
@@ -141,6 +144,7 @@ export const EN: Record<string, string> = {
   'api.leagueOwnerAlready': 'The league owner already runs this league',
   'api.leagueOwnerOnly': 'Only the league owner can choose the team',
   'api.linkObrigatorio': 'Provide the appraisal link.',
+  'api.motivoDaExclusao': 'Say why this ticket is being deleted.',
   'api.motivoObrigatorio': 'Say why the status is going back.',
   'api.mustBeInClan': 'You must be part of the clan you are registering',
   'api.needTwoPlayers': 'At least 2 active players are required',
@@ -207,6 +211,20 @@ export const EN: Record<string, string> = {
   'avaliacoes.creditoShort': 'store credit',
   'avaliacoes.creditPercent': 'Credit',
   'avaliacoes.currency': 'R$ {valor}',
+  'avaliacoes.delete': 'Delete ticket',
+  'avaliacoes.deleteAfterPayment':
+    'This ticket is already past payment and cannot be deleted. If it was a mistake, move the status back one step at a time — every step is recorded with its reason.',
+  'avaliacoes.deleteBody':
+    'Nothing has been offered on this ticket yet. It leaves the list for good; what stays on record is the code, the contact and who deleted it.',
+  'avaliacoes.deleteBodySent':
+    "This ticket is already an offer: the customer's link stops working immediately. It leaves the list for good, history included; what stays on record is the code, the contact, the amounts and who deleted it.",
+  'avaliacoes.deleteConfirm': 'Delete for good',
+  'avaliacoes.deleteConfirmLabel': 'Type {codigo} to confirm',
+  'avaliacoes.deleteHelp':
+    'For a ticket opened by mistake, or a test left in the list. There is no undo.',
+  'avaliacoes.deleteReason': 'Reason',
+  'avaliacoes.deleteReasonPlaceholder': 'Why is this ticket being deleted?',
+  'avaliacoes.deleteTitle': 'Delete',
   'avaliacoes.edit': 'Edit contact',
   'avaliacoes.email': 'Email',
   'avaliacoes.empty': 'No appraisals here.',

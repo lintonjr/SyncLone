@@ -12,6 +12,8 @@ const {
   impedimentoParaPagamento,
   impedimentoParaAvancar,
   impedimentoParaVoltar,
+  impedimentoParaExcluir,
+  dadosDaExclusao,
   statusAnterior,
   trocaOToken,
   dadosPublicos,
@@ -262,5 +264,95 @@ test('avaliarOS: o percentual é opcional e vai de 1 a 100', () => {
       false,
       `percentual ${ruim} não deveria passar`,
     );
+  }
+});
+
+// --- Excluir a OS ---
+
+test('excluir: a fronteira é o dinheiro, não o status genérico', () => {
+  const ok = { confirmacao: 'K7M4-Q2X9', motivo: 'aberta por engano' };
+
+  // Antes do pagamento: apagar um papel.
+  for (const status of ['para_avaliar', 'avaliado', 'recusada']) {
+    assert.equal(impedimentoParaExcluir({ os: os({ status }), ...ok }), null, status);
+  }
+
+  // De 'a_pagar' em diante a loja se comprometeu: some a prova de um negócio.
+  for (const status of ['a_pagar', 'para_guardar', 'para_inserir', 'inserido']) {
+    assert.equal(
+      impedimentoParaExcluir({ os: os({ status }), ...ok }),
+      'api.excluirDepoisDoPagamento',
+      status,
+    );
+  }
+
+  assert.equal(impedimentoParaExcluir({ os: null, ...ok }), 'api.avaliacaoNaoEncontrada');
+});
+
+test('excluir: motivo só é cobrado depois de a OS virar proposta', () => {
+  const codigo = { confirmacao: 'K7M4-Q2X9' };
+
+  // Em 'para_avaliar' nada foi oferecido: o engano no balcão não precisa de texto.
+  assert.equal(impedimentoParaExcluir({ os: os({ status: 'para_avaliar' }), ...codigo }), null);
+
+  // Depois, sumir com a OS some com algo que alguém recebeu.
+  for (const status of ['avaliado', 'recusada']) {
+    assert.equal(
+      impedimentoParaExcluir({ os: os({ status }), ...codigo }),
+      'api.motivoDaExclusao',
+      status,
+    );
+    assert.equal(
+      impedimentoParaExcluir({ os: os({ status }), ...codigo, motivo: '   ' }),
+      'api.motivoDaExclusao',
+      `${status} com motivo em branco`,
+    );
+  }
+});
+
+test('excluir: o código confirma como a busca compara — sem hífen, sem caixa', () => {
+  const alvo = os({ status: 'para_avaliar' });
+  for (const digitado of ['K7M4-Q2X9', 'k7m4q2x9', ' K7M4 Q2X9 ', 'k7m4-q2x9']) {
+    assert.equal(
+      impedimentoParaExcluir({ os: alvo, confirmacao: digitado }),
+      null,
+      `"${digitado}" deveria confirmar`,
+    );
+  }
+  for (const errado of ['K7M4-Q2X8', 'outra coisa', '', null, undefined]) {
+    assert.equal(
+      impedimentoParaExcluir({ os: alvo, confirmacao: errado }),
+      'api.codigoNaoConfere',
+      `"${errado}" não deveria confirmar`,
+    );
+  }
+});
+
+test('excluir: o registro guarda o que houve, não os dados pessoais', () => {
+  const d = dadosDaExclusao(os({ status: 'avaliado', escolha: 'pix' }));
+
+  assert.deepEqual(Object.keys(d).sort(), [
+    'codigo', 'escolha', 'nome', 'percentual_credito', 'percentual_pix',
+    'status_na_exclusao', 'telefone', 'valor_bruto',
+  ]);
+  assert.equal(d.status_na_exclusao, 'avaliado');
+
+  // O que a loja decidiu apagar não vira arquivo permanente.
+  for (const proibido of ['email', 'link_avaliacao', 'chave_pix', 'token_publico', 'comprovante']) {
+    assert.equal(proibido in d, false, `${proibido} não pode sobreviver à exclusão`);
+  }
+});
+
+test('excluirAvaliacao: confirmação obrigatória, motivo opcional no schema', () => {
+  const { excluirAvaliacao } = require('../src/schemas');
+
+  assert.equal(excluirAvaliacao.parse({ confirmacao: 'K7M4-Q2X9' }).motivo, undefined);
+  assert.equal(excluirAvaliacao.parse({ confirmacao: 'K7M4-Q2X9', motivo: '' }).motivo, undefined);
+  assert.equal(excluirAvaliacao.parse({ confirmacao: 'k7m4', motivo: ' erro ' }).motivo, 'erro');
+
+  // Quem cobra motivo por status é a regra pura, não o zod — dois lugares
+  // decidindo a mesma coisa é como elas divergem.
+  for (const ruim of [{}, { confirmacao: '' }, { confirmacao: '   ' }]) {
+    assert.equal(excluirAvaliacao.safeParse(ruim).success, false, JSON.stringify(ruim));
   }
 });

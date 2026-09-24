@@ -1,7 +1,8 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AvaliacaoService, AvaliacaoDetalhe } from '../../services/avaliacao';
+import { AuthService } from '../../services/auth';
 import { DialogService } from '../../services/dialog';
 import { I18nService, mensagemDeErro } from '../../i18n/i18n';
 import { parteDaProposta } from '../../lib/proposta';
@@ -23,6 +24,8 @@ export class AvaliacaoDetalheComponent implements OnInit {
   i18n = inject(I18nService);
   private svc = inject(AvaliacaoService);
   private rota = inject(ActivatedRoute);
+  private router = inject(Router);
+  private auth = inject(AuthService);
   private dialog = inject(DialogService);
 
   os = signal<AvaliacaoDetalhe | null>(null);
@@ -77,6 +80,51 @@ export class AvaliacaoDetalheComponent implements OnInit {
   /** O comprovante escolhido, se houver: ele é anexo, não requisito. */
   comprovante = signal<File | null>(null);
 
+  /**
+   * Excluir: o bloco fica fechado e só abre no clique.
+   *
+   * Dois campos (o código e o motivo) não cabem no `dialog.prompt`, que pede um
+   * texto só — e encadear dois prompts transformaria uma decisão em duas
+   * perguntas soltas. Aqui os dois ficam à vista, ao lado do aviso do que vai
+   * acontecer.
+   */
+  excluindo = signal(false);
+  confirmacao = signal('');
+  motivoExclusao = signal('');
+
+  /** Só admin exclui, e só antes de a loja se comprometer com dinheiro. */
+  ehAdmin = computed(() => this.auth.currentUser()?.role === 'admin');
+
+  /**
+   * Os status que a tela oferece para excluir.
+   *
+   * A lista está repetida aqui e em `EXCLUIVEIS`, no `lib/avaliacao.js` — não há
+   * build compartilhado entre as pontas. Quem **decide** é sempre o servidor,
+   * que recusa com `api.excluirDepoisDoPagamento`; isto aqui só escolhe entre
+   * mostrar o botão e mostrar o aviso de como desfazer. Errar de um lado deixa a
+   * tela confusa, nunca deixa apagar o que não podia.
+   */
+  podeExcluir = computed(() => {
+    const status = this.os()?.status;
+    return !!status && ['para_avaliar', 'avaliado', 'recusada'].includes(status);
+  });
+
+  /** Passado o pagamento, a saída é voltar o status — a tela diz isso. */
+  excluirBloqueado = computed(() => this.ehAdmin() && !this.podeExcluir());
+
+  /** Fora de "para avaliar", sumir com a OS some com uma proposta já enviada. */
+  exigeMotivo = computed(() => this.os()?.status !== 'para_avaliar');
+
+  confirmacaoConfere = computed(() => {
+    const limpo = (t: string) => t.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const os = this.os();
+    return !!os && limpo(this.confirmacao()) === limpo(os.codigo);
+  });
+
+  podeConfirmarExclusao = computed(
+    () => this.confirmacaoConfere() && (!this.exigeMotivo() || !!this.motivoExclusao().trim()),
+  );
+
   // Editar contato
   editando = signal(false);
   nome = signal('');
@@ -130,6 +178,9 @@ export class AvaliacaoDetalheComponent implements OnInit {
     this.ocupado.set(false);
     this.editando.set(false);
     this.comprovante.set(null);
+    this.excluindo.set(false);
+    this.confirmacao.set('');
+    this.motivoExclusao.set('');
   }
 
   private falhou(err: unknown) {
@@ -243,6 +294,36 @@ export class AvaliacaoDetalheComponent implements OnInit {
     this.erro.set('');
     this.svc.voltar(os.id, motivo).subscribe({
       next: (novo) => this.receber(novo),
+      error: (err) => this.falhou(err),
+    });
+  }
+
+  /**
+   * Exclui e sai para a lista.
+   *
+   * Não há `receber()` no fim: a OS não existe mais, e recarregar a ficha daria
+   * 404 na cara de quem acabou de apagar de propósito.
+   */
+  /**
+   * Abre e fecha o bloco, sempre com os campos limpos.
+   *
+   * Fechar tem de esquecer o que foi digitado: um código já confirmado esperando
+   * atrás de um bloco fechado é uma exclusão a um clique de distância, feita por
+   * quem já tinha desistido dela.
+   */
+  alternarExclusao(aberto: boolean) {
+    this.excluindo.set(aberto);
+    this.confirmacao.set('');
+    this.motivoExclusao.set('');
+  }
+
+  excluir() {
+    const os = this.os();
+    if (!os || !this.podeConfirmarExclusao()) return;
+    this.ocupado.set(true);
+    this.erro.set('');
+    this.svc.excluir(os.id, this.confirmacao().trim(), this.motivoExclusao().trim()).subscribe({
+      next: () => this.router.navigate(['/avaliacoes']),
       error: (err) => this.falhou(err),
     });
   }

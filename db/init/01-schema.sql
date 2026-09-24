@@ -326,3 +326,25 @@ CREATE TABLE IF NOT EXISTS `avaliacao_historico` (
   CONSTRAINT `avaliacao_historico_os_fk` FOREIGN KEY (`avaliacao_id`) REFERENCES `avaliacoes` (`id`) ON DELETE CASCADE,
   CONSTRAINT `avaliacao_historico_autor_fk` FOREIGN KEY (`autor_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- O que sobra de uma OS apagada. Sem FK para `avaliacoes`: esta linha nasce
+-- quando a de lá morre. Não copia e-mail, link da planilha nem chave pix —
+-- guardar dado pessoal de um negócio apagado seria o contrário de apagar.
+CREATE TABLE IF NOT EXISTS `avaliacao_exclusoes` (
+  `id` varchar(36) NOT NULL,
+  `codigo` varchar(12) NOT NULL,
+  `nome` varchar(120) NOT NULL,
+  `telefone` varchar(30) NOT NULL,
+  `status_na_exclusao` enum('para_avaliar','avaliado','recusada','a_pagar','para_guardar','para_inserir','inserido') NOT NULL,
+  `valor_bruto` decimal(10,2) DEFAULT NULL,
+  `percentual_credito` tinyint unsigned DEFAULT NULL,
+  `percentual_pix` tinyint unsigned DEFAULT NULL,
+  `escolha` enum('credito','pix') DEFAULT NULL,
+  `autor_id` varchar(36) NOT NULL,
+  `motivo` text DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `por_data` (`created_at`),
+  KEY `por_codigo` (`codigo`),
+  CONSTRAINT `avaliacao_exclusoes_autor_fk` FOREIGN KEY (`autor_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

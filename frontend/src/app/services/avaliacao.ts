@@ -160,6 +160,20 @@ export class AvaliacaoService {
     );
   }
 
+  /**
+   * Exclui a OS. Só admin, e só antes do pagamento — quem decide é o servidor.
+   *
+   * `body` num DELETE é incomum, mas é o que mantém a confirmação e o motivo
+   * fora da URL: código de OS em query string acaba em log de acesso e no
+   * histórico do navegador.
+   */
+  excluir(id: string, confirmacao: string, motivo: string) {
+    return this.http.delete<{ codigo: string; excluida: boolean }>(`${this.API}/${id}`, {
+      headers: this.headers(),
+      body: { confirmacao, motivo },
+    });
+  }
+
   // --- Cliente, sem conta e sem cabeçalho de autorização ---
 
   proposta(token: string) {

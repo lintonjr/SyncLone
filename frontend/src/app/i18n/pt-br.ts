@@ -119,10 +119,13 @@ export const PT_BR: Record<string, string> = {
   'api.coOrganizerAlready': 'Essa pessoa já está no time da liga',
   'api.coOrganizerMustOrganize': 'Só quem já é organizador pode entrar no time da liga',
   'api.coOrganizerNotFound': 'Essa pessoa não está no time da liga',
+  'api.codigoNaoConfere': 'O código digitado não confere com o desta OS.',
   'api.confirmacaoNaoConfere': 'O nome digitado não confere',
   'api.contaDesativada': 'Esta conta está desativada. Fale com a organização da loja.',
   'api.deactivateFirst': 'Desative a conta antes de anonimizar',
   'api.emailInUse': 'Este e-mail já está em uso',
+  'api.excluirDepoisDoPagamento':
+    'Esta OS já passou do pagamento. Volte o status, um passo por vez, antes de excluir.',
   'api.escolhaInvalida': 'Escolha crédito ou pix.',
   'api.eventDeleteOwnerOnly': 'Só quem criou o evento ou o dono da liga pode excluí-lo',
   'api.eventFinished': 'Este evento já foi encerrado',
@@ -142,6 +145,7 @@ export const PT_BR: Record<string, string> = {
   'api.leagueOwnerAlready': 'O dono da liga já cuida dela',
   'api.leagueOwnerOnly': 'Só o dono da liga escolhe quem está no time',
   'api.linkObrigatorio': 'Informe o link da avaliação.',
+  'api.motivoDaExclusao': 'Diga por que esta OS está sendo excluída.',
   'api.motivoObrigatorio': 'Diga o motivo de voltar o status.',
   'api.mustBeInClan': 'Você precisa fazer parte do clã que está inscrevendo',
   'api.needTwoPlayers': 'São necessários pelo menos 2 jogadores ativos',
@@ -208,6 +212,20 @@ export const PT_BR: Record<string, string> = {
   'avaliacoes.creditoShort': 'crédito',
   'avaliacoes.creditPercent': 'Crédito',
   'avaliacoes.currency': 'R$ {valor}',
+  'avaliacoes.delete': 'Excluir OS',
+  'avaliacoes.deleteAfterPayment':
+    'Esta OS já passou do pagamento e não pode ser excluída. Se foi um erro, volte o status um passo por vez — cada volta fica no histórico com o motivo.',
+  'avaliacoes.deleteBody':
+    'Nada foi oferecido nesta OS ainda. Ela sai da lista para sempre; o que fica registrado é o código, o contato e quem excluiu.',
+  'avaliacoes.deleteBodySent':
+    'Esta OS já virou proposta: o link do cliente para de abrir na hora. Ela sai da lista para sempre, junto com o histórico; o que fica registrado é o código, o contato, os valores e quem excluiu.',
+  'avaliacoes.deleteConfirm': 'Excluir para sempre',
+  'avaliacoes.deleteConfirmLabel': 'Digite {codigo} para confirmar',
+  'avaliacoes.deleteHelp':
+    'Para a OS aberta por engano ou o teste que ficou na lista. Não tem volta.',
+  'avaliacoes.deleteReason': 'Motivo',
+  'avaliacoes.deleteReasonPlaceholder': 'Por que esta OS está sendo excluída?',
+  'avaliacoes.deleteTitle': 'Excluir',
   'avaliacoes.edit': 'Editar contato',
   'avaliacoes.email': 'E-mail',
   'avaliacoes.empty': 'Nenhuma avaliação por aqui.',

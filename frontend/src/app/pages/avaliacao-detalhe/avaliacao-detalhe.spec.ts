@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AvaliacaoDetalheComponent } from './avaliacao-detalhe';
 import { DialogService } from '../../services/dialog';
+import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
 import { I18nService } from '../../i18n/i18n';
 
@@ -46,7 +47,11 @@ const avaliada = (over: Record<string, unknown> = {}) =>
     ...over,
   });
 
-async function montar(os: Record<string, unknown> = umaOS()) {
+/** `papel` decide o que a ficha oferece: só admin vê o bloco de excluir. */
+async function montar(os: Record<string, unknown> = umaOS(), papel = 'admin') {
+  // Alguns testes montam a ficha mais de uma vez (papéis e status diferentes),
+  // e o TestBed recusa ser configurado depois de instanciado.
+  TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
@@ -56,6 +61,9 @@ async function montar(os: Record<string, unknown> = umaOS()) {
     ],
   });
   TestBed.inject(I18nService).lang.set('pt-BR');
+  TestBed.inject(AuthService).currentUser.set({
+    id: 'u1', display_name: 'Dona', email: 'dona@t.local', role: papel,
+  } as never);
   const http = TestBed.inject(HttpTestingController);
   const fixture = TestBed.createComponent(AvaliacaoDetalheComponent);
   fixture.detectChanges();
@@ -299,5 +307,108 @@ describe('AvaliacaoDetalheComponent', () => {
     const historico = html.querySelector('.historico')!;
     expect(historico.textContent).toContain('pelo cliente');
     expect(historico.textContent).toContain('por Bia');
+  });
+
+  // --- Excluir ---
+
+  it('excluir: só admin vê o bloco', async () => {
+    const soAvaliador = await montar(umaOS(), 'organizer');
+    expect(soAvaliador.html.querySelector('.bloco.perigo')).toBeFalsy();
+
+    const { html } = await montar();
+    expect(html.querySelector('.bloco.perigo')).toBeTruthy();
+    expect(botao(html, 'Excluir OS')).toBeTruthy();
+  });
+
+  it('excluir: depois do pagamento a tela diz qual é a saída, em vez de só travar', async () => {
+    for (const status of ['a_pagar', 'para_guardar', 'para_inserir', 'inserido']) {
+      const { html } = await montar(avaliada({ status }));
+      expect(botao(html, 'Excluir OS')).toBeFalsy();
+      expect(html.querySelector('.bloco.perigo')?.textContent).toContain('volte o status');
+    }
+  });
+
+  it('excluir: em "para avaliar" pede só o código, e ele confirma como a busca compara', async () => {
+    const { fixture, http, html } = await montar();
+    botao(html, 'Excluir OS').click();
+    fixture.detectChanges();
+
+    // Nada foi oferecido ainda: não há motivo a cobrar.
+    expect(html.querySelector('#av-motivo-exclusao')).toBeFalsy();
+
+    const confirmar = () => botao(html, 'Excluir para sempre');
+    expect(confirmar().disabled).toBe(true);
+
+    const campo = html.querySelector('#av-confirmacao') as HTMLInputElement;
+    campo.value = 'k7m4q2x9';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(confirmar().disabled).toBe(false);
+
+    confirmar().click();
+    const req = http.expectOne(`${environment.apiUrl}/avaliacoes/os1`);
+    expect(req.request.method).toBe('DELETE');
+    expect(req.request.body).toEqual({ confirmacao: 'k7m4q2x9', motivo: '' });
+  });
+
+  it('excluir: código errado mantém o botão trancado e nada sai', async () => {
+    const { fixture, http, html } = await montar();
+    botao(html, 'Excluir OS').click();
+    fixture.detectChanges();
+
+    const campo = html.querySelector('#av-confirmacao') as HTMLInputElement;
+    for (const errado of ['K7M4-Q2X8', 'apagar', '']) {
+      campo.value = errado;
+      campo.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect([errado, botao(html, 'Excluir para sempre').disabled]).toEqual([errado, true]);
+    }
+    http.expectNone(`${environment.apiUrl}/avaliacoes/os1`);
+  });
+
+  it('excluir: numa OS já avaliada, o motivo é obrigatório e o aviso fala do link', async () => {
+    const { fixture, http, html } = await montar(avaliada());
+    botao(html, 'Excluir OS').click();
+    fixture.detectChanges();
+
+    expect(html.querySelector('.bloco.perigo')?.textContent).toContain('link do cliente');
+
+    const campo = html.querySelector('#av-confirmacao') as HTMLInputElement;
+    campo.value = 'K7M4-Q2X9';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    // Só o código não basta aqui.
+    expect(botao(html, 'Excluir para sempre').disabled).toBe(true);
+
+    const motivo = html.querySelector('#av-motivo-exclusao') as HTMLInputElement;
+    motivo.value = 'aberta em duplicidade';
+    motivo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(botao(html, 'Excluir para sempre').disabled).toBe(false);
+
+    botao(html, 'Excluir para sempre').click();
+    expect(http.expectOne(`${environment.apiUrl}/avaliacoes/os1`).request.body).toEqual({
+      confirmacao: 'K7M4-Q2X9',
+      motivo: 'aberta em duplicidade',
+    });
+  });
+
+  it('excluir: cancelar fecha o bloco e esquece o que foi digitado', async () => {
+    const { fixture, html } = await montar();
+    botao(html, 'Excluir OS').click();
+    fixture.detectChanges();
+
+    const campo = html.querySelector('#av-confirmacao') as HTMLInputElement;
+    campo.value = 'K7M4-Q2X9';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    botao(html, 'Cancelar').click();
+    fixture.detectChanges();
+    expect(html.querySelector('#av-confirmacao')).toBeFalsy();
+
+    botao(html, 'Excluir OS').click();
+    fixture.detectChanges();
+    expect((html.querySelector('#av-confirmacao') as HTMLInputElement).value).toBe('');
   });
 });

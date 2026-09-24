@@ -241,6 +241,16 @@ const schemas = {
     chave_pix: blank(z.string().trim().max(140).optional()),
   }),
 
+  excluirAvaliacao: z.object({
+    // O código da OS digitado à mão, como anonimizar pede o nome da pessoa.
+    // A rota compara normalizado: quem digita "k7m4q2x9" quer a mesma OS de
+    // quem cola "K7M4-Q2X9".
+    confirmacao: z.string().trim().min(1).max(20),
+    // Opcional aqui; a regra pura é que o cobra quando a OS já virou proposta.
+    // Validar por status no zod duplicaria a decisão que mora em lib/avaliacao.js.
+    motivo: blank(z.string().trim().max(1000).optional()),
+  }),
+
   voltarAvaliacao: z.object({
     // Voltar é sempre correção de erro: daqui a um mês alguém vai perguntar
     // por que esta OS andou para trás.

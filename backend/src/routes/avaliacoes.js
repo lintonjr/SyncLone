@@ -4,6 +4,7 @@ const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const db = require('../db');
 const auth = require('../middleware/auth');
 const requireAvaliador = require('../middleware/requireAvaliador');
+const requireAdmin = require('../middleware/requireAdmin');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
@@ -21,6 +22,8 @@ const {
   impedimentoParaPagamento,
   impedimentoParaAvancar,
   impedimentoParaVoltar,
+  impedimentoParaExcluir,
+  dadosDaExclusao,
   statusAnterior,
   trocaOToken,
   dadosPublicos,
@@ -66,6 +69,7 @@ const STATUS_HTTP = {
   'api.statusInvalido': 409,
   'api.jaRespondida': 409,
   'api.semRetorno': 409,
+  'api.excluirDepoisDoPagamento': 409,
 };
 
 function barrar(codigo) {
@@ -357,6 +361,48 @@ router.post('/:id/voltar', auth, requireAvaliador, validate(schemas.voltarAvalia
     });
 
     res.json(await fichaCompleta(os.id));
+  })
+);
+
+/**
+ * Excluir a OS. Só admin, e só antes de a loja se comprometer com dinheiro.
+ *
+ * É o único ato do módulo que não deixa a OS para trás. Existe para o caso que o
+ * fluxo não cobria — a OS aberta por engano, o teste que ficou na lista — e não
+ * para desfazer negócio: de `a_pagar` em diante a regra recusa, e o caminho é
+ * `voltar` um passo por vez, cada um com motivo no histórico.
+ *
+ * O que sobra é uma linha em `avaliacao_exclusoes`, gravada **antes** do DELETE e
+ * na mesma transação: o `avaliacao_historico` da OS cascateia junto com ela, e
+ * sem esse registro apagar não deixaria vestígio nenhum.
+ */
+router.delete('/:id', auth, requireAdmin, validate(schemas.excluirAvaliacao),
+  asyncHandler(async (req, res) => {
+    const os = await buscar(db, req.params.id);
+    const motivo = req.body.motivo?.trim() || null;
+    barrar(impedimentoParaExcluir({ os, confirmacao: req.body.confirmacao, motivo }));
+
+    await db.transaction(async (tx) => {
+      const dados = dadosDaExclusao(os);
+      await tx.run(
+        `INSERT INTO avaliacao_exclusoes
+           (id, codigo, nome, telefone, status_na_exclusao, valor_bruto,
+            percentual_credito, percentual_pix, escolha, autor_id, motivo)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [uuidv4(), dados.codigo, dados.nome, dados.telefone, dados.status_na_exclusao,
+         dados.valor_bruto, dados.percentual_credito, dados.percentual_pix,
+         dados.escolha, req.user.id, motivo]
+      );
+      // O histórico da OS vai junto, pelo ON DELETE CASCADE da 020.
+      await tx.run('DELETE FROM avaliacoes WHERE id = ?', [os.id]);
+    });
+
+    // Fora da transação, como a capa do evento: o arquivo não participa do
+    // rollback, e deixá-lo no bucket criaria um anexo órfão que nenhuma linha
+    // mais aponta — exatamente o lixo que `events.js` passou a limpar.
+    await removeFile(os.comprovante);
+
+    res.json({ codigo: os.codigo, excluida: true });
   })
 );
 
