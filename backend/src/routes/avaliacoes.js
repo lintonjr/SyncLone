@@ -99,9 +99,24 @@ async function avisarEquipe(tx, code, params) {
 
 const buscar = (conn, id) => conn.get('SELECT * FROM avaliacoes WHERE id = ?', [id]);
 
-/** A OS com o histórico que a ficha mostra. */
+/**
+ * A OS com o histórico que a ficha mostra.
+ *
+ * O nome de quem abriu vem por join, como na lista: `SELECT *` traz `criada_por`,
+ * que é um id, e a ficha precisa do nome. Sem isto, a tela caía no travessão do
+ * `|| '—'` e "Aberta por" não dizia nada em OS nenhuma — o defeito não era de
+ * quem abriu, era da consulta.
+ *
+ * `LEFT JOIN` e não `JOIN`: quem abriu pode ter sido anonimizado desde então, e
+ * uma OS não some da ficha porque a conta de quem a abriu saiu do ar.
+ */
 async function fichaCompleta(id) {
-  const os = await buscar(db, id);
+  const os = await db.get(
+    `SELECT a.*, u.display_name AS criada_por_nome
+       FROM avaliacoes a LEFT JOIN users u ON u.id = a.criada_por
+      WHERE a.id = ?`,
+    [id]
+  );
   if (!os) throw new HttpError(404, 'Avaliação não encontrada', 'api.avaliacaoNaoEncontrada');
   const historico = await db.query(
     `SELECT h.acao, h.de, h.para, h.motivo, h.created_at, u.display_name AS autor

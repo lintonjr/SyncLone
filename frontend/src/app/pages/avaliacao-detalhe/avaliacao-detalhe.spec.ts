@@ -411,4 +411,18 @@ describe('AvaliacaoDetalheComponent', () => {
     fixture.detectChanges();
     expect((html.querySelector('#av-confirmacao') as HTMLInputElement).value).toBe('');
   });
+
+  it('cabeçalho: mostra quem abriu a OS, e o travessão só quando ninguém abriu', async () => {
+    // Este teste nasceu de um defeito que passou por aqui: a ficha mostrava
+    // "Aberta por —" em toda OS, porque `GET /avaliacoes/:id` devolvia
+    // `criada_por` (um id) e nunca `criada_por_nome`. O fixture já trazia o
+    // nome, então a tela parecia certa no teste e errada no ar — o furo estava
+    // no contrato com a API, não no template.
+    const { html } = await montar(umaOS({ criada_por_nome: 'So Avaliador' }));
+    expect(html.querySelector('.sub')?.textContent?.trim()).toBe('Aberta por So Avaliador');
+
+    // Nulo é o caso real de quem abriu e depois teve a conta anonimizada.
+    const semAutor = await montar(umaOS({ criada_por_nome: null }));
+    expect(semAutor.html.querySelector('.sub')?.textContent?.trim()).toBe('Aberta por —');
+  });
 });
