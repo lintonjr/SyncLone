@@ -173,6 +173,36 @@
           </label>
         </div>
 
+        <!-- O extra: acréscimo em reais, fora do percentual. A justificativa só
+             aparece quando há acréscimo — não há o que explicar em zero. -->
+        <p class="dica">{{ i18n.t('avaliacoes.extraHelp') }}</p>
+        <div class="campos">
+          <label>
+            {{ i18n.t('avaliacoes.extra') }}
+            <input
+              id="av-extra"
+              type="text"
+              inputmode="decimal"
+              [value]="extra()"
+              (input)="extra.set($any($event.target).value)"
+              placeholder="0,00"
+            />
+          </label>
+          @if (mostrarJustificativa()) {
+            <label>
+              {{ i18n.t('avaliacoes.extraReason') }}
+              <input
+                id="av-extra-motivo"
+                type="text"
+                maxlength="1000"
+                [value]="justificativaExtra()"
+                (input)="justificativaExtra.set($any($event.target).value)"
+                [placeholder]="i18n.t('avaliacoes.extraReasonPlaceholder')"
+              />
+            </label>
+          }
+        </div>
+
         <div class="acoes">
           <button
             class="btn btn-primary"
@@ -194,18 +224,59 @@
               {{ i18n.t('avaliacoes.currency', { valor: a.valor_bruto ?? '' }) }}
             </dd>
           </div>
-          <div>
-            <dt>{{ i18n.t('avaliacoes.credit', { pct: a.percentual_credito }) }}</dt>
-            <dd class="numero">
-              {{ i18n.t('avaliacoes.currency', { valor: a.valor_credito ?? '' }) }}
-            </dd>
-          </div>
-          <div>
-            <dt>{{ i18n.t('avaliacoes.pix', { pct: a.percentual_pix }) }}</dt>
-            <dd class="numero">
-              {{ i18n.t('avaliacoes.currency', { valor: a.valor_pix ?? '' }) }}
-            </dd>
-          </div>
+          <!-- Com extra, a quebra mostra de onde vem o total: a parte do
+               percentual é `total - extra`, exata, sempre fechando a soma. -->
+          @if (temExtraGravado()) {
+            <div>
+              <dt>{{ i18n.t('avaliacoes.credit', { pct: a.percentual_credito }) }}</dt>
+              <dd class="numero parcela">
+                {{ i18n.t('avaliacoes.currency', { valor: baseCredito() }) }}
+              </dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('avaliacoes.pix', { pct: a.percentual_pix }) }}</dt>
+              <dd class="numero parcela">
+                {{ i18n.t('avaliacoes.currency', { valor: basePix() }) }}
+              </dd>
+            </div>
+            <div class="extra-linha">
+              <dt>{{ i18n.t('avaliacoes.extra') }}</dt>
+              <dd class="numero parcela">
+                + {{ i18n.t('avaliacoes.currency', { valor: a.valor_extra ?? '' }) }}
+              </dd>
+            </div>
+            @if (a.justificativa_extra) {
+              <div class="extra-motivo">
+                <dt>{{ i18n.t('avaliacoes.extraReason') }}</dt>
+                <dd class="interno">{{ a.justificativa_extra }}</dd>
+              </div>
+            }
+            <div class="total">
+              <dt>{{ i18n.t('avaliacoes.totalCredit') }}</dt>
+              <dd class="numero">
+                {{ i18n.t('avaliacoes.currency', { valor: a.valor_credito ?? '' }) }}
+              </dd>
+            </div>
+            <div class="total">
+              <dt>{{ i18n.t('avaliacoes.totalPix') }}</dt>
+              <dd class="numero">
+                {{ i18n.t('avaliacoes.currency', { valor: a.valor_pix ?? '' }) }}
+              </dd>
+            </div>
+          } @else {
+            <div>
+              <dt>{{ i18n.t('avaliacoes.credit', { pct: a.percentual_credito }) }}</dt>
+              <dd class="numero">
+                {{ i18n.t('avaliacoes.currency', { valor: a.valor_credito ?? '' }) }}
+              </dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('avaliacoes.pix', { pct: a.percentual_pix }) }}</dt>
+              <dd class="numero">
+                {{ i18n.t('avaliacoes.currency', { valor: a.valor_pix ?? '' }) }}
+              </dd>
+            </div>
+          }
         </dl>
         @if (a.link_avaliacao) {
           <p class="interno">

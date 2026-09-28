@@ -33,6 +33,10 @@ export interface AvaliacaoRow {
   valor_bruto: string | null;
   valor_credito: string | null;
   valor_pix: string | null;
+  /** O acréscimo em reais, já somado nos dois valores acima. */
+  valor_extra: string | null;
+  /** Interna: o cliente vê o total, não a explicação. */
+  justificativa_extra: string | null;
   escolha: 'credito' | 'pix' | null;
   created_at: string;
   updated_at: string;
@@ -127,10 +131,15 @@ export class AvaliacaoService {
     valor: string,
     percentual_credito: number,
     percentual_pix: number,
+    valor_extra: string,
+    justificativa_extra: string,
   ) {
     return this.http.post<AvaliacaoDetalhe>(
       `${this.API}/${id}/avaliar`,
-      { link_avaliacao, valor, percentual_credito, percentual_pix },
+      {
+        link_avaliacao, valor, percentual_credito, percentual_pix,
+        valor_extra, justificativa_extra,
+      },
       { headers: this.headers() },
     );
   }

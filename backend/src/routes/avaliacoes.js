@@ -259,8 +259,14 @@ router.put('/:id', auth, requireAvaliador, validate(schemas.editarAvaliacao), as
  */
 router.post('/:id/avaliar', auth, requireAvaliador, validate(schemas.avaliarOS), asyncHandler(async (req, res) => {
   const os = await buscar(db, req.params.id);
-  const { link_avaliacao, valor, percentual_credito, percentual_pix } = req.body;
-  barrar(impedimentoParaAvaliar({ os, link: link_avaliacao, valor }));
+  const {
+    link_avaliacao, valor, percentual_credito, percentual_pix,
+    valor_extra, justificativa_extra,
+  } = req.body;
+  barrar(impedimentoParaAvaliar({
+    os, link: link_avaliacao, valor,
+    extra: valor_extra, justificativaExtra: justificativa_extra,
+  }));
 
   // O percentual é negociado por OS. Quem não manda nada fica com o padrão da
   // loja, que chega na linha pelo DEFAULT da coluna — e é ele, não uma constante
@@ -268,7 +274,10 @@ router.post('/:id/avaliar', auth, requireAvaliador, validate(schemas.avaliarOS),
   const v = valoresDaProposta(valor, {
     credito: percentual_credito ?? os.percentual_credito,
     pix: percentual_pix ?? os.percentual_pix,
+    extra: valor_extra,
   });
+  // Justificativa sem extra não tem o que explicar; a regra já garantiu o inverso.
+  const justificativa = v.valor_extra === '0.00' ? null : justificativa_extra?.trim() || null;
   // Uma OS que voltou para "para avaliar" perdeu o token; aqui ela ganha outro.
   const token = os.token_publico ?? tokenPublico();
 
@@ -277,11 +286,13 @@ router.post('/:id/avaliar', auth, requireAvaliador, validate(schemas.avaliarOS),
       `UPDATE avaliacoes
           SET link_avaliacao = ?, valor_bruto = ?,
               percentual_credito = ?, percentual_pix = ?,
+              valor_extra = ?, justificativa_extra = ?,
               valor_credito = ?, valor_pix = ?,
               token_publico = ?, status = 'avaliado'
         WHERE id = ?`,
       [link_avaliacao.trim(), v.valor_bruto,
        v.percentual_credito, v.percentual_pix,
+       v.valor_extra, justificativa,
        v.valor_credito, v.valor_pix, token, os.id]
     );
     await registrar(tx, {
@@ -289,7 +300,11 @@ router.post('/:id/avaliar', auth, requireAvaliador, validate(schemas.avaliarOS),
       // Com percentual negociável, o valor bruto sozinho não responde à pergunta
       // que aparece meses depois: "por que esta OS pagou 55%?".
       autor: req.user.id,
-      motivo: `R$ ${v.valor_bruto} · ${v.percentual_credito}% / ${v.percentual_pix}%`,
+      motivo:
+        `R$ ${v.valor_bruto} · ${v.percentual_credito}% / ${v.percentual_pix}%` +
+        // O extra entra no histórico com a justificativa: um acréscimo sem
+        // explicação é exatamente o que ninguém consegue defender meses depois.
+        (justificativa ? ` · extra R$ ${v.valor_extra} (${justificativa})` : ''),
     });
   });
 

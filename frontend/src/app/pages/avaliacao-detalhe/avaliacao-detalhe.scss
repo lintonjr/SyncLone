@@ -255,3 +255,38 @@ label {
     color: var(--danger);
   }
 }
+
+/**
+ * A quebra da proposta quando há extra.
+ *
+ * As parcelas (percentual e acréscimo) ficam apagadas e o total em destaque: o
+ * número que vale é o que vai ser pago, e as parcelas existem para explicar de
+ * onde ele veio — não para competir com ele. Sem essa diferença, quatro valores
+ * do mesmo peso na mesma grade é onde alguém paga a parcela em vez do total.
+ */
+.dados {
+  .parcela {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .total dt {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .total .numero {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  /* A justificativa é texto, não número: ocupa a linha inteira da grade. */
+  .extra-motivo {
+    grid-column: 1 / -1;
+
+    .interno {
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+  }
+}

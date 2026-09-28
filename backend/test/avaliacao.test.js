@@ -69,6 +69,7 @@ test('proposta: 60% de crédito e 50% de pix, arredondados em centavos', () => {
     valor_bruto: '300.00',
     percentual_credito: 60,
     percentual_pix: 50,
+    valor_extra: '0.00',
     valor_credito: '180.00',
     valor_pix: '150.00',
   });
@@ -355,4 +356,79 @@ test('excluirAvaliacao: confirmação obrigatória, motivo opcional no schema', 
   for (const ruim of [{}, { confirmacao: '' }, { confirmacao: '   ' }]) {
     assert.equal(excluirAvaliacao.safeParse(ruim).success, false, JSON.stringify(ruim));
   }
+});
+
+// --- O extra em reais, além do percentual ---
+
+test('extra: soma igual nas duas formas, depois do arredondamento', () => {
+  const v = valoresDaProposta(1000, { credito: 70, pix: 56, extra: '50' });
+  assert.equal(v.valor_extra, '50.00');
+  assert.equal(v.valor_credito, '750.00'); // 700 + 50
+  assert.equal(v.valor_pix, '610.00'); // 560 + 50
+
+  // O extra é acréscimo em reais, não percentual de si mesmo: os dois sobem o
+  // mesmo tanto, e a diferença entre eles continua sendo só a dos percentuais.
+  // Comparado em centavos inteiros — subtrair os reais em float é justamente o
+  // que este módulo existe para não fazer (16.68 - 0.01 dá 16.669999999999998).
+  const semExtra = valoresDaProposta(1000, { credito: 70, pix: 56 });
+  assert.equal(emCentavos(v.valor_credito) - emCentavos(semExtra.valor_credito), 5000);
+  assert.equal(emCentavos(v.valor_pix) - emCentavos(semExtra.valor_pix), 5000);
+});
+
+test('extra: a parte do percentual é sempre total menos extra, exata', () => {
+  // O caso que justifica a subtração em vez de recalcular: aqui o percentual cai
+  // num meio centavo. `total - extra` fecha; recalcular abriria espaço para a
+  // soma exibida não bater com o valor pago.
+  const v = valoresDaProposta('33.33', { credito: 60, pix: 50, extra: '0.01' });
+  assert.equal(v.valor_credito, '20.01'); // 20.00 + 0.01
+  assert.equal(v.valor_pix, '16.68'); // 16.67 (meio-para-cima) + 0.01
+  assert.equal(emCentavos(v.valor_pix) - emCentavos(v.valor_extra), 1667);
+});
+
+test('extra: ausente é zero; ilegível é proposta inválida, nunca zero calado', () => {
+  for (const vazio of [undefined, null, '']) {
+    assert.equal(valoresDaProposta(300, { extra: vazio }).valor_extra, '0.00', String(vazio));
+  }
+  // Valor digitado errado não pode virar zero em silêncio: o cliente receberia
+  // menos do que foi combinado e nada na tela diria por quê.
+  for (const ruim of ['abc', '-10', '10.999', '1,2,3']) {
+    assert.equal(valoresDaProposta(300, { extra: ruim }), null, ruim);
+  }
+});
+
+test('extra: exige justificativa acima de zero, e não a cobra em zero', () => {
+  const base = { os: os({ status: 'para_avaliar' }), link: 'https://p.local/x', valor: '300' };
+
+  assert.equal(impedimentoParaAvaliar({ ...base, extra: '50' }), 'api.justificativaDoExtra');
+  assert.equal(
+    impedimentoParaAvaliar({ ...base, extra: '50', justificativaExtra: '  ' }),
+    'api.justificativaDoExtra',
+  );
+  assert.equal(
+    impedimentoParaAvaliar({ ...base, extra: '50', justificativaExtra: 'cartas fora da lista' }),
+    null,
+  );
+
+  // Zero e ausente não têm o que explicar.
+  assert.equal(impedimentoParaAvaliar({ ...base, extra: '0' }), null);
+  assert.equal(impedimentoParaAvaliar({ ...base }), null);
+
+  // Sinal negativo é recusado pelo campo, não virado em desconto.
+  assert.equal(impedimentoParaAvaliar({ ...base, extra: '-5' }), 'api.extraInvalido');
+  assert.equal(impedimentoParaAvaliar({ ...base, extra: 'muito' }), 'api.extraInvalido');
+});
+
+test('avaliarOS: extra e justificativa são opcionais no schema', () => {
+  const { avaliarOS } = require('../src/schemas');
+  const base = { link_avaliacao: 'https://planilha.local/os1', valor: '300' };
+
+  assert.equal(avaliarOS.parse(base).valor_extra, undefined);
+  // Campo vazio é "não mandei", como no percentual.
+  assert.equal(avaliarOS.parse({ ...base, valor_extra: '' }).valor_extra, undefined);
+  assert.equal(avaliarOS.parse({ ...base, valor_extra: '50,00' }).valor_extra, '50,00');
+  assert.equal(avaliarOS.parse({ ...base, valor_extra: 50 }).valor_extra, 50);
+  assert.equal(
+    avaliarOS.parse({ ...base, justificativa_extra: ' raras ' }).justificativa_extra,
+    'raras',
+  );
 });

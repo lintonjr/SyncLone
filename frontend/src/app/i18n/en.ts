@@ -124,6 +124,7 @@ export const EN: Record<string, string> = {
   'api.emailInUse': 'Email already in use',
   'api.excluirDepoisDoPagamento':
     'This ticket is already past payment. Move the status back, one step at a time, before deleting.',
+  'api.extraInvalido': 'The extra must be an amount in reais, with no minus sign.',
   'api.escolhaInvalida': 'Choose store credit or pix.',
   'api.eventDeleteOwnerOnly': 'Only the event creator or the league owner can delete this event',
   'api.eventFinished': 'This event has already finished',
@@ -143,6 +144,7 @@ export const EN: Record<string, string> = {
   'api.leagueNotYours': 'You can only attach events to leagues you organize',
   'api.leagueOwnerAlready': 'The league owner already runs this league',
   'api.leagueOwnerOnly': 'Only the league owner can choose the team',
+  'api.justificativaDoExtra': 'Say why the offer has an extra.',
   'api.linkObrigatorio': 'Provide the appraisal link.',
   'api.motivoDaExclusao': 'Say why this ticket is being deleted.',
   'api.motivoObrigatorio': 'Say why the status is going back.',
@@ -232,6 +234,11 @@ export const EN: Record<string, string> = {
   'avaliacoes.evaluateConfirm': 'Finish appraisal',
   'avaliacoes.evaluateHelp':
     'The link and the amount are what turn the ticket into an offer — and create the address the person receives.',
+  'avaliacoes.extra': 'Extra',
+  'avaliacoes.extraHelp':
+    'An amount in reais on top of the percentage — for what the list missed: rare cards left out, a collection already sorted. It applies equally to store credit and Pix.',
+  'avaliacoes.extraReason': 'Why the extra',
+  'avaliacoes.extraReasonPlaceholder': 'What justifies the increase?',
   'avaliacoes.grossShort': 'R$ {valor}',
   'avaliacoes.grossValue': 'Appraised amount',
   'avaliacoes.history': 'History',
@@ -272,6 +279,8 @@ export const EN: Record<string, string> = {
     'The collections that came through the counter, and where each one stands.',
   'avaliacoes.title': 'Appraisals',
   'avaliacoes.toInsert': 'Mark as to list',
+  'avaliacoes.totalCredit': 'Total in store credit',
+  'avaliacoes.totalPix': 'Total in Pix',
   'badges.award': 'Award',
   'badges.awardPrompt': 'Email of the account receiving "{nome}":',
   'badges.awardedTo': 'Awarded to {n}',

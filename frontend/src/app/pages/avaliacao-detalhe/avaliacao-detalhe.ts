@@ -5,7 +5,7 @@ import { AvaliacaoService, AvaliacaoDetalhe } from '../../services/avaliacao';
 import { AuthService } from '../../services/auth';
 import { DialogService } from '../../services/dialog';
 import { I18nService, mensagemDeErro } from '../../i18n/i18n';
-import { parteDaProposta } from '../../lib/proposta';
+import { parteDaProposta, baseSemExtra } from '../../lib/proposta';
 
 /**
  * A ficha de uma OS: onde ela está, o que falta e por onde passou.
@@ -66,16 +66,63 @@ export class AvaliacaoDetalheComponent implements OnInit {
    * ninguém confirmar uma proposta sem ver quanto ela paga. Vazio quando a conta
    * ainda não fecha — melhor não mostrar nada do que mostrar um número errado.
    */
-  previaCredito = computed(() => parteDaProposta(this.valor(), this.creditoValido()));
-  previaPix = computed(() => parteDaProposta(this.valor(), this.pixValido()));
+  /**
+   * O acréscimo em reais e a explicação dele.
+   *
+   * Vazio é "não teve extra", e aí não há o que justificar. Acima de zero a
+   * justificativa passa a ser obrigatória — quem cobra isso é o servidor; aqui
+   * o botão já trava para o erro não vir só depois do clique.
+   */
+  extra = signal('');
+  justificativaExtra = signal('');
 
-  /** Só dá para concluir com link, valor e os dois percentuais em pé. */
+  /** Centavos do extra, ou null se o que está digitado não é um valor. */
+  private extraValido = computed(() => {
+    const t = this.extra().trim();
+    if (!t) return 0;
+    return /^\d+([.,]\d{1,2})?$/.test(t) ? Number(t.replace(',', '.')) : null;
+  });
+
+  temExtra = computed(() => (this.extraValido() ?? 0) > 0);
+
+  /**
+   * Quando mostrar o campo de justificativa.
+   *
+   * Também com texto já digitado, mesmo que o extra esteja ilegível no momento:
+   * escondê-lo faria a explicação que a pessoa acabou de escrever sumir da tela
+   * no meio de corrigir um dígito. O valor sobrevive no signal, mas quem está
+   * olhando não sabe disso.
+   */
+  mostrarJustificativa = computed(() => this.temExtra() || !!this.justificativaExtra().trim());
+
+  previaCredito = computed(() =>
+    parteDaProposta(this.valor(), this.creditoValido(), this.extra()),
+  );
+  previaPix = computed(() => parteDaProposta(this.valor(), this.pixValido(), this.extra()));
+
+  /** Só dá para concluir com link, valor, os dois percentuais e o extra em pé. */
   podeAvaliar = computed(
     () =>
       !!this.link().trim() &&
       !!this.previaCredito() &&
-      !!this.previaPix(),
+      !!this.previaPix() &&
+      this.extraValido() !== null &&
+      (!this.temExtra() || !!this.justificativaExtra().trim()),
   );
+
+  /**
+   * A quebra da proposta já gravada: a parte do percentual é `total - extra`.
+   *
+   * Subtração e não `bruto × pct` recalculado — assim a soma exibida sempre fecha
+   * com o valor que vai ser pago, sem depender de o arredondamento daqui
+   * continuar igual ao do servidor.
+   */
+  temExtraGravado = computed(() => {
+    const e = this.os()?.valor_extra;
+    return !!e && Number(e) > 0;
+  });
+  baseCredito = computed(() => baseSemExtra(this.os()?.valor_credito ?? null, this.os()?.valor_extra ?? null));
+  basePix = computed(() => baseSemExtra(this.os()?.valor_pix ?? null, this.os()?.valor_extra ?? null));
 
   /** O comprovante escolhido, se houver: ele é anexo, não requisito. */
   comprovante = signal<File | null>(null);
@@ -174,6 +221,8 @@ export class AvaliacaoDetalheComponent implements OnInit {
     this.link.set(os.link_avaliacao ?? '');
     this.pctCredito.set(String(os.percentual_credito));
     this.pctPix.set(String(os.percentual_pix));
+    this.extra.set('');
+    this.justificativaExtra.set('');
     this.carregando.set(false);
     this.ocupado.set(false);
     this.editando.set(false);
@@ -210,10 +259,15 @@ export class AvaliacaoDetalheComponent implements OnInit {
     if (!os || !this.podeAvaliar() || credito === null || pix === null) return;
     this.ocupado.set(true);
     this.erro.set('');
-    this.svc.avaliar(os.id, this.link().trim(), this.valor().trim(), credito, pix).subscribe({
-      next: (novo) => this.receber(novo),
-      error: (err) => this.falhou(err),
-    });
+    this.svc
+      .avaliar(
+        os.id, this.link().trim(), this.valor().trim(), credito, pix,
+        this.extra().trim(), this.justificativaExtra().trim(),
+      )
+      .subscribe({
+        next: (novo) => this.receber(novo),
+        error: (err) => this.falhou(err),
+      });
   }
 
   escolherComprovante(evento: Event) {

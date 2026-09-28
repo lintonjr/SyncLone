@@ -35,13 +35,36 @@ export const paraDecimal = (centavos: number): string =>
  * R$ 33,33 a 50% dá R$ 16,67 e não R$ 16,66 — a diferença é do cliente.
  * Devolve '' quando o valor ou o percentual ainda não formam uma proposta,
  * para a tela simplesmente não mostrar prévia em vez de mostrar "NaN".
+ *
+ * `extra` é o acréscimo em reais, somado **depois** do arredondamento e igual nas
+ * duas formas de pagamento — a mesma ordem do backend. Um extra ilegível devolve
+ * '' em vez de ser ignorado: a prévia não pode mostrar um total sem o acréscimo
+ * que a pessoa acabou de digitar.
  */
 export function parteDaProposta(
   valorBruto: string | number | null | undefined,
   percentual: number | null | undefined,
+  extra?: string | number | null,
 ): string {
   const bruto = emCentavos(valorBruto);
   if (bruto === null || bruto <= 0) return '';
   if (!Number.isInteger(percentual) || percentual! < 1 || percentual! > 100) return '';
-  return paraDecimal(Math.round((bruto * percentual!) / 100));
+  const acrescimo = extra === null || extra === undefined || extra === '' ? 0 : emCentavos(extra);
+  if (acrescimo === null) return '';
+  return paraDecimal(Math.round((bruto * percentual!) / 100) + acrescimo);
+}
+
+/**
+ * A quebra que a ficha mostra de uma proposta já gravada.
+ *
+ * A parte do percentual é `total - extra`, e não `bruto × pct` recalculado: os
+ * dois dariam o mesmo número hoje, mas a subtração é exata e não depende de o
+ * arredondamento daqui continuar igual ao do servidor. Assim a soma exibida
+ * sempre fecha com o valor que vai ser pago.
+ */
+export function baseSemExtra(total: string | null, extra: string | null): string {
+  const t = emCentavos(total);
+  const e = emCentavos(extra) ?? 0;
+  if (t === null) return '';
+  return paraDecimal(t - e);
 }

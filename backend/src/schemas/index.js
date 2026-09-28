@@ -233,6 +233,13 @@ const schemas = {
     // 0% não é proposta e acima de 100 a loja pagaria mais do que avaliou.
     percentual_credito: int(1, 100),
     percentual_pix: int(1, 100),
+    // Um acréscimo em reais, fora do percentual. Texto ou número pelo mesmo
+    // motivo de `valor`: "50,00" digitado no balcão chega como veio, e quem
+    // converte para centavos é lib/avaliacao.js, num lugar só.
+    valor_extra: blank(z.union([z.string().trim().max(20), z.number()]).optional()),
+    // Obrigatória quando o extra é maior que zero — e quem cobra isso é a regra
+    // pura, que sabe o valor convertido. Aqui só o tamanho.
+    justificativa_extra: blank(z.string().trim().max(1000).optional()),
   }),
 
   responderAvaliacao: z.object({

@@ -294,6 +294,11 @@ CREATE TABLE IF NOT EXISTS `avaliacoes` (
   `percentual_pix` tinyint unsigned NOT NULL DEFAULT 50,
   `valor_credito` decimal(10,2) DEFAULT NULL,
   `valor_pix` decimal(10,2) DEFAULT NULL,
+  -- Acréscimo em reais, já somado em valor_credito/valor_pix (que são o valor a
+  -- pagar). A parte do percentual é `valor - valor_extra`. Justificativa interna:
+  -- o cliente vê o total, não a explicação.
+  `valor_extra` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `justificativa_extra` text DEFAULT NULL,
   -- Trinta e dois caracteres aleatórios seguram a página sem login: não existe
   -- rota que liste por token, então quem não recebeu o link não acha a OS.
   `token_publico` char(32) DEFAULT NULL,
@@ -339,6 +344,7 @@ CREATE TABLE IF NOT EXISTS `avaliacao_exclusoes` (
   `valor_bruto` decimal(10,2) DEFAULT NULL,
   `percentual_credito` tinyint unsigned DEFAULT NULL,
   `percentual_pix` tinyint unsigned DEFAULT NULL,
+  `valor_extra` decimal(10,2) DEFAULT NULL,
   `escolha` enum('credito','pix') DEFAULT NULL,
   `autor_id` varchar(36) NOT NULL,
   `motivo` text DEFAULT NULL,

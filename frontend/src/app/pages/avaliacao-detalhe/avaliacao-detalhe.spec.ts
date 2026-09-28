@@ -27,6 +27,8 @@ function umaOS(over: Record<string, unknown> = {}) {
     link_avaliacao: null,
     percentual_credito: 60,
     percentual_pix: 50,
+    valor_extra: '0.00',
+    justificativa_extra: null,
     token_publico: null,
     chave_pix: null,
     comprovante: null,
@@ -112,6 +114,8 @@ describe('AvaliacaoDetalheComponent', () => {
       valor: '300',
       percentual_credito: 60,
       percentual_pix: 50,
+      valor_extra: '',
+      justificativa_extra: '',
     });
     req.flush(avaliada());
     fixture.detectChanges();
@@ -148,6 +152,8 @@ describe('AvaliacaoDetalheComponent', () => {
       valor: '200',
       percentual_credito: 55,
       percentual_pix: 45,
+      valor_extra: '',
+      justificativa_extra: '',
     });
   });
 
@@ -424,5 +430,117 @@ describe('AvaliacaoDetalheComponent', () => {
     // Nulo é o caso real de quem abriu e depois teve a conta anonimizada.
     const semAutor = await montar(umaOS({ criada_por_nome: null }));
     expect(semAutor.html.querySelector('.sub')?.textContent?.trim()).toBe('Aberta por —');
+  });
+
+  // --- O extra em reais ---
+
+  const preencherProposta = (html: HTMLElement, valor = '1000') => {
+    const set = (id: string, v: string) => {
+      const el = html.querySelector(id) as HTMLInputElement;
+      el.value = v;
+      el.dispatchEvent(new Event('input'));
+    };
+    set('#av-link', 'https://planilha.local/os1');
+    set('#av-valor', valor);
+    return set;
+  };
+
+  it('extra: a justificativa só aparece com acréscimo, e tranca o botão sem ela', async () => {
+    const { fixture, html } = await montar();
+    const set = preencherProposta(html);
+    fixture.detectChanges();
+
+    // Sem extra não há o que explicar, e dá para concluir.
+    expect(html.querySelector('#av-extra-motivo')).toBeFalsy();
+    expect(botao(html, 'Concluir avaliação').disabled).toBe(false);
+
+    set('#av-extra', '50');
+    fixture.detectChanges();
+    expect(html.querySelector('#av-extra-motivo')).toBeTruthy();
+    expect(botao(html, 'Concluir avaliação').disabled).toBe(true);
+
+    set('#av-extra-motivo', 'cartas raras fora da lista');
+    fixture.detectChanges();
+    expect(botao(html, 'Concluir avaliação').disabled).toBe(false);
+  });
+
+  it('extra: a prévia soma o acréscimo nas duas formas', async () => {
+    const { fixture, html } = await montar();
+    const set = preencherProposta(html);
+    set('#av-pct-credito', '70');
+    set('#av-pct-pix', '56');
+    fixture.detectChanges();
+    expect([...html.querySelectorAll('.percentuais .previa')].map((e) => e.textContent?.trim()))
+      .toEqual(['R$ 700.00', 'R$ 560.00']);
+
+    set('#av-extra', '50');
+    fixture.detectChanges();
+    expect([...html.querySelectorAll('.percentuais .previa')].map((e) => e.textContent?.trim()))
+      .toEqual(['R$ 750.00', 'R$ 610.00']);
+  });
+
+  it('extra: valor ilegível apaga a prévia e tranca — nunca some como zero', async () => {
+    const { fixture, html } = await montar();
+    const set = preencherProposta(html, '300');
+    for (const ruim of ['abc', '-10', '10.999']) {
+      set('#av-extra', ruim);
+      fixture.detectChanges();
+      expect([ruim, botao(html, 'Concluir avaliação').disabled]).toEqual([ruim, true]);
+      expect([ruim, html.querySelectorAll('.percentuais .previa')[0].textContent?.trim()])
+        .toEqual([ruim, '']);
+    }
+  });
+
+  it('extra: vai no corpo junto da justificativa', async () => {
+    const { fixture, http, html } = await montar();
+    const set = preencherProposta(html);
+    set('#av-extra', '50,00');
+    fixture.detectChanges();
+    set('#av-extra-motivo', 'coleção já organizada');
+    fixture.detectChanges();
+
+    botao(html, 'Concluir avaliação').click();
+    expect(http.expectOne(`${environment.apiUrl}/avaliacoes/os1/avaliar`).request.body).toEqual({
+      link_avaliacao: 'https://planilha.local/os1',
+      valor: '1000',
+      percentual_credito: 60,
+      percentual_pix: 50,
+      valor_extra: '50,00',
+      justificativa_extra: 'coleção já organizada',
+    });
+  });
+
+  it('proposta com extra: a quebra fecha com o total que vai ser pago', async () => {
+    const { html } = await montar(
+      avaliada({
+        percentual_credito: 70,
+        percentual_pix: 56,
+        valor_bruto: '1401.29',
+        valor_extra: '50.00',
+        justificativa_extra: 'três raras fora da lista',
+        valor_credito: '1030.90',
+        valor_pix: '834.72',
+      }),
+    );
+
+    const numeros = [...html.querySelectorAll('.dados .numero')].map((e) => e.textContent?.trim());
+    // Bruto, as duas parcelas, o extra, e os dois totais.
+    expect(numeros).toEqual([
+      'R$ 1401.29',
+      'R$ 980.90',
+      'R$ 784.72',
+      '+ R$ 50.00',
+      'R$ 1030.90',
+      'R$ 834.72',
+    ]);
+    // A justificativa é interna, mas aparece para a equipe na ficha.
+    expect(html.querySelector('.extra-motivo')?.textContent).toContain('três raras fora da lista');
+  });
+
+  it('proposta sem extra: segue com dois valores, sem linha de total', async () => {
+    const { html } = await montar(avaliada());
+    const numeros = [...html.querySelectorAll('.dados .numero')].map((e) => e.textContent?.trim());
+    expect(numeros).toEqual(['R$ 300.00', 'R$ 180.00', 'R$ 150.00']);
+    expect(html.querySelector('.extra-motivo')).toBeFalsy();
   });
 });

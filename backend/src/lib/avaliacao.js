@@ -112,15 +112,33 @@ const paraDecimal = (centavos) =>
  * R$ 16,66 — a diferença é do cliente. Os percentuais entram como argumento e
  * são gravados junto: mudar a política da loja no ano que vem não pode reescrever
  * o que foi oferecido hoje.
+ *
+ * O `extra` é um acréscimo em reais, **não** um percentual: entra depois do
+ * arredondamento e igual nas duas formas de pagamento, porque o cliente leva o
+ * acréscimo qualquer que seja a escolha dele.
+ *
+ * `valor_credito` e `valor_pix` saem daqui **já com o extra somado** — eles são o
+ * valor a pagar, não a parte do percentual. É de propósito: nove lugares leem
+ * esses dois campos, um deles é a instrução de quanto dinheiro entregar, e somar
+ * o extra em cada um deles seria esperar que ninguém esquecesse. A parte do
+ * percentual, quando a tela precisa mostrar a quebra, é `valor - extra`:
+ * subtração exata, sem arredondamento, sempre fechando com o total.
  */
-function valoresDaProposta(valorBruto, { credito = 60, pix = 50 } = {}) {
+function valoresDaProposta(valorBruto, { credito = 60, pix = 50, extra } = {}) {
   const bruto = emCentavos(valorBruto);
   if (bruto === null || bruto <= 0) return null;
-  const parte = (pct) => Math.round((bruto * pct) / 100);
+
+  // Ausente é zero; presente e ilegível é proposta inválida. O que não pode é um
+  // valor digitado errado virar zero em silêncio e o cliente receber menos.
+  const acrescimo = extra === null || extra === undefined || extra === '' ? 0 : emCentavos(extra);
+  if (acrescimo === null) return null;
+
+  const parte = (pct) => Math.round((bruto * pct) / 100) + acrescimo;
   return {
     valor_bruto: paraDecimal(bruto),
     percentual_credito: credito,
     percentual_pix: pix,
+    valor_extra: paraDecimal(acrescimo),
     valor_credito: paraDecimal(parte(credito)),
     valor_pix: paraDecimal(parte(pix)),
   };
@@ -137,12 +155,24 @@ const podeAvaliar = ({ role, avaliador } = {}) => role === 'admin' || !!avaliado
  * O link e o valor são obrigatórios juntos: é o par que transforma "recebi uma
  * caixa de cartas" em uma proposta que alguém vai aceitar ou recusar.
  */
-function impedimentoParaAvaliar({ os, link, valor }) {
+function impedimentoParaAvaliar({ os, link, valor, extra, justificativaExtra }) {
   if (!os) return 'api.avaliacaoNaoEncontrada';
   if (os.status !== 'para_avaliar') return 'api.statusInvalido';
   if (!String(link ?? '').trim()) return 'api.linkObrigatorio';
-  const valores = valoresDaProposta(valor);
-  if (!valores) return 'api.valorInvalido';
+  if (!valoresDaProposta(valor)) return 'api.valorInvalido';
+
+  // O extra é conferido à parte para o erro dizer qual campo está errado: os dois
+  // são dinheiro digitado no balcão, e "valor inválido" não ajudaria a achar qual.
+  const temExtra = !(extra === null || extra === undefined || extra === '');
+  if (temExtra) {
+    const acrescimo = emCentavos(extra);
+    // `emCentavos` já recusa sinal negativo: o campo é acréscimo, não ajuste.
+    if (acrescimo === null) return 'api.extraInvalido';
+    // Um acréscimo sem explicação é um número que ninguém sabe justificar depois.
+    if (acrescimo > 0 && !String(justificativaExtra ?? '').trim()) {
+      return 'api.justificativaDoExtra';
+    }
+  }
   return null;
 }
 

@@ -126,6 +126,7 @@ export const PT_BR: Record<string, string> = {
   'api.emailInUse': 'Este e-mail já está em uso',
   'api.excluirDepoisDoPagamento':
     'Esta OS já passou do pagamento. Volte o status, um passo por vez, antes de excluir.',
+  'api.extraInvalido': 'O extra precisa ser um valor em reais, sem sinal negativo.',
   'api.escolhaInvalida': 'Escolha crédito ou pix.',
   'api.eventDeleteOwnerOnly': 'Só quem criou o evento ou o dono da liga pode excluí-lo',
   'api.eventFinished': 'Este evento já foi encerrado',
@@ -144,6 +145,7 @@ export const PT_BR: Record<string, string> = {
   'api.leagueNotYours': 'Você só pode vincular eventos a ligas que você organiza',
   'api.leagueOwnerAlready': 'O dono da liga já cuida dela',
   'api.leagueOwnerOnly': 'Só o dono da liga escolhe quem está no time',
+  'api.justificativaDoExtra': 'Diga por que a proposta tem um extra.',
   'api.linkObrigatorio': 'Informe o link da avaliação.',
   'api.motivoDaExclusao': 'Diga por que esta OS está sendo excluída.',
   'api.motivoObrigatorio': 'Diga o motivo de voltar o status.',
@@ -233,6 +235,11 @@ export const PT_BR: Record<string, string> = {
   'avaliacoes.evaluateConfirm': 'Concluir avaliação',
   'avaliacoes.evaluateHelp':
     'O link e o valor são o que transforma a OS em proposta — e criam o endereço que a pessoa recebe.',
+  'avaliacoes.extra': 'Extra',
+  'avaliacoes.extraHelp':
+    'Acréscimo em reais, fora do percentual — para o que a planilha não pegou: cartas raras fora da lista, coleção já organizada. Entra igual no crédito e no pix.',
+  'avaliacoes.extraReason': 'Por que o extra',
+  'avaliacoes.extraReasonPlaceholder': 'O que justifica o acréscimo?',
   'avaliacoes.grossShort': 'R$ {valor}',
   'avaliacoes.grossValue': 'Valor avaliado',
   'avaliacoes.history': 'Histórico',
@@ -272,6 +279,8 @@ export const PT_BR: Record<string, string> = {
   'avaliacoes.subtitle': 'As coleções que passaram pelo balcão, e em que pé está cada uma.',
   'avaliacoes.title': 'Avaliações',
   'avaliacoes.toInsert': 'Marcar para inserir',
+  'avaliacoes.totalCredit': 'Total no crédito',
+  'avaliacoes.totalPix': 'Total no pix',
   'badges.award': 'Entregar',
   'badges.awardPrompt': 'E-mail da conta que vai receber "{nome}":',
   'badges.awardedTo': 'Entregue a {n}',

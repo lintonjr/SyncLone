@@ -1,4 +1,4 @@
-import { emCentavos, parteDaProposta } from './proposta';
+import { emCentavos, parteDaProposta, baseSemExtra } from './proposta';
 
 /**
  * Os casos são os mesmos de `backend/test/avaliacao.test.js` de propósito: a
@@ -41,5 +41,33 @@ describe('proposta — a prévia combina com o servidor', () => {
     for (const pct of [0, 101, 60.5, null, undefined, NaN]) {
       expect(parteDaProposta(300, pct)).toBe('');
     }
+  });
+
+  it('extra: soma igual nas duas formas, depois do arredondamento', () => {
+    expect(parteDaProposta(1000, 70, '50')).toBe('750.00');
+    expect(parteDaProposta(1000, 56, '50')).toBe('610.00');
+    // Mesmos números do backend: 33,33 a 50% = 16,67 e o centavo entra depois.
+    expect(parteDaProposta('33.33', 50, '0.01')).toBe('16.68');
+    expect(parteDaProposta('33.33', 60, '0.01')).toBe('20.01');
+  });
+
+  it('extra: ausente é zero; ilegível apaga a prévia em vez de ignorar o campo', () => {
+    for (const vazio of ['', null, undefined]) {
+      expect(parteDaProposta(300, 60, vazio)).toBe('180.00');
+    }
+    // A prévia não pode mostrar um total sem o acréscimo que acabou de ser digitado.
+    for (const ruim of ['abc', '-10', '10.999']) {
+      expect(parteDaProposta(300, 60, ruim)).toBe('');
+    }
+  });
+
+  it('baseSemExtra: a parte do percentual sai por subtração exata', () => {
+    expect(baseSemExtra('750.00', '50.00')).toBe('700.00');
+    // O caso que a subtração resolve e o float não: 16.68 - 0.01 em Number daria
+    // 16.669999999999998, e a quebra exibida não fecharia com o total.
+    expect(baseSemExtra('16.68', '0.01')).toBe('16.67');
+    expect(baseSemExtra('180.00', '0.00')).toBe('180.00');
+    expect(baseSemExtra('180.00', null)).toBe('180.00');
+    expect(baseSemExtra(null, '50.00')).toBe('');
   });
 });
