@@ -16,6 +16,7 @@ function umaLiga(over: Record<string, unknown> = {}) {
     owner_id: 'dona',
     owner_name: 'Dona da Liga',
     playoff_counts: 1,
+    pontos_extra: 0,
     created_at: '2026-09-01T00:00:00.000Z',
     events: [],
     standings: [],
@@ -26,6 +27,9 @@ function umaLiga(over: Record<string, unknown> = {}) {
 
 /** Monta a página da liga já respondida, com `usuarioId` logado (ou ninguém). */
 async function montar(usuarioId: string | null, liga = umaLiga()) {
+  // Alguns testes montam a página mais de uma vez (com e sem bônus), e o TestBed
+  // recusa ser configurado depois de instanciado.
+  TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
   });
@@ -127,3 +131,48 @@ describe('LeagueDetailComponent — time da liga', () => {
     );
   });
 });
+
+describe('LeagueDetailComponent — ponto extra por torneio', () => {
+  const classificacao = [
+    // Jogou 3, deu drop em 1: o bônus conta os 4, os pontos de mesa só os 3.
+    { user_id: 'ana', display_name: 'Ana', points: 33, wins: 7, losses: 2, draws: 0, events_played: 3, events_bonus: 4, bonus: 12 },
+    { user_id: 'bia', display_name: 'Bia', points: 24, wins: 6, losses: 3, draws: 0, events_played: 3, events_bonus: 3, bonus: 9 },
+  ];
+
+  it('sem bônus, a tabela é a de antes: nenhuma coluna a mais', async () => {
+    const { html } = await montar(null, umaLiga({
+      pontos_extra: 0,
+      standings: [{ ...classificacao[1], bonus: 0, events_bonus: 0, points: 15 }],
+    }));
+
+    const cabecalhos = [...html.querySelectorAll('.standings-table th')].map((t) => t.textContent?.trim());
+    expect(cabecalhos).toEqual(['Posição', 'Jogador', 'Eventos', 'W', 'L', 'D', 'Pts']);
+    expect(html.querySelector('.bonus-cell')).toBeFalsy();
+  });
+
+  it('com bônus, a coluna aparece e o total já traz o bônus dentro', async () => {
+    const { html } = await montar(null, umaLiga({ pontos_extra: 3, standings: classificacao }));
+
+    const cabecalhos = [...html.querySelectorAll('.standings-table th')].map((t) => t.textContent?.trim());
+    expect(cabecalhos).toEqual(['Posição', 'Jogador', 'Eventos', 'W', 'L', 'D', 'Bônus', 'Pts']);
+
+    const bonus = [...html.querySelectorAll('.bonus-cell')].map((c) => c.textContent?.trim());
+    expect(bonus).toEqual(['+12', '+9']);
+
+    // `points` é o total: quem lê a tabela vê o número que vale, não a parte de mesa.
+    const pontos = [...html.querySelectorAll('.standings-table tbody tr')]
+      .map((tr) => tr.querySelector('td:last-child')?.textContent?.trim());
+    expect(pontos).toEqual(['33', '24']);
+  });
+
+  it('o detalhe do bônus diz de quantos torneios ele veio, drop incluído', async () => {
+    const { html } = await montar(null, umaLiga({ pontos_extra: 3, standings: classificacao }));
+
+    // Ana aparece com 3 na coluna Eventos e 4 torneios no bônus: ela deu drop em
+    // um. É por isso que o título existe — senão a conta não fecharia na tela.
+    const primeira = html.querySelectorAll('.standings-table tbody tr')[0];
+    expect(primeira.querySelector('td[data-rotulo="Eventos"]')?.textContent?.trim()).toBe('3');
+    expect(primeira.querySelector('.bonus-cell')?.getAttribute('title')).toBe('4 torneio(s) × 3 ponto(s)');
+  });
+});
+

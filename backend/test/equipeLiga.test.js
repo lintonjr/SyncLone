@@ -150,3 +150,32 @@ test('time: admin remove qualquer um; co-organizador continua só podendo sair',
   assert.equal(podeRemoverDoTime({ ...coOrg, alvoId: 'bia' }), true);
   assert.equal(podeRemoverDoTime({ ...coOrg, alvoId: 'davi' }), false);
 });
+
+// --- Ponto extra por torneio participado (schema da liga) ---
+
+test('liga: pontos_extra é opcional e vai de 0 a 99', () => {
+  const { createLeague, updateLeague } = require('../src/schemas');
+  const base = { name: 'Liga de Sexta' };
+
+  // Ausente é "não mandei"; a rota resolve para 0 (desligado) ou mantém o atual.
+  assert.equal(createLeague.parse(base).pontos_extra, undefined);
+  // Campo vazio de formulário também: `blank` o trata antes do número.
+  assert.equal(createLeague.parse({ ...base, pontos_extra: '' }).pontos_extra, undefined);
+
+  // Zero é valor legítimo: é como se desliga o bônus.
+  assert.equal(createLeague.parse({ ...base, pontos_extra: 0 }).pontos_extra, 0);
+  // Chega como número mesmo vindo string de um formulário.
+  assert.equal(createLeague.parse({ ...base, pontos_extra: '3' }).pontos_extra, 3);
+  assert.equal(createLeague.parse({ ...base, pontos_extra: 99 }).pontos_extra, 99);
+  assert.equal(updateLeague.parse({ pontos_extra: '10' }).pontos_extra, 10);
+
+  // O teto protege contra o dedo escorregar: 1000 em vez de 1 viraria a liga de
+  // cabeça para baixo. Negativo e fracionário não são bônus.
+  for (const ruim of [100, 1000, -1, 2.5, 'três']) {
+    assert.equal(
+      createLeague.safeParse({ ...base, pontos_extra: ruim }).success,
+      false,
+      `pontos_extra ${ruim} não deveria passar`,
+    );
+  }
+});

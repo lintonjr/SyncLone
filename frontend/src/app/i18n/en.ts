@@ -549,6 +549,8 @@ export const EN: Record<string, string> = {
   'home.search': 'Search by name, game, or description...',
   'home.upcoming': 'UPCOMING EVENTS',
   'league.addOrganizer': 'Add',
+  'league.bonus': 'Bonus',
+  'league.bonusDetail': '{n} tournament(s) × {pts} point(s)',
   'league.cut': 'Cut',
   'league.deck': 'Deck',
   'league.deckMatches': 'Matches',
@@ -558,6 +560,13 @@ export const EN: Record<string, string> = {
     'What was played across this league, most played first. Includes guests without an account and follows the same playoff rule as the standings.',
   'league.events': 'Events',
   'league.eventsCount': '{n} tournament(s)',
+  'league.extraPoints': 'Extra points per tournament played',
+  'league.extraPointsHelp':
+    'When on, every player with an account earns the points below for each league tournament they signed up for — drops included. It only affects league scoring: each tournament’s own standings stay the same.',
+  'league.extraPointsLabel': 'Extra points per tournament (1 to 99)',
+  'league.extraPointsRequired': 'Say how many extra points, from 1 to 99 — or clear the checkbox.',
+  'league.extraPointsRetroactive':
+    'It applies retroactively: league scoring is recomputed on every load, so tournaments already played count right away.',
   'league.leaveTeam': 'Leave team',
   'league.name': 'League Name',
   'league.namePlaceholder': 'e.g. Friday Night Commander League',

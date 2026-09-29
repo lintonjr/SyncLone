@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS `leagues` (
   `name` varchar(100) NOT NULL,
   `owner_id` varchar(36) NOT NULL,
   `playoff_counts` tinyint(1) NOT NULL DEFAULT '1',
+  -- Ponto extra por torneio participado, somado só na pontuação da liga (nunca
+  -- na classificação de um torneio). Zero é desligado; o checkbox da tela é
+  -- derivado de `> 0`, para não haver um booleano que discorde do número.
+  `pontos_extra` int unsigned NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `owner_id` (`owner_id`),

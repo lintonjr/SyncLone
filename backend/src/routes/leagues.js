@@ -60,16 +60,54 @@ router.get('/:id', asyncHandler(async (req, res) => {
     [req.params.id]
   );
 
-  // user_id -> { user_id, display_name, points, wins, losses, draws }
+  /**
+   * Ponto extra por torneio participado, só na pontuação da liga.
+   *
+   * Zero é desligado, e é o DEFAULT da coluna: liga que não usa o recurso soma
+   * exatamente como somava antes. `computeStandings` não sabe que isto existe —
+   * o bônus nunca aparece na classificação de um torneio.
+   */
+  const pontosExtra = Number(league.pontos_extra) || 0;
+
+  // user_id -> { user_id, display_name, points, wins, losses, draws, ... }
   const totals = new Map();
+  const linha = (userId, displayName) => {
+    const cur = totals.get(userId) ?? {
+      user_id: userId, display_name: displayName,
+      points: 0, wins: 0, losses: 0, draws: 0,
+      // Torneios cuja pontuação de mesa entrou na conta (só quem terminou ativo).
+      events_played: 0,
+      // Torneios em que se inscreveu, drop incluído: é este que o bônus multiplica.
+      events_bonus: 0,
+      bonus: 0,
+    };
+    totals.set(userId, cur);
+    return cur;
+  };
+
+  /** A pontuação de mesa de um torneio. Só para quem terminou ativo. */
   const bump = (userId, displayName, { points, wins, losses, draws }) => {
-    const cur = totals.get(userId) ?? { user_id: userId, display_name: displayName, points: 0, wins: 0, losses: 0, draws: 0, events_played: 0 };
+    const cur = linha(userId, displayName);
     cur.points += points;
     cur.wins += wins;
     cur.losses += losses;
     cur.draws += draws;
     cur.events_played += 1;
-    totals.set(userId, cur);
+  };
+
+  /**
+   * O bônus de presença de um torneio.
+   *
+   * Separado do `bump` porque a regra é outra: aqui vale ter se inscrito, mesmo
+   * tendo dado drop no meio — foi a decisão de produto ("inscreveu-se, ganha").
+   * Chamado só quando `pontosExtra > 0`, e é isso que mantém a tabela idêntica à
+   * de antes nas ligas que não usam o recurso: sem bônus, quem só deu drop não
+   * ganha linha nenhuma.
+   */
+  const bonificar = (userId, displayName) => {
+    const cur = linha(userId, displayName);
+    cur.events_bonus += 1;
+    cur.bonus += pontosExtra;
   };
 
   // Duas queries para a liga inteira, não duas por evento: em liga com dezenas de
@@ -149,13 +187,22 @@ router.get('/:id', asyncHandler(async (req, res) => {
     }
     for (const p of ranked) {
       // Convidado sem conta existe só dentro do próprio torneio: não há a quem
-      // creditar entre eventos diferentes. Quem deu drop também fica de fora —
-      // é a regra que já valia aqui, e mudá-la é decisão de produto, não efeito
-      // colateral de trocar quem faz a conta.
-      if (!p.user_id || p.status !== 'active') continue;
+      // creditar entre eventos diferentes — nem pontos, nem bônus.
+      if (!p.user_id) continue;
+
+      // O bônus premia presença, então drop conta. A pontuação de mesa, não: essa
+      // regra é anterior e continua valendo.
+      if (pontosExtra > 0) bonificar(p.user_id, p.display_name);
+      if (p.status !== 'active') continue;
       bump(p.user_id, p.display_name, p);
     }
   }
+
+  // `points` sai daqui como o total, bônus dentro. É o campo que a tela lê e o
+  // que ordena a tabela: deixá-lo como "só as mesas" e somar o bônus na exibição
+  // seria esperar que ninguém esquecesse, e a ordem é justamente onde esquecer
+  // aparece como ranking errado. A quebra fica em `bonus`.
+  for (const linhaTotal of totals.values()) linhaTotal.points += linhaTotal.bonus;
 
   const standings = [...totals.values()].sort((a, b) => b.points - a.points || b.wins - a.wins);
 
@@ -167,11 +214,13 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
 // Auth: create league (organizer only)
 router.post('/', auth, requireOrganizer, validate(schemas.createLeague), asyncHandler(async (req, res) => {
-  const { name, playoff_counts } = req.body;
+  const { name, playoff_counts, pontos_extra } = req.body;
   const id = uuidv4();
   await db.run(
-    'INSERT INTO leagues (id, name, owner_id, playoff_counts) VALUES (?, ?, ?, ?)',
-    [id, name, req.user.id, playoff_counts === undefined ? 1 : (parseBool(playoff_counts) ? 1 : 0)]
+    'INSERT INTO leagues (id, name, owner_id, playoff_counts, pontos_extra) VALUES (?, ?, ?, ?, ?)',
+    [id, name, req.user.id,
+     playoff_counts === undefined ? 1 : (parseBool(playoff_counts) ? 1 : 0),
+     pontos_extra ?? 0]
   );
   res.status(201).json(await db.get('SELECT * FROM leagues WHERE id = ?', [id]));
 }));
@@ -185,10 +234,12 @@ router.put('/:id', auth, validate(schemas.updateLeague), asyncHandler(async (req
     throw new HttpError(403, 'Forbidden', 'api.forbidden');
   }
 
-  const { name, playoff_counts } = req.body;
-  await db.run('UPDATE leagues SET name = ?, playoff_counts = ? WHERE id = ?', [
+  const { name, playoff_counts, pontos_extra } = req.body;
+  await db.run('UPDATE leagues SET name = ?, playoff_counts = ?, pontos_extra = ? WHERE id = ?', [
     name || league.name,
     playoff_counts !== undefined ? (parseBool(playoff_counts) ? 1 : 0) : league.playoff_counts,
+    // Zero é um valor legítimo aqui (desligar o bônus), então `??` e não `||`.
+    pontos_extra ?? league.pontos_extra,
     req.params.id,
   ]);
   res.json(await db.get('SELECT * FROM leagues WHERE id = ?', [req.params.id]));

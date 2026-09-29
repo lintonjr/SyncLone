@@ -279,11 +279,16 @@ const schemas = {
   createLeague: z.object({
     name: z.string().trim().min(1).max(100),
     playoff_counts: boolish,
+    // Ponto extra por torneio participado. Zero desliga; 1–99 é a faixa útil, e o
+    // teto existe contra o dedo escorregar: 1000 em vez de 1 viraria a liga de
+    // cabeça para baixo antes de alguém notar.
+    pontos_extra: int(0, 99),
   }),
 
   updateLeague: z.object({
     name: blank(z.string().trim().min(1).max(100).optional()),
     playoff_counts: boolish,
+    pontos_extra: int(0, 99),
   }),
 
   // Co-organizador: pela conta, e ela precisa já existir e já organizar.

@@ -550,6 +550,8 @@ export const PT_BR: Record<string, string> = {
   'home.search': 'Buscar por nome, jogo ou descrição...',
   'home.upcoming': 'PRÓXIMOS EVENTOS',
   'league.addOrganizer': 'Adicionar',
+  'league.bonus': 'Bônus',
+  'league.bonusDetail': '{n} torneio(s) × {pts} ponto(s)',
   'league.cut': 'Corte',
   'league.deck': 'Deck',
   'league.deckMatches': 'Partidas',
@@ -559,6 +561,13 @@ export const PT_BR: Record<string, string> = {
     'O que foi jogado nos torneios desta liga, do mais jogado para o menos. Conta convidados sem conta e segue a mesma regra de mata-mata da classificação.',
   'league.events': 'Eventos',
   'league.eventsCount': '{n} torneio(s)',
+  'league.extraPoints': 'Ponto extra por torneio participado',
+  'league.extraPointsHelp':
+    'Ligado, cada jogador com conta ganha os pontos abaixo por torneio da liga em que se inscreveu — drop incluído. Vale só na pontuação da liga: a classificação de cada torneio não muda.',
+  'league.extraPointsLabel': 'Pontos extras por torneio (1 a 99)',
+  'league.extraPointsRequired': 'Diga quantos pontos extras, de 1 a 99 — ou desmarque a opção.',
+  'league.extraPointsRetroactive':
+    'Vale para trás: a pontuação da liga é recalculada a cada carregamento, então os torneios já realizados entram na conta na hora.',
   'league.leaveTeam': 'Sair do time',
   'league.name': 'Nome da liga',
   'league.namePlaceholder': 'ex.: Liga Commander de Sexta',

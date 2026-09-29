@@ -47,6 +47,11 @@
               <th>W</th>
               <th>L</th>
               <th>D</th>
+              <!-- A coluna do bônus só existe quando a liga usa o recurso: numa
+                   liga sem ponto extra ela seria uma coluna de zeros. -->
+              @if (league()!.pontos_extra > 0) {
+                <th>{{ i18n.t('league.bonus') }}</th>
+              }
               <th>{{ i18n.t('common.points') }}</th>
             </tr>
           </thead>
@@ -65,6 +70,22 @@
                 <td data-rotulo="W">{{ s.wins }}</td>
                 <td data-rotulo="L">{{ s.losses }}</td>
                 <td data-rotulo="D">{{ s.draws }}</td>
+                @if (league()!.pontos_extra > 0) {
+                  <!-- O título diz de onde veio a conta: o número de torneios do
+                       bônus inclui drops, então pode divergir da coluna Eventos. -->
+                  <td
+                    data-rotulo="Bônus"
+                    class="bonus-cell"
+                    [title]="
+                      i18n.t('league.bonusDetail', {
+                        n: s.events_bonus,
+                        pts: league()!.pontos_extra,
+                      })
+                    "
+                  >
+                    +{{ s.bonus }}
+                  </td>
+                }
                 <td data-rotulo="Pts">
                   <strong>{{ s.points }}</strong>
                 </td>

@@ -336,3 +336,17 @@
     flex: 1 1 100%;
   }
 }
+
+/**
+ * A coluna do bônus.
+ *
+ * Apagada e menor que os pontos: ela explica de onde vem parte do total, não
+ * compete com ele. Dois números do mesmo peso lado a lado é onde alguém lê o
+ * bônus como se fosse a pontuação.
+ */
+.bonus-cell {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+}

@@ -30,6 +30,37 @@
     </div>
     <p class="modal-sub">{{ i18n.t('league.playoffCountsHelp') }}</p>
 
+    <!-- Ponto extra por presença: a caixa abre o campo, e o campo é obrigatório
+         enquanto ela estiver marcada — marcado com zero não é "ligado". -->
+    <div class="checkboxes">
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          [checked]="pontoExtraLigado()"
+          (change)="alternarPontoExtra($any($event.target).checked)"
+        />
+        {{ i18n.t('league.extraPoints') }}
+      </label>
+    </div>
+    <p class="modal-sub">{{ i18n.t('league.extraPointsHelp') }}</p>
+
+    @if (pontoExtraLigado()) {
+      <div class="form-field extra-field">
+        <label for="pontos-extra">{{ i18n.t('league.extraPointsLabel') }}</label>
+        <input
+          id="pontos-extra"
+          type="number"
+          inputmode="numeric"
+          min="1"
+          max="99"
+          step="1"
+          [value]="pontosExtra()"
+          (input)="pontosExtra.set($any($event.target).value)"
+        />
+        <p class="modal-sub">{{ i18n.t('league.extraPointsRetroactive') }}</p>
+      </div>
+    }
+
     <button class="btn btn-primary" (click)="submit()" [disabled]="loading()">
       @if (loading()) {
         <span class="spinner-sm"></span>

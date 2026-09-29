@@ -8,6 +8,8 @@ export interface League {
   owner_id: string;
   owner_name?: string;
   playoff_counts: number;
+  /** Ponto extra por torneio participado, só na pontuação da liga. Zero é desligado. */
+  pontos_extra: number;
   created_at: string;
   event_count?: number;
   // Só em /leagues/mine: se a pessoa é dona ou está no time da liga.
@@ -26,7 +28,12 @@ export interface LeagueStanding {
   wins: number;
   losses: number;
   draws: number;
+  /** Torneios cuja pontuação de mesa entrou na conta (só quem terminou ativo). */
   events_played: number;
+  /** Torneios em que se inscreveu, drop incluído: é o que o bônus multiplica. */
+  events_bonus: number;
+  /** O bônus acumulado, já somado em `points`. */
+  bonus: number;
 }
 
 export interface LeagueEvent {
@@ -86,11 +93,11 @@ export class LeagueService {
     return this.http.get<LeagueDetail>(`${this.API}/${id}`);
   }
 
-  createLeague(payload: { name: string; playoff_counts: boolean }) {
+  createLeague(payload: { name: string; playoff_counts: boolean; pontos_extra: number }) {
     return this.http.post<League>(this.API, payload, { headers: this.authHeaders() });
   }
 
-  updateLeague(id: string, payload: { name: string; playoff_counts: boolean }) {
+  updateLeague(id: string, payload: { name: string; playoff_counts: boolean; pontos_extra: number }) {
     return this.http.put<League>(`${this.API}/${id}`, payload, { headers: this.authHeaders() });
   }
 

@@ -52,3 +52,12 @@
   color: var(--text-muted);
   margin-top: -8px;
 }
+
+/* O campo do ponto extra: recuado, para se ler como detalhe da caixa acima. */
+.extra-field {
+  margin-left: 24px;
+
+  input {
+    max-width: 120px;
+  }
+}
