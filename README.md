@@ -366,6 +366,7 @@ DELETE /api/leagues/:id
 
 ## Roadmap conhecido (gaps ainda pendentes vs. o site original)
 
+- **Teste de rota no backend.** As provas do backend exercitam as regras puras (`lib/`), sem banco e sem HTTP — um defeito de **contrato** entre API e tela passa por elas. Já passou: a ficha da avaliação mostrava "Aberta por —" em toda OS porque `GET /api/avaliacoes/:id` não devolvia `criada_por_nome`, e o teste do componente não pegou porque o *fixture* afirmava um campo que a API nunca mandou. É a lacuna de maior valor da lista
 - **Organizer Can Play** — dono se auto-registrar como jogador no próprio evento
 - Decklist real (busca de comandante + partner commander + link Moxfield) — hoje é só texto livre
 - Página de Perfil/Configurações — existe uma versão mínima (`/profile`: nome/e-mail/papel, visibilidade do perfil e a solicitação para organizar); falta o restante (editar o próprio nome/e-mail, preferências). Trocar a própria senha já existe no servidor (`PUT /api/users/me/password`) e na tela de troca forçada, mas `/profile` ainda não oferece o formulário

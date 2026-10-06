@@ -1,0 +1,36 @@
+erDiagram
+  users ||--o{ avaliacoes : "abriu"
+  users ||--o{ avaliacao_historico : "autor"
+  users ||--o{ avaliacao_exclusoes : "excluiu"
+  avaliacoes ||--o{ avaliacao_historico : "cascata ao apagar"
+
+  users {
+    varchar id PK
+    tinyint avaliador "permissão, não papel"
+  }
+  avaliacoes {
+    varchar codigo UK "K7M4-Q2X9, ditável"
+    varchar nome "contato da OS, não de users"
+    enum status "7 estados"
+    decimal valor_bruto "congelado"
+    tinyint percentual_credito "congelado"
+    tinyint percentual_pix "congelado"
+    decimal valor_extra "congelado"
+    decimal valor_credito "total a pagar"
+    decimal valor_pix "total a pagar"
+    char token_publico UK "128 bits, sem rota que liste"
+    varchar criada_por FK
+  }
+  avaliacao_historico {
+    varchar avaliacao_id FK
+    enum acao
+    varchar autor_id FK "nulo = o cliente"
+    text motivo
+  }
+  avaliacao_exclusoes {
+    varchar codigo "sem FK: nasce quando a OS morre"
+    enum status_na_exclusao
+    decimal valor_bruto
+    varchar autor_id FK "obrigatório"
+    text motivo
+  }

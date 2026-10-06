@@ -1,0 +1,26 @@
+stateDiagram-v2
+  direction TB
+  [*] --> para_avaliar : abre a OS no balcão
+  para_avaliar --> avaliado : avalia (link, valor, %, extra)
+  avaliado --> a_pagar : cliente aceita pelo link
+  avaliado --> recusada : cliente recusa
+  a_pagar --> para_guardar : confirma o pagamento
+  para_guardar --> para_inserir : guardou
+  para_inserir --> inserido : entrou no estoque
+  inserido --> [*]
+  recusada --> [*]
+
+  avaliado --> para_avaliar : volta (troca o token)
+  a_pagar --> avaliado : volta
+  para_guardar --> a_pagar : volta
+  para_inserir --> para_guardar : volta
+  inserido --> para_inserir : volta
+
+  note right of recusada
+    Não volta: retomar
+    é abrir uma OS nova
+  end note
+  note left of a_pagar
+    Daqui em diante
+    a OS não se exclui
+  end note

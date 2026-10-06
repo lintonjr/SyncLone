@@ -8,6 +8,9 @@ um por provedor. Refletem `../aws/SPEC.md` (implementado) e `../googlecloud/SPEC
 | [`aws.drawio`](aws.drawio) | AWS · `us-east-2` · **implementado** | CloudFront (SPA, `/api`, `/uploads`) · ECS Fargate ARM em subnet pública (sem ALB, sem NAT) · RDS MySQL 8.4 · Valkey Serverless · Lambda de DNS da origem |
 | [`gcp.drawio`](gcp.drawio) | Google Cloud · `southamerica-east1` | Global External Application LB · Cloud Storage + CDN (SPA) · Cloud Run (backend, 1 instância) · Cloud SQL MySQL 8 |
 
+Os diagramas **do HLD** (`frontend/public/docs/index.html`) são outra coisa: SVG embutido,
+gerado por mermaid. As fontes e o procedimento estão em [`mermaid/`](mermaid/).
+
 ## Como abrir
 
 - **Web:** [app.diagrams.net](https://app.diagrams.net) → *File ▸ Open from ▸ Device*

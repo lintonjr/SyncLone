@@ -100,7 +100,9 @@
   }
 
   /* ── Números ── */
-  .numeros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--linha); border: 1px solid var(--linha); }
+  /* auto-fit, e não contagem fixa: a faixa ganhou um número e deixava uma linha
+     órfã com três células vazias. Assim ela acomoda o que houver. */
+  .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: var(--linha); border: 1px solid var(--linha); }
   .numero { background: var(--ameixa-800); padding: 22px 20px; display: flex; flex-direction: column; gap: 4px; }
   .numero b {
     font-family: 'Archivo Black', sans-serif; font-size: clamp(26px, 4vw, 38px);
@@ -109,7 +111,7 @@
   .numero span { font-size: 14px; color: var(--creme-suave); }
 
   /* ── Pilares ── */
-  .pilares { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .pilares { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; }
   .pilar { display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 3px solid var(--ouro); }
   .pilar h3 { font-size: 20px; }
   .pilar p { color: var(--creme-suave); font-size: 15px; }
@@ -176,11 +178,12 @@
 <header class="faixa capa">
   <div class="interno">
     <p class="marca"><span class="selo">M</span> Mercadia Game Store</p>
-    <h1>Todo torneio da loja, <em>do pareamento ao campeão</em>, num lugar só.</h1>
+    <h1>O balcão e a mesa, <em>do pareamento ao pagamento</em>, num lugar só.</h1>
     <p class="chamada">
-      O Mercadia Tracker organiza as noites de torneio da Mercadia: monta as rodadas, calcula os
-      desempates oficiais, mantém a classificação da liga e mostra tudo em tempo real no
-      celular de quem está jogando.
+      O Mercadia Tracker organiza as noites de torneio da Mercadia — monta as rodadas, calcula
+      os desempates oficiais, mantém a classificação da liga e mostra tudo em tempo real no
+      celular de quem está jogando. E agora cuida também da <b>compra de coleção no balcão</b>:
+      a loja avalia, manda a proposta por link, e o cliente aceita sem precisar criar conta.
     </p>
     <div class="fichas">
       <span class="ficha">Magic</span>
@@ -202,6 +205,7 @@
       <div class="numero"><b>4</b><span>desempates oficiais (MTR 2.3)</span></div>
       <div class="numero"><b>3</b><span>formatos: individual, duplas e clãs 4×4</span></div>
       <div class="numero"><b>2</b><span>idiomas: português e inglês</span></div>
+      <div class="numero"><b>7</b><span>estados da avaliação, do balcão ao estoque</span></div>
     </div>
     <div class="pilares">
       <div class="pilar">
@@ -223,6 +227,14 @@
         <p>
           Torneios viram liga, liga vira ranking, e cada jogador tem um perfil com histórico,
           aproveitamento, títulos e as badges que a loja entrega.
+        </p>
+      </div>
+      <div class="pilar">
+        <h3>A coleção que entra pelo balcão</h3>
+        <p>
+          A loja recebe, avalia e manda a proposta por link. O cliente vê quanto vale em crédito
+          ou em pix e responde ali mesmo, sem conta e sem conversa de WhatsApp para recuperar
+          depois. Cada passo fica registrado, com nome e data.
         </p>
       </div>
     </div>
@@ -312,6 +324,8 @@
         <ul>
           <li>Vários torneios somados numa <b>classificação de liga</b></li>
           <li>Escolha se o mata-mata conta ou não para a soma da liga</li>
+          <li><b>Ponto extra por torneio participado</b>: a liga pode premiar presença, e quem aparece mais sobe na tabela</li>
+          <li><b>Ranking de decks da liga</b>: o que foi jogado, com aproveitamento e títulos por deck</li>
           <li><b>Time de organização</b>: o dono da liga adiciona co-organizadores</li>
           <li>O time cuida de <b>todos os torneios da liga</b>, inclusive os criados por outra pessoa</li>
           <li>Apagar a liga não apaga os torneios: eles só deixam de somar</li>
@@ -339,10 +353,24 @@
       </article>
 
       <article class="bloco">
-        <h3>Administração <span class="conta">10</span></h3>
+        <h3>Avaliação de coleção <span class="conta">10</span></h3>
+        <ul>
+          <li>A <b>ordem de serviço do balcão</b>: a loja recebe a coleção, avalia, propõe e paga — tudo num lugar só</li>
+          <li><b>Número de OS ditável</b>, sem letras que se confundem: <code>K7M4-Q2X9</code> anotado à mão não vira outra OS</li>
+          <li>Proposta em <b>crédito da loja ou pix</b>, com o percentual de cada um negociável na hora e um <b>extra em reais</b> para o que a planilha não pegou</li>
+          <li><b>O cliente não precisa de conta</b>: recebe um link, vê quanto vale e aceita ou recusa por ali</li>
+          <li>Aceitou? A equipe inteira é avisada no sino — quem avaliou não é necessariamente quem paga</li>
+          <li>Depois do pagamento, os passos de prateleira: <b>guardar</b> e <b>inserir no estoque</b></li>
+          <li>Errou? Volta um passo por vez, sempre com motivo, e o histórico guarda quem fez o quê</li>
+        </ul>
+      </article>
+
+      <article class="bloco">
+        <h3>Administração <span class="conta">11</span></h3>
         <ul>
           <li>Fila de <b>pedidos para organizar</b>, com histórico de quem pede e decisão com motivo</li>
           <li>Quadro de organizadores, com promoção e revogação de acesso</li>
+          <li><b>Administração de contas</b>: corrigir nome e e-mail, senha temporária que expira no primeiro acesso, desativar e anonimizar — com tudo registrado na ficha da pessoa</li>
           <li>Interface em <b>português e inglês</b> e tema claro ou escuro, por pessoa</li>
           <li>Funciona no celular, que é onde a noite de torneio acontece</li>
         </ul>
