@@ -684,6 +684,7 @@ export const PT_BR: Record<string, string> = {
   'pairings.player1': 'Jogador 1',
   'pairings.player2': 'Jogador 2',
   'pairings.pod': 'Mesa',
+  'pairings.recordHelp': 'Vitórias-derrotas-empates antes desta rodada',
   'pairings.result': 'Resultado',
   'pairings.selectSwap': 'Selecionar para troca',
   'pairings.setResult': 'Lançar resultado',

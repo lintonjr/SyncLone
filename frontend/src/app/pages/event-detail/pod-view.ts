@@ -93,3 +93,58 @@ export function myResultLabel(
   const won = (iAm1 && pairing.result === 'player1') || (!iAm1 && pairing.result === 'player2');
   return won ? { label: 'Win', cls: 'result-win' } : { label: 'Loss', cls: 'result-loss' };
 }
+
+/** Cartel de um jogador: vitórias, derrotas e empates. */
+export interface Cartel {
+  v: number;
+  d: number;
+  e: number;
+}
+
+/** "2-0-0" — vitórias, derrotas, empates, na ordem que a loja fala. */
+export function cartelLabel(c: Cartel): string {
+  return `${c.v}-${c.d}-${c.e}`;
+}
+
+/**
+ * O cartel de cada jogador **antes** da rodada informada.
+ *
+ * Antes, e não corrente, de propósito: é o cartel que explica o pareamento. Com
+ * o total corrente, lançar um resultado da rodada aberta mexeria no número ao
+ * lado do nome enquanto o organizador digita, e ao reler uma rodada antiga
+ * apareceria o cartel do fim do torneio ao lado de uma mesa do começo — "por que
+ * o 3-0 jogou com o 1-2?" não teria resposta na tela.
+ *
+ * Conta só resultado **confirmado**, como o servidor faz: um auto-relato ainda
+ * não aprovado não move a classificação e não pode mover isto. Um bye é vitória.
+ */
+export function cartelAntesDaRodada(
+  pairings: Pairing[],
+  rounds: Round[],
+  roundNumber: number,
+): Map<string, Cartel> {
+  const numeroDaRodada = new Map(rounds.map((r) => [r.id, r.round_number]));
+  const cartel = new Map<string, Cartel>();
+  const doJogador = (id: string) => {
+    let c = cartel.get(id);
+    if (!c) {
+      c = { v: 0, d: 0, e: 0 };
+      cartel.set(id, c);
+    }
+    return c;
+  };
+
+  for (const p of pairings) {
+    const n = p.round_id ? numeroDaRodada.get(p.round_id) : undefined;
+    if (n === undefined || n >= roundNumber) continue;
+    if (!p.result || p.result_status !== 'confirmed') continue;
+
+    for (const assento of podPlayers(p)) {
+      const r = podPlayerResult(p, assento.slot);
+      if (r === 'win' || r === 'bye') doJogador(assento.id).v++;
+      else if (r === 'loss') doJogador(assento.id).d++;
+      else if (r === 'draw') doJogador(assento.id).e++;
+    }
+  }
+  return cartel;
+}

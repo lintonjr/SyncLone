@@ -8,6 +8,8 @@ import {
   gameScoreLabel,
   roundLabel,
   resultLabel,
+  cartelAntesDaRodada,
+  cartelLabel,
 } from '../event-detail/pod-view';
 import { RoundTimer } from '../event-my-round/event-my-round';
 
@@ -71,6 +73,27 @@ export class EventPairingsComponent {
     const player = (this.ev()?.players ?? []).find((p) => p.id === playerId);
     const i = clans.findIndex((c) => c.id === player?.clan_id);
     return i < 0 ? 0 : i % 8;
+  }
+
+  /**
+   * O cartel que cada jogador levou PARA esta rodada.
+   *
+   * Sai das mesas que o evento já carrega, não de uma consulta nova, e não do
+   * total corrente do jogador: o total mudaria debaixo do organizador enquanto
+   * ele lança os resultados desta mesma rodada. Ver `cartelAntesDaRodada`.
+   */
+  private cartelDaRodada = computed(() => {
+    const atual = this.current();
+    const ev = this.ev();
+    if (!atual || !ev?.pairings || !ev?.rounds) return new Map<string, string>();
+    const bruto = cartelAntesDaRodada(ev.pairings, ev.rounds, atual.round.round_number);
+    return new Map([...bruto].map(([id, c]) => [id, cartelLabel(c)]));
+  });
+
+  /** "2-0-0" do jogador, ou "0-0-0" para quem ainda não jogou. */
+  cartel(playerId: string | null | undefined): string {
+    if (!playerId) return '';
+    return this.cartelDaRodada().get(playerId) ?? '0-0-0';
   }
 
   podPlayers = podPlayers;

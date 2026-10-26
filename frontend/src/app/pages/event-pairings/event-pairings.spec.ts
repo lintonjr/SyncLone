@@ -178,3 +178,98 @@ describe('podPlayerResult · mesa de duplas', () => {
     expect(podPlayerResult({ ...mesa, result: 'bye' }, 'player3')).toBe('bye');
   });
 });
+
+// --- Cartel ao lado do nome ---
+
+describe('EventPairingsComponent — cartel', () => {
+  /** Duas rodadas jogadas, a terceira em aberto. */
+  const historico = () => {
+    const r1 = umaRodada({ id: 'r1', round_number: 1 });
+    const r2 = umaRodada({ id: 'r2', round_number: 2 });
+    const r3 = umaRodada({ id: 'r3', round_number: 3, status: 'active' });
+    const mesas: Pairing[] = [
+      // R1: Ana vence Bruno; Carla empata com Diego; Elisa leva bye
+      umaMesa({ id: 'm1', round_id: 'r1', player1_id: 'ana', player2_id: 'bruno', result: 'player1' }),
+      umaMesa({ id: 'm2', round_id: 'r1', player1_id: 'carla', player2_id: 'diego', result: 'draw' }),
+      umaMesa({ id: 'm3', round_id: 'r1', player1_id: 'elisa', player2_id: undefined, result: 'bye' }),
+      // R2: Ana vence Carla; Bruno vence Diego
+      umaMesa({ id: 'm4', round_id: 'r2', player1_id: 'ana', player2_id: 'carla', result: 'player1' }),
+      umaMesa({ id: 'm5', round_id: 'r2', player1_id: 'bruno', player2_id: 'diego', result: 'player1' }),
+      // R3: ainda sem resultado — é a rodada mostrada
+      umaMesa({ id: 'm6', round_id: 'r3', player1_id: 'ana', player2_id: 'bruno', p1_name: 'Ana', p2_name: 'Bruno', result: undefined }),
+    ];
+    return { rounds: [r1, r2, r3], mesas, r3 };
+  };
+
+  const montarCom = () => {
+    const { rounds, mesas, r3 } = historico();
+    const fixture = TestBed.createComponent(EventPairingsComponent);
+    fixture.componentRef.setInput('ev', umEvento({ pod_size: 2, rounds, pairings: mesas, current_round: 3 }));
+    fixture.componentRef.setInput('isOwner', true);
+    fixture.componentRef.setInput('current', { round: r3, pairings: [mesas[5]] });
+    fixture.detectChanges();
+    return fixture;
+  };
+
+  it('conta vitória, derrota, empate e bye nas rodadas anteriores', async () => {
+    const fixture = montarCom();
+    await fixture.whenStable();
+    const c = fixture.componentInstance;
+
+    expect(c.cartel('ana')).toBe('2-0-0');    // venceu as duas
+    expect(c.cartel('bruno')).toBe('1-1-0');  // perdeu da Ana, venceu o Diego
+    expect(c.cartel('carla')).toBe('0-1-1');  // empate na 1, derrota na 2
+    expect(c.cartel('diego')).toBe('0-1-1');  // empate na 1, derrota na 2
+    expect(c.cartel('elisa')).toBe('1-0-0');  // o bye conta como vitória
+  });
+
+  it('quem ainda não jogou aparece como 0-0-0, não em branco', async () => {
+    const fixture = montarCom();
+    await fixture.whenStable();
+    expect(fixture.componentInstance.cartel('ninguem')).toBe('0-0-0');
+  });
+
+  it('o cartel aparece ao lado do nome na tabela de duelo', async () => {
+    const fixture = montarCom();
+    await fixture.whenStable();
+    const cartéis = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cartel')].map(
+      (e) => e.textContent?.trim(),
+    );
+    expect(cartéis).toEqual(['2-0-0', '1-1-0']);
+  });
+
+  it('NÃO conta a rodada mostrada: lançar resultado não mexe no cartel ao lado', async () => {
+    // É o motivo de o cartel ser "antes da rodada" e não o total corrente: com o
+    // total, o número mudaria debaixo do organizador enquanto ele digita.
+    const { rounds, mesas, r3 } = historico();
+    const decidida = { ...mesas[5], result: 'player1', result_status: 'confirmed' } as Pairing;
+    const fixture = TestBed.createComponent(EventPairingsComponent);
+    fixture.componentRef.setInput('ev', umEvento({
+      pod_size: 2, rounds, pairings: [...mesas.slice(0, 5), decidida], current_round: 3,
+    }));
+    fixture.componentRef.setInput('isOwner', true);
+    fixture.componentRef.setInput('current', { round: r3, pairings: [decidida] });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.cartel('ana')).toBe('2-0-0');
+    expect(fixture.componentInstance.cartel('bruno')).toBe('1-1-0');
+  });
+
+  it('auto-relato ainda não aprovado não entra no cartel', async () => {
+    // A mesma regra do servidor: resultado pendente não move a classificação.
+    const { rounds, mesas, r3 } = historico();
+    const pendente = { ...mesas[4], result_status: 'pending' } as Pairing;
+    const fixture = TestBed.createComponent(EventPairingsComponent);
+    fixture.componentRef.setInput('ev', umEvento({
+      pod_size: 2, rounds, pairings: [...mesas.slice(0, 4), pendente, mesas[5]], current_round: 3,
+    }));
+    fixture.componentRef.setInput('isOwner', true);
+    fixture.componentRef.setInput('current', { round: r3, pairings: [mesas[5]] });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    // Bruno venceu o Diego na R2, mas o resultado está pendente de aprovação.
+    expect(fixture.componentInstance.cartel('bruno')).toBe('0-1-0');
+  });
+});

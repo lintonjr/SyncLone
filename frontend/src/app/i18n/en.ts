@@ -682,6 +682,7 @@ export const EN: Record<string, string> = {
   'pairings.player1': 'Player 1',
   'pairings.player2': 'Player 2',
   'pairings.pod': 'Pod',
+  'pairings.recordHelp': 'Wins-losses-draws before this round',
   'pairings.result': 'Result',
   'pairings.selectSwap': 'Select for swap',
   'pairings.setResult': 'Set Result',

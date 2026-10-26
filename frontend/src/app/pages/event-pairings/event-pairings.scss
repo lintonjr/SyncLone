@@ -429,3 +429,20 @@
   font-size: 12px;
   padding: 4px 12px;
 }
+
+/* Cartel ao lado do nome: 2-0-0. Discreto de propósito — o nome é que se lê de
+   longe na projeção do salão; o cartel é a conferência de quem está ao lado da
+   mesa. Tabular para as colunas não dançarem de linha em linha. */
+.cartel {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.pod-player .cartel {
+  margin-left: 6px;
+}

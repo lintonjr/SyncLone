@@ -149,6 +149,9 @@
                     <span class="pod-seat">{{ $index + 1 }}</span>
                   }
                   <span class="pod-name">{{ player.name }}</span>
+                  <span class="cartel" [title]="i18n.t('pairings.recordHelp')">{{
+                    cartel(player.id)
+                  }}</span>
                   @if (isClanFormat()) {
                     <span class="clan-tag">{{ clanOf(player.id) }}</span>
                   }
@@ -208,6 +211,9 @@
                 <td class="col-table table-num">{{ p.table_number }}</td>
                 <td class="player-col">
                   {{ p.p1_name }}
+                  <span class="cartel" [title]="i18n.t('pairings.recordHelp')">{{
+                    cartel(p.player1_id)
+                  }}</span>
                   @if (!p.result && isOwner() && swapMode()) {
                     <button
                       class="swap-select-btn"
@@ -222,6 +228,11 @@
                 <td class="col-vs vs">vs</td>
                 <td class="player-col">
                   {{ p.p2_name || i18n.t('common.bye') }}
+                  @if (p.player2_id) {
+                    <span class="cartel" [title]="i18n.t('pairings.recordHelp')">{{
+                      cartel(p.player2_id)
+                    }}</span>
+                  }
                   @if (!p.result && isOwner() && swapMode() && p.player2_id) {
                     <button
                       class="swap-select-btn"
