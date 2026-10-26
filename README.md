@@ -57,17 +57,18 @@ Um fluxo que não é torneio: a loja recebe uma coleção, avalia, propõe um va
 - **Collaborative Deck Registering**: quando ativado, qualquer participante pode editar o deck de qualquer outro jogador do evento (por padrão, só o dono do evento ou o próprio jogador podem)
 
 ### Rodadas e pareamento
-- 4 métodos de pareamento suíço, fiéis ao site original:
-  - **Swiss (Performance Pairing)** — ordena por standing atual
-  - **Swiss (Less Repetition)** / **Avoid Repetition** — evita repetir adversários já enfrentados
-  - **Random** — pareamento aleatório
+- 4 métodos de pareamento suíço:
+  - **Suíço por desempenho (sem revanche)** — o default. Em duelo é o sistema **Dubov** (FIDE C.04.4.1) com os critérios absolutos das Regras Básicas do Suíço (FIDE **C.04.1, artigo 2**: "two participants shall not play against each other more than once"). O MTR não traz algoritmo de pareamento — a seção 10.4 só diz que o suíço é presumido e gasta o resto no chaveamento do playoff —, então a norma vem da FIDE. Cada mesa possível é uma aresta com custo, e a rodada é o emparelhamento perfeito de custo mínimo: revanche domina, depois o **quadrado** da diferença de pontos (Dubov 2.3.2 compara as diferenças em ordem descendente, e somar o quadrado espalha o deslocamento em vez de concentrá-lo — 9×6 e 6×3, nunca 9×3), depois a adjacência que dá nome a "por desempenho". Até 20 jogadores a conta é exata; acima, guloso com melhora local. Antes disso o pareamento ordenava pela classificação e fatiava em pares adjacentes sem olhar o histórico: medido, 96,8% dos torneios de 17 jogadores em 5 rodadas repetiam ao menos uma mesa, o mesmo par chegava a se enfrentar três vezes, e **100% dessas revanches eram evitáveis sem piorar a diferença de pontos** — ver `services/suicoDubov.js`
+  - **Suíço, menos repetição (mesas de Commander)** — a anti-repetição gulosa das mesas de 3–4. Em duelo a opção não aparece, porque lá ela aponta para o mesmo suíço de desempenho
+  - **Evitar repetição** — ordem sorteada, com a mesma anti-repetição gulosa
+  - **Aleatório** — pareamento aleatório
 - **Allow Byes**: se desativado, o início da rodada é bloqueado (erro 400) quando o número de jogadores não fecha pods completos
 - Edição de resultado de pod liberada enquanto a rodada não terminar (organizador, a qualquer momento antes de a rodada fechar)
 - **Player-Reported Results** (campo `async_draws`): jogador pode reportar o resultado do próprio pareamento sem depender do organizador — Vitória/Derrota/Empate em 1v1, só "I Won" (inequívoco) ou Empate em pods multiplayer. Resultado enviado pelo jogador entra como **pendente** (`result_status='pending'`) e não pontua até o organizador aprovar (botão "Approve"); enquanto pendente, a rodada não fecha nem libera início da próxima. Organizador pode aprovar ou sobrescrever o valor a qualquer momento antes da rodada terminar — resultados definidos pelo próprio organizador são sempre confirmados na hora, sem aprovação
 - **Desempates oficiais** (MTR 2.3), calculados no servidor: a classificação ordena por pontos → **OMW%** (média de vitória dos adversários enfrentados) → **GW%** (games ganhos) → **OGW%**, com piso de 33% em todos os percentuais. A mesma ordem alimenta a tabela, o seeding dos playoffs e a exportação — não há mais um cálculo aproximado no cliente divergindo do servidor
 - **Placar por games** (opcional, só mesa 1v1): ao lançar o resultado o organizador pode registrar 2×0 ou 2×1. O placar não decide quem venceu — isso continua sendo o resultado da partida — apenas alimenta GW% e OGW%. Trocar o resultado sem informar placar limpa o anterior, para não sobrar um GW% que nunca aconteceu
 - **Timer de rodada**: duração configurável por evento (padrão 50 min), contada a partir do início da rodada e visível para todos na página do evento e na aba My Round; ao estourar, vira contagem positiva com aviso de "Time!"
-- **Bye rotativo**: o bye vale uma vitória inteira, então quem senta fora é decidido pela **classificação oficial**, nunca pelo método de pareamento — vai sempre para o pior colocado que **ainda não recebeu um** neste evento, e só quando todos já passaram a rotação recomeça. Empate exato de colocação (a rodada 1 inteira, por exemplo) é resolvido por sorteio uniforme, refeito a cada pareamento: desfazer e reparear uma rodada empatada pode trocar quem sai
+- **Bye rotativo**: o bye vale uma vitória inteira, então quem senta fora é decidido pela **classificação oficial**, nunca pelo método de pareamento — vai sempre para o pior colocado que **ainda não recebeu um** neste evento, e só quando todos já passaram a rotação recomeça. No duelo a escolha segue a ordem do **Dubov 3.1** inteira: além de não repetir (3.1.1) e de ser o pior colocado (3.1.3), o candidato tem de **deixar o resto pareável sem revanche** (3.1.2 — antes o bye era escolhido antes de se saber se o campo restante fechava) e, entre empatados em pontos, o bye vai para quem **jogou mais partidas** (3.1.4), o que impede que ele caia em quem entrou atrasado em vez de em quem jogou todas as rodadas. Empate exato de colocação (a rodada 1 inteira, por exemplo) é resolvido por sorteio uniforme, refeito a cada pareamento: desfazer e reparear uma rodada empatada pode trocar quem sai
 - Undo de rodada e swap de pareamento (organizador) — Undo só reverte pontos de resultados já confirmados. Desfazer a final também limpa o campeão gravado
 
 ### Playoffs
@@ -124,6 +125,7 @@ CloneManaSync/
 │   │   │   └── notifications.js
 │   │   └── services/
 │   │       ├── pairing.js          # pareamento suíço, byes rotativos e seeding de playoff
+│   │       ├── suicoDubov.js       # duelo sem revanche (FIDE C.04.1 + Dubov C.04.4.1)
 │   │       ├── standings.js        # desempates oficiais (MTR 2.3)
 │   │       ├── notify.js           # gravação de notificações
 │   │       └── eventStream.js      # registry SSE

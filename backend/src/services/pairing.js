@@ -1,4 +1,5 @@
 const { cmpPct } = require('../lib/percentuais');
+const { parearDubov1v1, fechaSemRevanche } = require('./suicoDubov');
 
 const asPod = (g) => ({
   player1: g[0] ?? null,
@@ -186,13 +187,91 @@ function pickByePlayers(ordered, count, hadBye) {
   return { byes: chosen, rest: ordered.filter((_, i) => !takenIdx.has(i)) };
 }
 
+// Quantos candidatos ao bye vale testar pelo critério de completude (Dubov
+// 3.1.2) antes de aceitar o primeiro da fila. Cada teste é um emparelhamento
+// inteiro, e medido o primeiro candidato serve em praticamente todo campo: a
+// inviabilidade só aparece em campo pequeno encolhido por drop. O limite existe
+// para que um campo grande e esburacado não transforme o início da rodada numa
+// espera.
+const MAX_SONDAGENS_BYE = 8;
+
+/**
+ * Quem senta fora, na ordem do Dubov 3.1.
+ *
+ * 3.1.1 quem ainda não recebeu bye (é o [C2], absoluto — já era a regra daqui)
+ * 3.1.2 quem, saindo, deixa o resto pareável sem revanche ([C4], 2.2.1)
+ * 3.1.3 a menor pontuação
+ * 3.1.4 entre os de mesma pontuação, quem jogou MAIS partidas
+ * 3.1.5 maior número de pareamento — Magic não tem; fica o sorteio honesto que
+ *       `ordenado` já carrega
+ *
+ * O 3.1.4 é o que impede o bye de cair em quem entrou atrasado no torneio em vez
+ * de em quem jogou todas as rodadas: os dois podem ter a mesma pontuação baixa,
+ * e só um deles já ficou de fora antes.
+ *
+ * O 3.1.2 é o que faltava por completo. Escolher o bye antes de saber se o resto
+ * fecha deixava o pareamento sem saída: o último colocado sai, e os que sobram
+ * já se enfrentaram todos.
+ */
+function escolherByeDubov(ordenado, hadBye, historico) {
+  const partidas = (p) => p.matches_played ?? p.swiss_rounds_seated ?? 0;
+  // `reverse()` põe o pior colocado na frente (3.1.3 com os desempates
+  // oficiais); o sort é estável, então empate exato de pontos E de partidas
+  // mantém o sorteio que `rankWithRandomTiebreak` já fez.
+  const fila = [...ordenado].reverse()
+    .sort((a, b) => (a.points ?? 0) - (b.points ?? 0) || partidas(b) - partidas(a));
+
+  const elegiveis = fila.filter((p) => !hadBye.has(p.id));
+  // Todos já receberam bye: [C2] não tem como ser respeitado, e a fila inteira
+  // volta a valer — a rotação recomeça, como já era.
+  const candidatos = elegiveis.length ? elegiveis : fila;
+
+  for (const [i, candidato] of candidatos.entries()) {
+    if (i >= MAX_SONDAGENS_BYE) break;
+    if (fechaSemRevanche(ordenado.filter((p) => p.id !== candidato.id), historico)) {
+      return candidato;
+    }
+  }
+  return candidatos[0];
+}
+
+/**
+ * Duelo por desempenho: suíço Dubov (FIDE C.04.4.1) com os critérios absolutos
+ * das Regras Básicas do Suíço (C.04.1). A conta mora em `services/suicoDubov.js`.
+ *
+ * Este caminho escolhe o próprio bye em vez de usar `pickByePlayers`, porque o
+ * Dubov 3.1.2 exige testar se o campo restante fecha — e isso só se responde
+ * pareando. Os outros métodos continuam no `pickByePlayers`, que implementa
+ * 3.1.1 e 3.1.3 e está coberto por teste.
+ */
+function parearDuelo(players, pastPairings) {
+  const ordenado = rankWithRandomTiebreak(players, byOfficialStanding);
+  const historico = buildOpponentHistory(pastPairings);
+
+  const bye = byeCountFor(players.length, 2) > 0
+    ? escolherByeDubov(ordenado, buildByeHistory(pastPairings), historico)
+    : null;
+
+  const campo = bye ? ordenado.filter((p) => p.id !== bye.id) : ordenado;
+  const { mesas } = parearDubov1v1(campo, historico);
+  const pods = mesas.map(([a, b]) => asPod([a, b]));
+  return bye ? pods.concat([asPod([bye])]) : pods;
+}
+
 /**
  * Generate pod-based pairings for the next round.
  *
  * method:
- *   'swiss' (default)         — sort by points desc, chunk into pods (current behavior).
+ *   'swiss' (default)         — por desempenho. Em duelo é o suíço Dubov sem
+ *                               revanche (`parearDuelo`); em mesa de 3-4 segue
+ *                               o fatiamento por classificação.
  *   'random'                  — ignore points entirely, fully random pods.
- *   'swiss-less-repetition'   — points-ordered, but greedily avoids repeat opponents.
+ *   'swiss-less-repetition'   — as regras de mesa do Commander: ordem por
+ *                               classificação e anti-repetição gulosa. Em duelo
+ *                               aponta para o mesmo Dubov do 'swiss': existem
+ *                               eventos 1v1 já gravados com este valor, e mandá-
+ *                               los para o guloso entregaria menos do que o nome
+ *                               promete.
  *   'avoid-repetition'        — fully random order, greedily avoids repeat opponents.
  *
  * `pastPairings` (all prior pairings for the event) feeds both the
@@ -204,6 +283,12 @@ function pickByePlayers(ordered, count, hadBye) {
  * else in the field has never had one.
  */
 function generateSwissPairings(players, podSize = 2, method = 'swiss', pastPairings = []) {
+  // Duelo por desempenho: caminho próprio, porque o bye do Dubov depende de
+  // pareamento (3.1.2) e não pode ser escolhido antes dele.
+  if (podSize === 2 && (method === 'swiss' || method === 'swiss-less-repetition')) {
+    return parearDuelo(players, pastPairings);
+  }
+
   // Quem senta fora é decidido pela classificação, nunca pelo método de pareamento:
   // o bye vale uma vitória inteira, então não pode cair no líder porque o método
   // daquele evento embaralha. Empate exato — a rodada 1 inteira, por exemplo — sai

@@ -146,7 +146,12 @@
         <label>{{ i18n.t('form.pairingMethod') }}</label>
         <select [value]="pairingMethod()" (change)="pairingMethod.set($any($event.target).value)">
           <option value="swiss">{{ i18n.t('form.pairingSwiss') }}</option>
-          <option value="swiss-less-repetition">{{ i18n.t('form.pairingLessRep') }}</option>
+          <!-- "menos repetição" é a regra de mesa do Commander; em duelo ela
+               aponta para o mesmo suíço de desempenho, então oferecer as duas
+               seria oferecer a mesma coisa com dois nomes. -->
+          @if (podSize() > 2) {
+            <option value="swiss-less-repetition">{{ i18n.t('form.pairingLessRep') }}</option>
+          }
           <option value="avoid-repetition">{{ i18n.t('form.pairingAvoidRep') }}</option>
           <option value="random">{{ i18n.t('form.pairingRandom') }}</option>
         </select>
