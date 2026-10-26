@@ -1,5 +1,7 @@
 /**
- * Standings e desempates no estilo MTR (Magic Tournament Rules, seção 2.3).
+ * Standings e desempates do MTR (Magic Tournament Rules): a ordem oficial está
+ * na seção **3.1** e as definições na **Appendix C** — não na 2.3, que é
+ * "Pregame Procedures" e era a citação errada repetida por este projeto.
  *
  * A ordem oficial é: pontos de match → OMW% → GW% → OGW%. Os três percentuais
  * têm piso de 33%: sem isso, um jogador que perdeu tudo puxaria a média dos
@@ -58,12 +60,19 @@ function computeStandings(players, pairings, event) {
     stats.set(p.id, {
       matches: 0,
       matchPoints: 0,
-      gamesWon: 0,
+      gamePoints: 0,
       gamesPlayed: 0,
       wins: 0,
       losses: 0,
       draws: 0,
-      opponents: new Set(),
+      // Lista, não Set: o OMW% é "the average match-win percentage of each
+      // opponent that player faced" (Appendix C), e o exemplo da Appendix lista
+      // OITO adversários para um torneio de oito rodadas — um por rodada, não um
+      // por pessoa distinta. Com Set, quem enfrentasse o mesmo adversário duas
+      // vezes o via contado uma só, e a média saía de um denominador menor que o
+      // número de partidas. Era um erro escondido atrás de outro: o pareamento
+      // repetia mesa, e o desempate então calculava errado por causa disso.
+      opponents: [],
       swissRoundsSeated: new Set(),
     });
   }
@@ -130,12 +139,20 @@ function computeStandings(players, pairings, event) {
         for (const other of seated) {
           if (other === id) continue;
           if (meuLado?.has(other)) continue; // companheiro de dupla, não adversário
-          s.opponents.add(other);
+          s.opponents.push(other);
         }
       }
     }
 
     // Placar por games só existe em mesa 1v1, e só quando o organizador registrou.
+    //
+    // O que se acumula é **game points**, não games ganhos: a Appendix C define
+    // GW% como "the total number of game points they earned divided by the total
+    // game points possible (generally, 3 times the number of games played)", com
+    // 3 pontos por game ganho e 1 por game empatado. Enquanto o app só registra
+    // 2×0 e 2×1 as duas contas dão o mesmo número, porque 3·V / 3·N = V / N — a
+    // diferença aparece no dia em que um game empatado for registrável, e aí a
+    // fórmula já é a do documento em vez de uma que casava por coincidência.
     const g1 = pairing.p1_games;
     const g2 = pairing.p2_games;
     if (g1 !== null && g1 !== undefined && g2 !== null && g2 !== undefined && pairing.player2_id) {
@@ -144,18 +161,19 @@ function computeStandings(players, pairings, event) {
         for (const [seat, won] of [[pairing.player1_id, g1], [pairing.player2_id, g2]]) {
           const s = stats.get(seat);
           if (!s) continue;
-          s.gamesWon += won;
+          s.gamePoints += won * 3;
           s.gamesPlayed += total;
         }
       }
     } else if (isBye) {
-      // MTR: um bye conta como 2-0 para o GW% de quem o recebeu. No partner quem
-      // o recebe é a dupla inteira, e a mesa traz os dois assentos — creditar só
-      // o primeiro deixaria o parceiro fora do desempate por uma folga que foi
-      // dos dois.
+      // Appendix C: "When a player is assigned a bye for a round, they are
+      // considered to have won the match 2–0. Thus, that player earns 3 match
+      // points and 6 game points." No partner quem recebe é a dupla inteira, e a
+      // mesa traz os dois assentos — creditar só o primeiro deixaria o parceiro
+      // fora do desempate por uma folga que foi dos dois.
       for (const id of seated) {
         const s = stats.get(id);
-        if (s) { s.gamesWon += 2; s.gamesPlayed += 2; }
+        if (s) { s.gamePoints += 6; s.gamesPlayed += 2; }
       }
     }
   }
@@ -173,14 +191,14 @@ function computeStandings(players, pairings, event) {
   const gameWinPct = (id) => {
     const s = stats.get(id);
     if (!s || s.gamesPlayed === 0) return null;
-    return Math.max(s.gamesWon / s.gamesPlayed, FLOOR);
+    return Math.max(s.gamePoints / (s.gamesPlayed * 3), FLOOR);
   };
 
   const average = (values) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null);
 
   const enriched = players.map((p) => {
     const s = stats.get(p.id);
-    const opponents = [...s.opponents];
+    const opponents = s.opponents;
     const oppGwp = opponents.map(gameWinPct).filter((v) => v !== null);
     return {
       ...p,

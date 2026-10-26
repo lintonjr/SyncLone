@@ -91,7 +91,7 @@ export class EventStandingsComponent {
     return v === null || v === undefined ? '—' : (v * 100).toFixed(1) + '%';
   }
 
-  // MW% | OMW% | GW% | OGW%, na ordem em que desempatam (MTR 2.3).
+  // MW% | OMW% | GW% | OGW%, na ordem em que desempatam (MTR 3.1).
   tiebreakers(player: Player): { mw: string; omw: string; gw: string; ogw: string } {
     return {
       mw: this.pct(player.mwp),

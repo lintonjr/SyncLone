@@ -150,10 +150,10 @@ function buildByeHistory(pastPairings) {
   return had;
 }
 
-// Classificação oficial (MTR 2.3), a mesma exibida na tabela do evento. Os campos
-// de desempate chegam prontos de services/standings.js; quando o chamador não os
-// fornece (testes de unidade, por exemplo), sobra a pontuação, que é o critério
-// que mais importa.
+// Classificação oficial (MTR 3.1, definida na Appendix C), a mesma exibida na
+// tabela do evento. Os campos de desempate chegam prontos de
+// services/standings.js; quando o chamador não os fornece (testes de unidade,
+// por exemplo), sobra a pontuação, que é o critério que mais importa.
 const nz = (v) => (v === null || v === undefined ? 0 : v);
 // A mesma tolerância dos standings, e pela mesma razão: uma diferença de 1e-16
 // entre dois percentuais não é desempate, é ruído — e aqui ela decidiria quem

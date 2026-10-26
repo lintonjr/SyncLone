@@ -262,3 +262,76 @@ test('cartel ignora o que ainda não foi aprovado', () => {
 
   assert.deepEqual([a.wins, a.losses, a.draws], [0, 0, 0]);
 });
+
+// --- Appendix C: o adversário conta uma vez por RODADA, não uma por pessoa ---
+
+test('OMW%: adversário enfrentado duas vezes pesa duas vezes na média', () => {
+  // A Appendix C define OMW% como "the average match-win percentage of each
+  // opponent that player faced", e o exemplo dela lista OITO adversários para um
+  // torneio de oito rodadas — um por rodada. Guardar os adversários num Set
+  // fazia a revanche contar uma vez só e dividir por um denominador menor que o
+  // número de partidas jogadas.
+  //
+  // Três rodadas, e A enfrenta B duas vezes e C uma:
+  //   R1  A vence B   |  C vence D
+  //   R2  B vence A   |  D vence C
+  //   R3  A vence C   |  B vence D
+  //
+  // Cartéis: A 2-1 (MWP 6/9), B 2-1 (6/9), C 1-2 (3/9 = o piso), D 1-2 (piso).
+  // Multiconjunto [B, B, C]: (2/3 + 2/3 + 1/3) / 3 = 5/9.
+  // Com Set      [B, C]   : (2/3 + 1/3) / 2     = 1/2 — o número errado.
+  const players = [player('a', 6), player('b', 6), player('c', 3), player('d', 3)];
+  const pairings = [
+    match('a', 'b', 'player1'), match('c', 'd', 'player1'),
+    match('a', 'b', 'player2'), match('c', 'd', 'player2'),
+    match('a', 'c', 'player1'), match('b', 'd', 'player1'),
+  ];
+  const rows = computeStandings(players, pairings, EVENT);
+  const a = rows.find((p) => p.id === 'a');
+
+  close(a.mwp, 6 / 9, 'MWP de A');
+  close(a.omw, 5 / 9, 'OMW% de A precisa contar B duas vezes');
+  assert.ok(Math.abs(a.omw - 1 / 2) > 1e-6, 'veio o valor do Set — a revanche contou uma vez só');
+});
+
+test('OGW%: a revanche também pesa duas vezes no game-win dos adversários', () => {
+  const players = [player('a', 6), player('b', 3), player('c', 0)];
+  const pairings = [
+    match('a', 'b', 'player1', [2, 0]),   // B: 0 de 2 games
+    match('a', 'b', 'player1', [2, 0]),   // B nos mesmos 0 de 2
+    match('a', 'c', 'player1', [2, 1]),   // C: 1 de 3 games
+  ];
+  const rows = computeStandings(players, pairings, EVENT);
+  const a = rows.find((p) => p.id === 'a');
+  const b = rows.find((p) => p.id === 'b');
+  const c = rows.find((p) => p.id === 'c');
+
+  // B levou 0 de 4 games: piso. C levou 1 de 3 → 3/9 = o piso também.
+  close(b.gwp, FLOOR, 'GW% de B');
+  close(c.gwp, FLOOR, 'GW% de C');
+  close(a.ogw, FLOOR, 'OGW% de A, com B contado duas vezes');
+});
+
+// --- Appendix C: GW% sai de game points, não de games ganhos ---
+
+test('GW%: game points sobre 3× os games jogados', () => {
+  // "the total number of game points they earned divided by the total game
+  // points possible (generally, 3 times the number of games played)". Num 2x1
+  // o vencedor fez 6 pontos de game em 3 games: 6/9.
+  const players = [player('a', 3), player('b', 0)];
+  const [a, b] = (() => {
+    const rows = computeStandings(players, [match('a', 'b', 'player1', [2, 1])], EVENT);
+    return [rows.find((p) => p.id === 'a'), rows.find((p) => p.id === 'b')];
+  })();
+  close(a.gwp, 6 / 9, 'GW% de quem ganhou 2x1');
+  close(b.gwp, FLOOR, 'GW% de quem perdeu 1x2 (3/9 = o piso)');
+});
+
+test('GW%: o bye vale 6 pontos de game em 2 games, como manda a Appendix C', () => {
+  // "they are considered to have won the match 2–0. Thus, that player earns
+  // 3 match points and 6 game points." 6 / (3 × 2) = 100%.
+  const players = [player('a', 3)];
+  const [a] = computeStandings(players, [bye('a')], EVENT);
+  close(a.gwp, 1, 'GW% de quem recebeu bye');
+  assert.equal(a.omw, null, 'o bye não dá adversário a ninguém');
+});

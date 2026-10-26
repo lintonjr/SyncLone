@@ -92,7 +92,7 @@ export interface Player {
   losses: number;
   draws: number;
   points: number;
-  // Desempates oficiais, calculados pelo servidor (MTR 2.3). Nulos quando não há
+  // Desempates oficiais, calculados pelo servidor (MTR 3.1 e Appendix C). Nulos quando não há
   // dado suficiente: sem adversários enfrentados, ou sem placar de games registrado.
   matches_played: number;
   // rodadas em que o jogador teve assento — menor que o total = entrou depois
