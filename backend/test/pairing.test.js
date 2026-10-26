@@ -268,3 +268,83 @@ test('bye: classificação decide, mas o histórico continua tendo prioridade', 
       `esperado um dos empatados em 3 pontos, veio ${bye[0].player1.id}`);
   }
 });
+
+// --- Mesas de Commander: o 'swiss' também evita repetição, e a busca explora ---
+
+const pod4 = (a, b, c, d) => ({
+  player1_id: a, player2_id: b, player3_id: c, player4_id: d,
+  result: 'player1', result_status: 'confirmed',
+});
+const idsDoPod = (pod) => seatsOf(pod).map((p) => p.id);
+const repeticoesEm = (pods, past) => {
+  const hist = new Map();
+  for (const m of past) {
+    const ids = [m.player1_id, m.player2_id, m.player3_id, m.player4_id].filter(Boolean);
+    for (const a of ids) {
+      if (!hist.has(a)) hist.set(a, new Set());
+      for (const b of ids) if (b !== a) hist.get(a).add(b);
+    }
+  }
+  let n = 0;
+  for (const pod of pods) {
+    const ids = idsDoPod(pod);
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) if (hist.get(ids[i])?.has(ids[j])) n++;
+    }
+  }
+  return n;
+};
+
+test('mesa de 4: o "por desempenho" também evita repetir companheiro de mesa', () => {
+  // Dezesseis jogadores em quatro mesas. É o menor campo em que a rodada
+  // seguinte PODE sair sem nenhum reencontro: cada mesa nova pega um de cada
+  // mesa antiga. Com oito jogadores em duas mesas não daria — casa dos pombos:
+  // qualquer mesa de quatro tirada de dois grupos leva dois do mesmo grupo, e
+  // foi o que derrubou a primeira versão deste teste.
+  //
+  // Todos com os mesmos pontos de propósito: o que se mede aqui é se o método
+  // usa a liberdade que tem, não como ele agrupa por pontuação.
+  const field = Array.from({ length: 16 }, (_, i) => ({ id: `p${i}`, points: 3 }));
+  const past = [
+    pod4('p0', 'p1', 'p2', 'p3'), pod4('p4', 'p5', 'p6', 'p7'),
+    pod4('p8', 'p9', 'p10', 'p11'), pod4('p12', 'p13', 'p14', 'p15'),
+  ];
+  for (let i = 0; i < 30; i++) {
+    const pods = generateSwissPairings(field, 4, 'swiss', past);
+    assertSeatsEveryoneOnce(pods, field);
+    assert.equal(repeticoesEm(pods, past), 0, 'o swiss remontou mesa que dava para desmanchar');
+  }
+});
+
+test('mesa de 4: a busca explora de verdade entre os empatados em pontos', () => {
+  // A busca tenta 30 ordens e fica com a que menos repete — e isso só vale se
+  // as 30 forem diferentes. `rankWithRandomTiebreak` só sorteia entre quem
+  // empata em TUDO, então com desempates distintos a ordem saía fixa e as 30
+  // tentativas eram a mesma partição.
+  const field = Array.from({ length: 8 }, (_, i) => ({
+    id: `p${i}`, points: 3, omw: 0.9 - i * 0.05, gwp: 0.5, ogw: 0.5,
+  }));
+  const vistas = new Set();
+  for (let i = 0; i < 120; i++) {
+    const pods = generateSwissPairings(field, 4, 'swiss-less-repetition', []);
+    vistas.add(pods.map((p) => idsDoPod(p).sort().join('-')).sort().join('|'));
+  }
+  assert.ok(vistas.size > 1,
+    'a busca devolveu sempre a mesma partição — as tentativas não exploram nada');
+});
+
+test('mesa de 4: "swiss" e "menos repetição" compartilham o mesmo caminho', () => {
+  // A regra de mesa do Commander vale para os dois: 'swiss' é o DEFAULT do
+  // schema, e deixá-lo no fatiamento puro entregava o pior caminho a quem nunca
+  // abriu a lista de métodos.
+  const field = Array.from({ length: 16 }, (_, i) => ({ id: `p${i}`, points: 3 }));
+  const past = [
+    pod4('p0', 'p1', 'p2', 'p3'), pod4('p4', 'p5', 'p6', 'p7'),
+    pod4('p8', 'p9', 'p10', 'p11'), pod4('p12', 'p13', 'p14', 'p15'),
+  ];
+  for (const method of ['swiss', 'swiss-less-repetition']) {
+    const pods = generateSwissPairings(field, 4, method, past);
+    assertSeatsEveryoneOnce(pods, field);
+    assert.equal(repeticoesEm(pods, past), 0, `${method} repetiu mesa que dava para evitar`);
+  }
+});

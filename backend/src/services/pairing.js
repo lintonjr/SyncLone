@@ -74,6 +74,42 @@ function rankWithRandomTiebreak(players, compare) {
   return shuffle(players).sort(compare);
 }
 
+/**
+ * Ordem por classificação, mas com os empatados EM PONTOS sorteados entre si.
+ *
+ * Existe para a busca do pareamento de mesa cheia: ela tenta 30 ordens e fica
+ * com a que menos repete adversário, e isso só funciona se as 30 forem
+ * diferentes. `rankWithRandomTiebreak` não serve, porque ela só sorteia entre
+ * quem empata em TUDO — pontos, OMW%, GW% e OGW%. Num torneio de verdade os
+ * percentuais quase nunca empatam, então a ordem saía totalmente determinada e
+ * as 30 tentativas eram a mesma: medido, 1 partição distinta em 200
+ * pareamentos, contra 200 do método que sorteia. A busca existia e não
+ * explorava nada.
+ *
+ * O repositório já conhecia essa armadilha — o pareamento de Clã Fronto a
+ * comenta e a resolve embaralhando antes da ordenação estável. Faltava aplicar
+ * a mesma ideia aqui.
+ *
+ * Sortear dentro do grupo de pontos não enfraquece o "por desempenho": quem tem
+ * 6 pontos continua sentando com quem tem 6. O que varia é só a ordem dentro do
+ * grupo, que é justamente a liberdade que o suíço tem (FIDE C.04.1, artigo 5:
+ * "in general, participants are paired to others with the same score" — nada
+ * sobre a ordem dentro do grupo). Os desempates finos continuam decidindo o que
+ * é deles: a tabela do evento e quem recebe o bye.
+ */
+function shuffleWithinScoreGroups(players) {
+  const ordered = rankWithRandomTiebreak(players, byOfficialStanding);
+  const saida = [];
+  let i = 0;
+  while (i < ordered.length) {
+    let j = i;
+    while (j < ordered.length && (ordered[j].points ?? 0) === (ordered[i].points ?? 0)) j++;
+    saida.push(...shuffle(ordered.slice(i, j)));
+    i = j;
+  }
+  return saida;
+}
+
 // Map<playerId, Set<opponentId>> built from every past pairing (any round/podmate counts as an "opponent")
 function buildOpponentHistory(pastPairings) {
   const history = new Map();
@@ -300,7 +336,10 @@ function generateSwissPairings(players, podSize = 2, method = 'swiss', pastPairi
   );
   const byePods = byes.map((p) => asPod([p]));
 
-  if (method === 'swiss-less-repetition' || method === 'avoid-repetition') {
+  // Mesa de 3-4 por desempenho ('swiss' e 'swiss-less-repetition') e o sorteio
+  // anti-repetição ('avoid-repetition') compartilham o guloso. O 'swiss' em
+  // duelo nunca chega aqui: saiu antes, pelo `parearDuelo`.
+  if (method !== 'random') {
     const history = buildOpponentHistory(pastPairings);
     // A single greedy pass can paint itself into a corner (locally-optimal
     // early pods forcing a repeat later), so try several random orderings
@@ -310,7 +349,7 @@ function generateSwissPairings(players, podSize = 2, method = 'swiss', pastPairi
     for (let attempt = 0; attempt < 30 && bestScore > 0; attempt++) {
       const attemptOrder = method === 'avoid-repetition'
         ? shuffle(rest)
-        : rankWithRandomTiebreak(rest, byOfficialStanding);
+        : shuffleWithinScoreGroups(rest);
       const candidate = greedyAvoidRepeats(attemptOrder, podSize, history);
       const score = countRepeats(candidate.groups, history);
       if (score < bestScore) {
@@ -321,7 +360,7 @@ function generateSwissPairings(players, podSize = 2, method = 'swiss', pastPairi
     return best.groups.map(asPod).concat(chunkIntoPods(best.leftover, podSize), byePods);
   }
 
-  // 'swiss' (Performance Pairing) e 'random' diferem só na ordem dos pods.
+  // 'random' é o único que ignora a classificação por completo.
   const ordered = method === 'random'
     ? shuffle(rest)
     : rankWithRandomTiebreak(rest, byOfficialStanding);
