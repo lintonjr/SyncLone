@@ -444,11 +444,12 @@ export const EN: Record<string, string> = {
   'event.finished': '✓ Finished',
   'event.gameScore': 'Game score (optional)',
   'event.gameScoreHelp':
-    'Feeds GW% and OGW%. Applies to the winner you pick below; a draw is always recorded without a game score.',
+    'The game score decides the result: whoever won more games won the match, an even score is a draw. Feeds GW% and OGW% — 0-0 records the draw and adds nothing to the game count.',
   'event.guestName': 'Guest name',
   'event.join': 'Join Event',
   'event.leave': 'Leave Event',
   'event.loginToJoin': 'Login to Join',
+  'event.noGameScore': 'Without a game score:',
   'event.notFound': 'Event not found.',
   'event.notRecorded': 'Not recorded',
   'event.openLink': '↗ Open Link',
@@ -614,6 +615,8 @@ export const EN: Record<string, string> = {
   'myRound.losses': 'Losses',
   'myRound.naoComecou': "The event hasn't started yet. Wait for the organizer to start round 1.",
   'myRound.pendingApproval': 'Pending Approval — waiting on organizer',
+  'myRound.placarHelp':
+    'The game score decides the result. The organizer still has to approve what you report.',
   'myRound.points': 'Points',
   'myRound.record': 'Your Record',
   'myRound.reportDraw': 'Report Draw',

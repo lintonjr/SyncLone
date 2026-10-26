@@ -12,26 +12,51 @@
     @if (ehDuelo()) {
       <div class="game-score">
         <span class="game-score-label">{{ i18n.t('event.gameScore') }}</span>
-        <div class="game-score-chips">
-          <button class="game-chip" [class.active]="placar() === ''" (click)="placar.set('')">
-            {{ i18n.t('event.notRecorded') }}
-          </button>
-          <button class="game-chip" [class.active]="placar() === '2-0'" (click)="placar.set('2-0')">
-            2×0
-          </button>
-          <button class="game-chip" [class.active]="placar() === '2-1'" (click)="placar.set('2-1')">
-            2×1
-          </button>
+
+        @for (jogador of assentos(); track jogador.id) {
+          <div class="placar-linha">
+            <span class="placar-nome">{{ jogador.name }}</span>
+            <div class="game-score-chips">
+              @for (op of vitorias; track op.label) {
+                <button
+                  class="game-chip"
+                  [class.active]="ehAtual(jogador.slot, op)"
+                  (click)="escolherComPlacar(jogador.slot, op)"
+                >
+                  {{ op.label }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="placar-linha">
+          <span class="placar-nome">{{ i18n.t('event.allDraw') }}</span>
+          <div class="game-score-chips">
+            @for (op of empates; track op.label) {
+              <button
+                class="game-chip"
+                [class.active]="ehAtual('draw', op)"
+                (click)="escolherComPlacar('draw', op)"
+              >
+                {{ op.label }}
+              </button>
+            }
+          </div>
         </div>
+
         <span class="game-score-hint">{{ i18n.t('event.gameScoreHelp') }}</span>
       </div>
     }
 
     <div class="modal-btns">
+      @if (ehDuelo()) {
+        <span class="sem-placar-label">{{ i18n.t('event.noGameScore') }}</span>
+      }
       @for (jogador of assentos(); track jogador.id) {
         <button
           class="btn btn-primary"
-          [class.current-result]="mesa().result === jogador.slot"
+          [class.current-result]="mesa().result === jogador.slot && !placarAtual()"
           (click)="escolher(jogador.slot)"
         >
           {{ i18n.t('result.won', { nome: jogador.name }) }}
@@ -39,7 +64,7 @@
       }
       <button
         class="btn btn-ghost"
-        [class.current-result]="mesa().result === 'draw'"
+        [class.current-result]="mesa().result === 'draw' && !placarAtual()"
         (click)="escolher('draw')"
       >
         {{ i18n.t('event.allDraw') }}

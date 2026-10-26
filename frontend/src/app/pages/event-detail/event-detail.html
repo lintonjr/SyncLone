@@ -340,7 +340,7 @@
           [ev]="event()!"
           [mr]="myRound()"
           [timer]="roundTimer()"
-          (report)="submitResult($event.pairingId, $event.result)"
+          (report)="submitResult($event.pairingId, $event.result, $event.games)"
         />
       }
     </div>
@@ -363,7 +363,7 @@
     <app-event-result
       [mesa]="rm.pairing"
       [isPodMode]="isPodMode()"
-      (lancar)="submitResult($event.pairingId, $event.resultado, $event.placar)"
+      (lancar)="submitResult($event.pairingId, $event.resultado, $event.games)"
       (fechar)="resultModal.set(null)"
     />
   }

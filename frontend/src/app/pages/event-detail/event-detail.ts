@@ -447,24 +447,21 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  // '' = não registrar. Só existe em mesa 1v1; pods não têm placar por games.
-
   /** O modal cuida do placar a partir do que a mesa já tem. */
   openResultModal(pairing: Pairing) {
     this.resultModal.set({ pairing });
   }
 
-  submitResult(pairingId: string, result: string, placar: '' | '2-0' | '2-1' = '') {
-    // O placar acompanha o vencedor: 2×1 significa 2 games para quem venceu.
-    const winnerGames = placar === '2-0' ? [2, 0] : placar === '2-1' ? [2, 1] : null;
-    const games =
-      winnerGames && (result === 'player1' || result === 'player2')
-        ? result === 'player1'
-          ? { p1: winnerGames[0], p2: winnerGames[1] }
-          : { p1: winnerGames[1], p2: winnerGames[0] }
-        : undefined;
-
-    this.eventSvc.submitResult(this.id(), pairingId, result, games).subscribe({
+  /**
+   * Lança um resultado, com ou sem placar.
+   *
+   * A tradução de "placar escolhido" para "games de cada assento" agora mora em
+   * `lib/placar.ts`, com quem monta os botões — aqui só se repassa. Antes era
+   * esta função que decidia, e por isso ela nunca conseguia mandar placar num
+   * empate: a conta assumia que todo placar tinha um vencedor.
+   */
+  submitResult(pairingId: string, result: string, games?: { p1: number; p2: number } | null) {
+    this.eventSvc.submitResult(this.id(), pairingId, result, games ?? undefined).subscribe({
       next: () => {
         this.load();
         this.resultModal.set(null);

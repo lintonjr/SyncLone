@@ -87,7 +87,56 @@
       } @else {
         <span class="result-pill pill-pending">{{ i18n.t('myRound.awaiting') }}</span>
         @if (ev()!.async_draws) {
+          @if (ehDuelo()) {
+            <!-- Em duelo o jogador reporta pelo placar, igual ao organizador: o
+                 placar diz o resultado, então cada botão é uma ação só. -->
+            <div class="self-report-placar">
+              <div class="placar-linha">
+                <span class="placar-nome">{{ i18n.t('myRound.iWon') }}</span>
+                <div class="game-score-chips">
+                  @for (op of vitorias; track op.label) {
+                    <button
+                      class="game-chip"
+                      (click)="reportarComPlacar(mySlot()!, op)"
+                    >
+                      {{ op.label }}
+                    </button>
+                  }
+                </div>
+              </div>
+              <div class="placar-linha">
+                <span class="placar-nome">{{ i18n.t('myRound.iLost') }}</span>
+                <div class="game-score-chips">
+                  @for (op of vitorias; track op.label) {
+                    <button
+                      class="game-chip"
+                      (click)="reportarComPlacar(opponentSlot()!, op)"
+                    >
+                      {{ op.label }}
+                    </button>
+                  }
+                </div>
+              </div>
+              <div class="placar-linha">
+                <span class="placar-nome">{{ i18n.t('myRound.reportDraw') }}</span>
+                <div class="game-score-chips">
+                  @for (op of empates; track op.label) {
+                    <button
+                      class="game-chip"
+                      (click)="reportarComPlacar('draw', op)"
+                    >
+                      {{ op.label }}
+                    </button>
+                  }
+                </div>
+              </div>
+              <span class="game-score-hint">{{ i18n.t('myRound.placarHelp') }}</span>
+            </div>
+          }
           <div class="self-report-actions">
+            @if (ehDuelo()) {
+              <span class="sem-placar-label">{{ i18n.t('event.noGameScore') }}</span>
+            }
             <button
               class="btn btn-ghost report-draw-btn"
               (click)="reportar(mr()!.pairing.id, mySlot()!)"

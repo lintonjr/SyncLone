@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const requireOrganizer = require('../middleware/requireOrganizer');
 const { podeOrganizar } = require('../lib/roles');
 const { fusoOuPadrao } = require('../lib/fusos');
+const { conferirPlacar } = require('../lib/placar');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { HttpError, asyncHandler } = require('../lib/http');
@@ -1520,23 +1521,28 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
 
     const { result, p1_games, p2_games } = req.body;
 
-    // Placar por games: só faz sentido numa mesa 1v1, e só o organizador registra.
-    // Ele nunca decide quem venceu (isso é `result`) — alimenta GW% e OGW%.
+    // Placar por games: só existe em mesa 1v1, e o placar é que DIZ o resultado
+    // — quem fez mais games venceu, placar igual é empate. A regra e as
+    // combinações aceitas (2-0, 2-1, 1-0, 1-1, 0-0) moram em lib/placar.js, para
+    // valerem igual aqui, no teste, e na tela que as oferece. Quem reporta não
+    // muda a regra: o jogador que auto-reporta manda placar pelo mesmo caminho
+    // que o organizador, e passa pela mesma conferência.
     const isDuel = !!pairing.player2_id && !pairing.player3_id && !pairing.player4_id;
     const hasGameScore = p1_games !== undefined && p2_games !== undefined;
-    if (hasGameScore && !isDuel) {
-      throw new HttpError(400, 'Game scores only apply to 1v1 tables');
-    }
-    if (hasGameScore && result !== 'draw' && p1_games === p2_games) {
-      throw new HttpError(400, 'A decided match cannot end on an even game score');
-    }
+    const problema = conferirPlacar({ result, p1Games: p1_games, p2Games: p2_games, ehDuelo: isDuel });
+    if (problema) throw new HttpError(problema.status, problema.message, problema.code);
 
     const isOwner = gerenciaEvento(await papelDoUsuarioNoEvento(tx, event, req.user.id));
     if (!isOwner) {
       // Player-Reported Results: a seated player may self-report the outcome of their own
-      // still-pending match. In a 1v1 they can report a win, a loss, or a draw. In a
-      // multiplayer pod only "I Won" (unambiguous: everyone else lost) or "Draw" are allowed —
-      // reporting a loss wouldn't say who among the other seats actually won.
+      // still-pending match. In a 1v1 they can report a win, a loss, or a draw — e, desde
+      // que o placar passou a dizer o resultado, reportam a partida pelo placar
+      // (2-0, 2-1, 1-0, 1-1, 0-0) como o organizador faz. O que o jogador pode
+      // dizer não mudou: o resultado conferido abaixo é o que o placar deriva, de
+      // modo que "eu perdi 0-2" continua valendo e "o outro ganhou" continua
+      // sendo uma das opções dele. In a multiplayer pod only "I Won" (unambiguous:
+      // everyone else lost) or "Draw" are allowed — reporting a loss wouldn't say
+      // who among the other seats actually won — e lá não existe placar.
       const seatedPlayer = await tx.get(
         'SELECT id FROM event_players WHERE event_id = ? AND user_id = ? AND id IN (?, ?, ?, ?)',
         [req.params.id, req.user.id, pairing.player1_id, pairing.player2_id, pairing.player3_id, pairing.player4_id]

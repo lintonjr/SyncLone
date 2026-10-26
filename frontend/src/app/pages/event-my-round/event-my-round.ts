@@ -3,6 +3,7 @@ import { I18nService } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
 import { TournamentEvent, Player, Pairing, Round } from '../../services/event';
 import { podPlayers, podPlayerResult, roundLabel } from '../event-detail/pod-view';
+import { EMPATES, VITORIAS, OpcaoDePlacar, placarPorAssento } from '../../lib/placar';
 
 /** O que o jogador logado tem pela frente na rodada corrente. */
 export interface MyRound {
@@ -38,14 +39,26 @@ export class EventMyRoundComponent {
   mr = input<MyRound | null>(null);
   timer = input<RoundTimer | null>(null);
 
-  /** Assento do jogador reportando, mais o resultado escolhido. */
-  report = output<{ pairingId: string; result: string }>();
+  /**
+   * Assento do jogador reportando, o resultado escolhido e, em duelo, o placar.
+   *
+   * O placar é opcional: quem não acompanha games continua tendo os três botões
+   * de sempre. Quando vem, é ele que diz o resultado — a mesma regra do
+   * organizador, conferida no servidor por `lib/placar.js`.
+   */
+  report = output<{ pairingId: string; result: string; games?: { p1: number; p2: number } }>();
 
   isPodMode = computed(
     () =>
       (this.ev()?.pod_size ?? 2) >= 3 ||
       ['clafronto', 'partner'].includes(this.ev()?.tournament_format ?? ''),
   );
+
+  readonly vitorias = VITORIAS;
+  readonly empates = EMPATES;
+
+  /** Placar por games só existe em mesa de dois. */
+  ehDuelo = computed(() => !this.isPodMode() && !!this.mr()?.pairing.player2_id);
 
   podPlayers = podPlayers;
   podPlayerResult = podPlayerResult;
@@ -68,5 +81,16 @@ export class EventMyRoundComponent {
 
   reportar(pairingId: string, result: string) {
     this.report.emit({ pairingId, result });
+  }
+
+  /** Um placar, com o resultado que ele deriva. */
+  reportarComPlacar(slot: string, opcao: OpcaoDePlacar) {
+    const mr = this.mr();
+    if (!mr) return;
+    this.report.emit({
+      pairingId: mr.pairing.id,
+      result: slot,
+      games: placarPorAssento(opcao, slot !== 'player2'),
+    });
   }
 }

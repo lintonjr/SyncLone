@@ -446,11 +446,12 @@ export const PT_BR: Record<string, string> = {
   'event.finished': '✓ Finalizado',
   'event.gameScore': 'Placar por games (opcional)',
   'event.gameScoreHelp':
-    'Alimenta GW% e OGW%. Vale para o vencedor escolhido abaixo; empate nunca registra placar.',
+    'O placar diz o resultado: quem fez mais games venceu, placar igual é empate. Alimenta GW% e OGW% — 0-0 registra o empate e não entra na conta de games.',
   'event.guestName': 'Nome do convidado',
   'event.join': 'Participar',
   'event.leave': 'Sair do evento',
   'event.loginToJoin': 'Entre para participar',
+  'event.noGameScore': 'Sem registrar placar:',
   'event.notFound': 'Evento não encontrado.',
   'event.notRecorded': 'Não registrar',
   'event.openLink': '↗ Abrir link',
@@ -615,6 +616,8 @@ export const PT_BR: Record<string, string> = {
   'myRound.losses': 'Derrotas',
   'myRound.naoComecou': 'O torneio ainda não começou. Espere o organizador iniciar a rodada 1.',
   'myRound.pendingApproval': 'Aguardando aprovação do organizador',
+  'myRound.placarHelp':
+    'O placar diz o resultado. O organizador ainda precisa aprovar o que você reportar.',
   'myRound.points': 'Pontos',
   'myRound.record': 'Seu retrospecto',
   'myRound.reportDraw': 'Registrar empate',

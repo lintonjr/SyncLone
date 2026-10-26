@@ -105,4 +105,71 @@ describe('EventMyRoundComponent', () => {
 
     expect(emitidos).toEqual([{ pairingId: 'mesa-7', result: 'player1' }]);
   });
+
+  // --- Auto-report com placar: o jogador reporta o que o organizador reporta ---
+
+  it('em duelo o jogador vê os cinco placares, dos dois lados e do empate', async () => {
+    const fixture = montar(
+      { pod_size: 2, async_draws: 1 },
+      { round: umaRodada(), pairing: umaMesa(), myPlayer: eu },
+    );
+    await fixture.whenStable();
+    const chips = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.self-report-placar .game-chip'),
+    ].map((b) => b.textContent?.trim());
+
+    // 2-0, 2-1 e 1-0 para "eu venci" e outra vez para "eu perdi"; 1-1 e 0-0 no empate.
+    expect(chips).toEqual(['2-0', '2-1', '1-0', '2-0', '2-1', '1-0', '1-1', '0-0']);
+  });
+
+  it('mesa de quatro não oferece placar: "2×1" não quer dizer nada num pod', async () => {
+    const pod = umaMesa({ player3_id: 'p3', player4_id: 'p4', p3_name: 'C', p4_name: 'D' });
+    const fixture = montar(
+      { pod_size: 4, async_draws: 1 },
+      { round: umaRodada(), pairing: pod, myPlayer: eu },
+    );
+    await fixture.whenStable();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.self-report-placar'),
+    ).toBeNull();
+  });
+
+  it('o placar que o jogador escolhe vai nos assentos certos', async () => {
+    const fixture = montar(
+      { pod_size: 2, async_draws: 1 },
+      { round: umaRodada(), pairing: umaMesa({ id: 'mesa-9' }), myPlayer: eu },
+    );
+    await fixture.whenStable();
+    const emitidos: { pairingId: string; result: string; games?: { p1: number; p2: number } }[] = [];
+    fixture.componentInstance.report.subscribe((e) => emitidos.push(e));
+
+    const doisUm = fixture.componentInstance.vitorias[1];
+    // Eu (assento 1) venci por 2-1.
+    fixture.componentInstance.reportarComPlacar('player1', doisUm);
+    // Perdi por 2-1: os dois games vão para o assento 2.
+    fixture.componentInstance.reportarComPlacar('player2', doisUm);
+    // Empate 1-1.
+    fixture.componentInstance.reportarComPlacar('draw', fixture.componentInstance.empates[0]);
+
+    expect(emitidos).toEqual([
+      { pairingId: 'mesa-9', result: 'player1', games: { p1: 2, p2: 1 } },
+      { pairingId: 'mesa-9', result: 'player2', games: { p1: 1, p2: 2 } },
+      { pairingId: 'mesa-9', result: 'draw', games: { p1: 1, p2: 1 } },
+    ]);
+  });
+
+  it('os três botões sem placar continuam lá, para quem não acompanha games', async () => {
+    const fixture = montar(
+      { pod_size: 2, async_draws: 1 },
+      { round: umaRodada(), pairing: umaMesa(), myPlayer: eu },
+    );
+    await fixture.whenStable();
+    const botoes = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.self-report-actions button'),
+    ].map((b) => b.textContent?.trim());
+
+    expect(botoes).toContain('I Won');
+    expect(botoes).toContain('I Lost');
+    expect(botoes).toContain('Report Draw');
+  });
 });
