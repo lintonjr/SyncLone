@@ -232,6 +232,21 @@ export class EventService {
     });
   }
 
+  /**
+   * Reabre um torneio encerrado.
+   *
+   * Manda só `status`, e isso não é detalhe: o servidor recusa a edição de um
+   * evento encerrado com qualquer outro campo no corpo (`assertReopenOnly`),
+   * porque a pontuação de um torneio fechado alimenta a classificação final.
+   * Existe como método próprio para que nenhum chamador monte esse FormData à
+   * mão e acabe mandando um campo a mais.
+   */
+  reopenEvent(id: string) {
+    const corpo = new FormData();
+    corpo.append('status', 'ongoing');
+    return this.updateEvent(id, corpo);
+  }
+
   deleteEvent(id: string) {
     return this.http.delete(`${this.API}/${id}`, { headers: this.authHeaders() });
   }

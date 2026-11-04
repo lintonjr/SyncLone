@@ -811,6 +811,38 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Reabre o torneio encerrado.
+   *
+   * Reabrir já existia no servidor, e era a única forma de desfazer um
+   * encerramento — mas não tinha botão: o caminho era uma chamada de API na mão.
+   * Faltou justamente no dia em que foi preciso devolver à classificação alguém
+   * que havia sido dropado por engano, com o torneio já fechado.
+   *
+   * O diálogo avisa do efeito que surpreende: encerrar de novo dispara outra vez
+   * o aviso de "evento finalizado" para todos os jogadores ativos.
+   */
+  async reopenEvent() {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.reopenEvent'),
+      mensagem: this.i18n.t('dialog.reopenEventBody'),
+      confirmar: this.i18n.t('dialog.reopen'),
+    });
+    if (!ok) return;
+
+    this.actionLoading.set(true);
+    this.eventSvc.reopenEvent(this.id()).subscribe({
+      next: () => {
+        this.load();
+        this.actionLoading.set(false);
+      },
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
+    });
+  }
+
   async deleteEvent() {
     const ok = await this.dialog.confirm({
       titulo: this.i18n.t('dialog.deleteEvent'),

@@ -248,6 +248,26 @@
   letter-spacing: 0.02em;
 }
 
+/* Reabrir fica ao lado do selo de encerrado, discreto de propósito: é saída de
+   emergência do organizador, não um gesto do dia a dia. Nada de verde — a cor
+   ali é a do torneio fechado, e este botão desfaz isso. */
+.reopen-btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+
+  &:hover:not(:disabled) {
+    border-color: var(--text-muted);
+    color: var(--text);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 /* ── Playoffs ── */
 .playoffs-btn {
   font-size: 13px;

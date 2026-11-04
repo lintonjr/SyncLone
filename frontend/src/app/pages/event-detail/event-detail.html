@@ -106,6 +106,16 @@
                   </button>
                 } @else {
                   <span class="event-finished-badge">{{ i18n.t('event.finished') }}</span>
+                  <!-- Reabrir existia só na API; sem botão, desfazer um
+                       encerramento exigia linha de comando. -->
+                  <button
+                    class="btn btn-ghost reopen-btn"
+                    (click)="reopenEvent()"
+                    [disabled]="actionLoading()"
+                    [title]="i18n.t('event.reopenHelp')"
+                  >
+                    {{ i18n.t('event.reopen') }}
+                  </button>
                 }
                 @if (motivoTravado()) {
                   <!-- Antes o botão do mata-mata simplesmente sumia e ninguém sabia por quê. -->

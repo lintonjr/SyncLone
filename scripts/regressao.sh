@@ -127,6 +127,11 @@ sec "6. C-03 · evento encerrado só reabre"
 E3=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg3 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" | jqp 'd["id"]')
 body -X POST $API/events/$E3/finish -H "Authorization: Bearer $OT" >/dev/null
 chk "renomear depois do fim -> 400" "$(code -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "name=Novo")" "400"
+# Reabrir carona num campo a mais e recusado: reabrir e so reabrir. E por isso
+# que o front tem um `reopenEvent()` proprio em vez de montar o corpo na mao.
+body -X POST $API/events/$E3/finish -H "Authorization: Bearer $OT" >/dev/null
+chk "reabrir com um campo a mais -> 400" "$(code -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "status=ongoing" -F "name=Carona")" "400"
+chk "e o torneio continua encerrado" "$(body $API/events/$E3 | jqp 'd["status"]')" "completed"
 chk "reabrir -> 200" "$(code -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "status=ongoing")" "200"
 
 sec "7. C-04 · SSE avisa editar e apagar"
