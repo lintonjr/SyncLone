@@ -54,6 +54,10 @@ Um fluxo que não é torneio: a loja recebe uma coleção, avalia, propõe um va
 - Adicionar jogador manualmente (organizador) ou entrada via auto-registro (`join`)
 - **Confirm New Players**: quando ativado, novas entradas ficam com status `pending` até o organizador aprovar/rejeitar (seção "Pending Approval" na aba Standings)
 - Edição de jogador, e saída do evento por **drop**: quem já foi pareado em alguma rodada fica com status `dropped` — some das standings e dos pareamentos seguintes, mas o histórico (pareamentos e pontos que distribuiu) continua intacto e o nome aparece na seção "Dropped Players". Só quem nunca sentiu à mesa (inscrição rejeitada, desistência antes da 1ª rodada) é apagado de fato
+- **Sair pede confirmação**, e o aviso diz o que está em jogo: as partidas jogadas continuam valendo para a liga, mas não há volta sozinho. Era a única ação destrutiva da página sem diálogo, e um clique distraído tirava da classificação quem havia jogado o torneio inteiro
+- **Voltar à disputa é do organizador** (migration 024): a caixa "Dropped Players" mostra quem saiu e quando — *saiu* por conta própria ou *removido por fulano* — com um botão de trazer de volta ao lado. Reativa a inscrição existente em vez de criar outra, e é isso que preserva os pareamentos e resultados, que apontam para aquele id. O jogador nunca reentra sozinho: `POST /join` responde 409 para quem já tem inscrição
+- **Histórico da inscrição** (`event_player_history`): entrada, saída, remoção, restauração, aprovação e recusa, cada uma com autor e hora, em `GET /api/events/:id/history` — fechado a quem organiza, porque a resposta nomeia pessoas. Sair por conta própria e ser tirado pelo organizador terminam no mesmo status e são fatos diferentes; antes disso, um drop era inexplicável depois do fato
+- **Reabrir torneio encerrado** tem botão, ao lado do selo de finalizado. O servidor só aceita a edição de um evento fechado se o corpo trouxer `status` e mais nada, e o diálogo avisa que encerrar de novo dispara outra vez o aviso de torneio finalizado
 - **Collaborative Deck Registering**: quando ativado, qualquer participante pode editar o deck de qualquer outro jogador do evento (por padrão, só o dono do evento ou o próprio jogador podem)
 
 ### Rodadas e pareamento
@@ -89,7 +93,8 @@ Um fluxo que não é torneio: a loja recebe uma coleção, avalia, propõe um va
 - Quando o toggle de playoff está desligado, os pontos são recalculados do zero só com rodadas suíças confirmadas (a tabela `event_players` guarda só o total corrido, sem separar por tipo de rodada — a rota de standings da liga refaz esse cálculo)
 - Apagar uma liga não apaga nem trava os torneios vinculados — eles só voltam a ficar sem liga (`ON DELETE SET NULL`)
 - Página do evento mostra um link "🏆 Part of {liga}" quando vinculado
-- **Ponto extra por torneio participado** (migration 023): interruptor da liga que abre um campo de 1 a 99. Cada jogador **com conta** ganha esses pontos por torneio da liga em que se inscreveu — **drop incluído**, porque o bônus premia presença, não resultado. A pontuação de mesa segue a regra anterior (só quem terminou ativo), então quem deu drop pode ter "Eventos 2" e bônus de 3 torneios; a coluna **Bônus** mostra `+9` com `3 torneios × 3 pontos` no título, para a conta fechar na tela. Vale **só na pontuação da liga**: `computeStandings` não sabe que o bônus existe, e a classificação de nenhum torneio muda. `points` sai da rota como o total, bônus dentro, porque é ele que ordena a tabela. Zero é desligado e é o `DEFAULT`: liga que não usa o recurso soma exatamente como antes — inclusive não trazendo para a tabela quem só deu drop. **É retroativo**: a liga é recalculada das mesas a cada carregamento, então ligar o bônus conta os torneios já realizados na hora
+- **Ponto extra por torneio participado** (migration 023): interruptor da liga que abre um campo de 1 a 99. Cada jogador **com conta** ganha esses pontos por torneio da liga em que se inscreveu — **drop incluído**, porque o bônus premia presença, não resultado. A pontuação de mesa também conta para quem saiu (ver abaixo), então "Eventos" e bônus batem; a coluna **Bônus** mostra `+9` com `3 torneios × 3 pontos` no título, para a conta fechar na tela. Vale **só na pontuação da liga**: `computeStandings` não sabe que o bônus existe, e a classificação de nenhum torneio muda. `points` sai da rota como o total, bônus dentro, porque é ele que ordena a tabela. Zero é desligado e é o `DEFAULT`: liga que não usa o recurso soma exatamente como antes — inclusive não trazendo para a tabela quem só deu drop. **É retroativo**: a liga é recalculada das mesas a cada carregamento, então ligar o bônus conta os torneios já realizados na hora
+- **Quem sai leva os pontos que fez** (desde 2026-11-04): a pontuação de mesa de um torneio conta para o jogador mesmo que ele tenha saído no meio — as mesas que jogou aconteceram. Antes a liga descartava esses pontos, contando só quem terminou ativo, e isso contradizia o próprio sistema: `users.js` (`somar`) monta o perfil sem olhar status, então a ficha do jogador creditava um cartel que a tabela da liga ignorava. Não há recorte "até o momento do drop" porque não é preciso: `computeStandings` só soma mesa confirmada e dropado não é pareado depois, então os pontos dele **já são**, por construção, os de até a saída. Continua de fora quem está `pending` — pedido não aprovado nunca sentou à mesa
 - **Decks da liga**: ranking do que foi jogado nos torneios dela — partidas, jogadores distintos, V/D/E, aproveitamento e títulos por deck, do mais jogado para o menos. Conta convidados sem conta (um deck não depende de quem o pilotou ter cadastro) e segue o mesmo interruptor de mata-mata da classificação. Sai das listas que a rota já carrega, sem consulta nova
 
 ### Outros
@@ -147,6 +152,7 @@ CloneManaSync/
 ├── infraestructure/        # SPEC, RUNBOOK e plano da AWS; diagramas
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
+├── docker-compose.ci.yml   # sobreposição do CI: build sem network: host (gambiarra da VPN local)
 └── README.md
 ```
 
@@ -170,6 +176,18 @@ docker run -d --rm --name vk -p 127.0.0.1:36379:6379 valkey/valkey:8.1-alpine
 
 # MySQL (db) — ver db/README.md
 ```
+
+**Regressão de sistema** — a API inteira, de ponta a ponta, contra a stack de pé.
+É o único teste que prova a *composição*; os outros provam as peças. Cada bloco
+dela corresponde a um achado que já custou caro, e roda no CI pelo job `e2e`:
+
+```bash
+docker compose up -d                   # a stack precisa estar no ar
+SP=$(mktemp -d) bash scripts/regressao.sh
+```
+
+170 asserções em ~11 s. Cria dados próprios e os deixa no banco — rode contra um
+ambiente descartável, nunca contra produção.
 
 ## Como rodar — Docker (recomendado)
 
@@ -308,6 +326,7 @@ GET    /api/events/user/mine
 GET    /api/events
 GET    /api/events/:id
 GET    /api/events/:id/stream            # SSE — avisa clientes conectados quando o evento muda
+GET    /api/events/:id/history           # elenco: quem entrou, saiu, foi tirado ou voltou — só para quem organiza
 POST   /api/events
 PUT    /api/events/:id
 DELETE /api/events/:id

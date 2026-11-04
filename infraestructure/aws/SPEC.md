@@ -306,6 +306,7 @@ Alarmes:
 | `scripts` | `shellcheck` + 55 testes dos scripts de deploy com stubs |
 | `dns-updater` | 23 testes da Lambda |
 | `frontend` | formatação, testes, build |
+| `e2e` | a API de ponta a ponta contra a mesma stack do desenvolvimento — o único que prova a composição |
 
 ---
 
