@@ -136,7 +136,7 @@ jobs:
         with:
           node-version: '24'   # aws-env.sh exige Node 24
       - name: shellcheck
-        run: shellcheck -x -S style scripts/lib/comum.sh scripts/aws-env.sh scripts/zona.sh scripts/certificado.sh scripts/migrar.sh scripts/publicar-spa.sh scripts/deploy.sh scripts/fumaca.sh
+        run: shellcheck -x -S style scripts/lib/comum.sh scripts/aws-env.sh scripts/zona.sh scripts/certificado.sh scripts/migrar.sh scripts/publicar-spa.sh scripts/deploy.sh scripts/fumaca.sh scripts/regressao-lib.sh scripts/regressao.sh
       - name: Testes
         run: node --test 'scripts/test/*.test.js'
 
@@ -180,3 +180,54 @@ jobs:
         run: npm run build
       - name: Vulnerabilidades em produção
         run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    # A regressão de sistema: a API inteira, de ponta a ponta, contra a stack de
+    # verdade. É o único job que testa a COMPOSIÇÃO — os outros testam as peças.
+    #
+    # Existe porque a suíte ficou seis semanas quebrada sem ninguém notar. O
+    # commit do fuso do evento passou a exigir fuso na data, as datas do script
+    # não tinham, e toda criação de evento voltava 400. Não era defeito sutil:
+    # era a suíte inteira caída, e ninguém viu porque nada a executava. Cada
+    # bloco dela corresponde a um achado que já custou caro, então suíte parada
+    # é a rede de segurança desligada sem aviso.
+    #
+    # Sobe a MESMA stack do desenvolvimento (mesmo compose, mesmas imagens): é
+    # essa igualdade que impede o CI e a máquina de quem desenvolve de
+    # divergirem, que foi como a suíte morreu da primeira vez.
+    #
+    # O frontend não entra: a suíte só fala com a API, e o build do Angular já é
+    # coberto pelo job `frontend`. `--build backend` traz mysql e valkey junto,
+    # pelo depends_on.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stack de pé
+        # O schema sai de db/init/01-schema.sql, que o próprio MySQL aplica na
+        # primeira subida com o volume vazio — o mesmo caminho de quem roda
+        # `docker compose up` pela primeira vez. O caminho das migrations é
+        # coberto pelo job `db`, contra MySQL real; repeti-lo aqui seria gastar
+        # minuto para testar o que já está testado.
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build backend
+
+      - name: Esperar a API responder
+        # O compose tem health check para mysql e valkey, não para o backend:
+        # quem sabe que ele está pronto é a rota de saúde. Espera por condição,
+        # nunca por tempo fixo — é a mesma regra que vale dentro da suíte.
+        run: |
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:3001/api/health >/dev/null 2>&1; then
+              echo "API no ar"; exit 0
+            fi
+            sleep 2
+          done
+          echo "a API não respondeu em 120s"; exit 1
+
+      - name: Regressão de sistema
+        run: SP=$(mktemp -d) bash scripts/regressao.sh
+
+      - name: Logs do backend (só quando falha)
+        if: failure()
+        run: docker compose logs --no-color --tail 200 backend
+

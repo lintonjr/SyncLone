@@ -1,0 +1,22 @@
+# Sobreposição do CI. Usada junto do compose de sempre:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
+#
+# Existe por uma razão só: o `build.network: host` do compose principal é a
+# gambiarra da VPN (Cisco AnyConnect) da máquina de desenvolvimento, onde a
+# bridge do Docker fica sem rota e sem DNS. No runner do CI não há VPN — e,
+# pior, `network: host` no build exige privilégio explícito do buildx
+# ("additional privileges requested: pass --allow=network.host"), que faria
+# `docker compose up --build` ser recusado antes de construir qualquer coisa.
+#
+# Fora isso, nada muda: o CI sobe exatamente as mesmas imagens, com o mesmo
+# banco e o mesmo Valkey que você sobe na sua máquina. É essa igualdade que
+# impede o CI e o desenvolvimento de divergirem — e foi a divergência (ninguém
+# rodando a regressão) que deixou a suíte seis semanas quebrada sem ninguém ver.
+services:
+  backend:
+    build:
+      network: default
+  frontend:
+    build:
+      network: default

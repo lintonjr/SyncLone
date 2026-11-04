@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# $API e companhia são constantes literais sem espaço, repetidas em centenas de
+# chamadas de curl. Citar as 534 ocorrências seria reescrever a suíte inteira
+# por uma classe de erro que não pode acontecer aqui — e mexer em 657 linhas que
+# funcionam é justamente como se quebra uma rede de segurança.
+#
+# SC2016 é a outra face da mesma moeda: as condições do `espere` vão entre aspas
+# simples porque quem as avalia é o helper, a cada tentativa — expandir na
+# chamada congelaria o resultado da primeira e a espera nunca terminaria.
+# shellcheck disable=SC2086,SC2016
 # Regressão de sistema do Mercadia.
 #
 # Sobe nada: assume a stack em pé (docker compose up -d) e exercita a API de
@@ -11,6 +20,7 @@
 set -u
 SP="${SP:-$(mktemp -d)}"
 
+# shellcheck source=scripts/regressao-lib.sh
 . "$(dirname "$0")/regressao-lib.sh"
 S=$RANDOM$RANDOM
 OT=$(mkorg "reg$S@t.local" "Reg Final")
@@ -31,7 +41,7 @@ for n in P1 P2 P3 P4; do body -X POST $API/events/$ID/players -H "Authorization:
 fecha() { body $API/events/$1 | python3 -c "
 import sys,json;d=json.load(sys.stdin)
 print('\n'.join(p['id'] for p in d['pairings'] if not p['result']))" > $SP/p.txt
-  while read pid; do [ -n "$pid" ] && body -X PUT $API/events/$1/pairings/$pid -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"result":"player1"}' >/dev/null; done < $SP/p.txt; }
+  while read -r pid; do [ -n "$pid" ] && body -X PUT $API/events/$1/pairings/$pid -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"result":"player1"}' >/dev/null; done < $SP/p.txt; }
 body -X POST $API/events/$ID/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $ID
 body -X PUT $API/events/$ID -H "Authorization: Bearer $OT" -F "points_win=10" >/dev/null
 body -X POST $API/events/$ID/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $ID
@@ -43,7 +53,7 @@ chk "coluna points saiu do banco" "$(docker compose exec -T mysql mysql -N -uroo
 sec "3. C-02 · rotação exata de 4 clãs"
 CID=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg2 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "tournament_format=clafronto" -F "pairing_method=swiss-less-repetition" -F "playoff_structure=clan4" | jqp 'd["id"]')
 for c in Alfa Beta Gama Delta; do body -X POST $API/events/$CID/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"$c\",\"display_names\":[\"$c 1\",\"$c 2\",\"$c 3\",\"$c 4\"]}" >/dev/null; done
-for r in 1 2 3 4; do body -X POST $API/events/$CID/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $CID; done
+for _ in 1 2 3 4; do body -X POST $API/events/$CID/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $CID; done
 body $API/events/$CID > $SP/r2.json
 python3 - "$SP" > $SP/r2.txt <<'PY'
 import json, itertools, collections, sys
@@ -57,7 +67,7 @@ for p in d['pairings']:
     for a,b in itertools.combinations(sorted(s),2): pares[(a,b)]+=1
 print(len(pares), sum(1 for v in pares.values() if v>1), mesmo, len([p for p in d['pairings'] if p['result']=='bye']))
 PY
-read DIST REP MESMO BYES < $SP/r2.txt
+read -r DIST REP MESMO BYES < $SP/r2.txt
 chk "96 duplas distintas em 4 rodadas" "$DIST" "96"
 chk "zero reencontro" "$REP" "0"
 chk "nenhuma mesa com clã repetido" "$MESMO" "0"
@@ -77,7 +87,7 @@ m=[p for p in a['pairings'] if p['round_id']==a['rounds'][-1]['id']][0]
 s=[m['player%d_id'%i] for i in (1,2,3,4)]
 g=[x for x in s if pb[x]['points']>pa[x]['points']]
 print(len(g), len({pa[x]['clan_id'] for x in g}))" > $SP/pf.txt
-read NG NC < $SP/pf.txt
+read -r NG NC < $SP/pf.txt
 chk "dois assentos pontuaram" "$NG" "2"
 chk "e são do mesmo clã" "$NC" "1"
 
@@ -117,7 +127,7 @@ dupla = [porId[a] for a in assentos if porId[a]['clan_id'] == claVencedor]
 naLiga = [daLiga.get(p['user_id'], {}).get('wins') for p in dupla]
 print(len(daLiga), len(divergem), len(dupla), len(set(naLiga)))
 PYEOF
-read NL NDIV NDUP NWIN < $SP/c07.txt
+read -r NL NDIV NDUP NWIN < $SP/c07.txt
 chk "os quatro assentos entram na liga" "$NL" "4"
 chk "liga e evento dizem o mesmo para cada um" "$NDIV" "0"
 chk "a dupla vencedora tem dois assentos" "$NDUP" "2"
@@ -135,16 +145,26 @@ chk "e o torneio continua encerrado" "$(body $API/events/$E3 | jqp 'd["status"]'
 chk "reabrir -> 200" "$(code -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "status=ongoing")" "200"
 
 sec "7. C-04 · SSE avisa editar e apagar"
-(timeout 6 curl -sN "$API/events/$E3/stream" > $SP/sse.txt &); sleep 1
-body -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "name=Reg3 editado" >/dev/null; sleep 1
+# A rota escreve uma linha em branco assim que aceita a conexão (routes/events.js),
+# e é por isso que dá para esperar o arquivo deixar de estar vazio em vez de
+# chutar um segundo. O PID fica guardado para o curl não sobreviver à seção.
+: > $SP/sse.txt
+timeout 30 curl -sN "$API/events/$E3/stream" > $SP/sse.txt &
+SSE_PID=$!
+espere 15 "o stream SSE conectou" '[ -s "$SP/sse.txt" ]'
+body -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "name=Reg3 editado" >/dev/null
+espere 15 "PUT emite update" 'grep -q "data: update" "$SP/sse.txt"'
 chk "PUT emite update" "$(grep -c 'data: update' $SP/sse.txt)" "1"
-body -X DELETE $API/events/$E3 -H "Authorization: Bearer $OT" >/dev/null; sleep 1
+body -X DELETE $API/events/$E3 -H "Authorization: Bearer $OT" >/dev/null
+espere 15 "DELETE emite deleted" 'grep -q "data: deleted" "$SP/sse.txt"'
 chk "DELETE emite deleted" "$(grep -c 'data: deleted' $SP/sse.txt)" "1"
+kill "$SSE_PID" 2>/dev/null || true
+wait "$SSE_PID" 2>/dev/null || true
 
 sec "8. Selo de entrada tardia não confunde eliminação com atraso"
 E5=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg5 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "playoff_structure=top4" | jqp 'd["id"]')
 for n in A B C D E F G H; do body -X POST $API/events/$E5/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
-for r in 1 2; do body -X POST $API/events/$E5/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E5; done
+for _ in 1 2; do body -X POST $API/events/$E5/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E5; done
 body -X POST $API/events/$E5/playoffs/start -H "Authorization: Bearer $OT" >/dev/null
 body $API/events/$E5 > $SP/r5.json
 chk "Top 4 iniciado, mas o suíço continua com 2 rodadas" "$(jqp 'd["swiss_rounds_total"]' < $SP/r5.json)" "2"
@@ -159,7 +179,7 @@ chk "inscrição com aprovação fica pendente" "$(jqp 'd["pending"]' < $SP/j.js
 PIDP=$(body $API/events/$E4 | jqp '[p["id"] for p in d["players"] if p["status"]=="pending"][0]')
 body -X PUT $API/events/$E4/players/$PIDP -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"status":"active"}' >/dev/null
 for n in Q1 Q2 Q3 Q4; do body -X POST $API/events/$E4/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
-for r in 1 2 3 4 5; do body -X POST $API/events/$E4/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E4; done
+for _ in 1 2 3 4 5; do body -X POST $API/events/$E4/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E4; done
 body $API/events/$E4 > $SP/r4.json
 python3 -c "
 import json, collections
@@ -167,7 +187,7 @@ d=json.load(open('$SP/r4.json'))
 n={p['id']:p['display_name'] for p in d['players']}
 c=collections.Counter(n[p['player1_id']] for p in d['pairings'] if p['result']=='bye')
 print(len(d['rounds']), max(c.values()) if c else 0, len(c))" > $SP/r4.txt
-read NR MAXB DISTB < $SP/r4.txt
+read -r NR MAXB DISTB < $SP/r4.txt
 chk "A-16: 5 rodadas com 5 jogadores" "$NR" "5"
 chk "A-16: ninguém tomou bye duas vezes" "$MAXB" "1"
 chk "A-16: todos rodaram o bye" "$DISTB" "5"
@@ -207,7 +227,8 @@ LB=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: 
 torneio() {
   local extra=""
   [ -n "$3" ] && extra="-F league_id=$3"
-  local eid=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=$1 $S" -F "game=MTG" -F "format=$2" -F "date=2026-10-01T19:00:00Z" -F "allow_byes=true" $extra | jqp 'd["id"]')
+  local eid
+  eid=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=$1 $S" -F "game=MTG" -F "format=$2" -F "date=2026-10-01T19:00:00Z" -F "allow_byes=true" $extra | jqp 'd["id"]')
   body -X POST $API/events/$eid/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$MF\"}" >/dev/null
   for n in R1 R2 R3; do body -X POST $API/events/$eid/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
   body -X POST $API/events/$eid/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $eid
@@ -230,7 +251,6 @@ chk "quem joga uma liga so tem um recorte" "$(body $API/users/$UID_P/profile | j
 
 sec "12. Notificações: código e teto"
 NM="nt$S@t.local"; reg "Notificado" "$NM"; NMT=$(tok "$NM")
-NMID=$(body $API/users/me -H "Authorization: Bearer $NMT" | jqp 'd["id"]')
 ENT=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Notif $S" -F "game=MTG" -F "date=2026-10-01T19:00:00Z" -F "allow_byes=true" | jqp 'd["id"]')
 body -X POST $API/events/$ENT/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$NM\"}" >/dev/null
 for n in N1 N2 N3; do body -X POST $API/events/$ENT/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
@@ -271,10 +291,14 @@ chk "sumiu para o visitante" "$(body $API/users/$BPID/profile | jqp 'len(d["badg
 chk "o titular continua vendo, marcada" "$(body $API/users/$BPID/profile -H "Authorization: Bearer $BPT" | jqp '[b["visible"] for b in d["badges"]]')" "[0]"
 chk "quem entregou nao muda a visibilidade alheia -> 404" "$(code -X PUT $API/users/me/badges/$UB -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"visible":true}')" "404"
 chk "revogar -> 200" "$(code -X DELETE $API/badges/$BID/award/$BPID -H "Authorization: Bearer $OT")" "200"
-ANTES_ARQ=$(docker compose exec -T backend ls /app/uploads 2>/dev/null | wc -l)
+# A remocao do arquivo acontece depois da resposta do DELETE, entao a conta so
+# fecha um instante depois. Esperar a condicao em vez de um segundo fixo.
+contar_uploads() { docker compose exec -T backend ls /app/uploads 2>/dev/null | wc -l; }
+ANTES_ARQ=$(contar_uploads)
 ECAPA=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Capa $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "thumbnail=@$SP/badge.png;type=image/png" | jqp 'd["id"]')
-body -X DELETE $API/events/$ECAPA -H "Authorization: Bearer $OT" >/dev/null; sleep 1
-chk "apagar evento nao deixa a capa no disco" "$(docker compose exec -T backend ls /app/uploads 2>/dev/null | wc -l)" "$ANTES_ARQ"
+body -X DELETE $API/events/$ECAPA -H "Authorization: Bearer $OT" >/dev/null
+espere 15 "a capa sai do disco com o evento" "[ \"\$(contar_uploads)\" -eq $ANTES_ARQ ]"
+chk "apagar evento nao deixa a capa no disco" "$(contar_uploads)" "$ANTES_ARQ"
 
 chk "sumiu ate para o titular" "$(body $API/users/$BPID/profile -H "Authorization: Bearer $BPT" | jqp 'len(d["badges"])')" "0"
 
@@ -312,7 +336,7 @@ chk "dupla com tres nomes recusada -> 400" "$(code -X POST $API/events/$PEV/clan
 chk "quem inscreve precisa estar na dupla -> 403" "$(code -X POST $API/events/$PEV/clans -H "Authorization: Bearer $(tok "pa-Alfa-1-$S@t.local")" -H 'Content-Type: application/json' -d "{\"name\":\"Intrusa\",\"emails\":[\"pa-Beta-1-$S@t.local\",\"pa-Beta-2-$S@t.local\"]}")" "403"
 chk "playoff de outro formato recusado -> 400" "$(code -X PUT $API/events/$PEV -H "Authorization: Bearer $OT" -F "playoff_structure=top4")" "400"
 
-for r in 1 2 3; do body -X POST $API/events/$PEV/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $PEV; done
+for _ in 1 2 3; do body -X POST $API/events/$PEV/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $PEV; done
 body $API/events/$PEV > $SP/pt1.json
 python3 - "$SP" > $SP/pt1.txt <<'PYEOF'
 import json, sys, collections
@@ -344,7 +368,7 @@ iguais = all(
 soma = sum(c['points'] for c in d['clan_standings'])
 print(all(duplasNaMesa), len(set(byes)), len(byes), iguais, soma)
 PYEOF
-read FORMA BYEDIST BYETOT IGUAIS SOMA < $SP/pt1.txt
+read -r FORMA BYEDIST BYETOT IGUAIS SOMA < $SP/pt1.txt
 chk "toda mesa tem duas duplas, parceiros em 1-3 e 2-4" "$FORMA" "True"
 chk "tres rodadas impares geram tres byes" "$BYETOT" "3"
 chk "e cada dupla folgou uma vez" "$BYEDIST" "3"
@@ -363,7 +387,7 @@ divergem = [u for u in ev if ev[u] != liga.get(u)]
 porDupla = [sorted(liga.get(p['user_id']) for p in c['players']) for c in d['clan_standings']]
 print(len(liga), len(divergem), all(v[0] == v[1] for v in porDupla), sum(liga.values()))
 PYEOF
-read NLIGA NDIV PARES SOMALIGA < $SP/pt2.txt
+read -r NLIGA NDIV PARES SOMALIGA < $SP/pt2.txt
 chk "os seis jogadores entram na liga" "$NLIGA" "6"
 chk "liga e evento dizem o mesmo para cada um" "$NDIV" "0"
 chk "os dois de cada dupla levam o mesmo" "$PARES" "True"
@@ -394,7 +418,7 @@ for i in 1 2 3 4 5 6 7 8; do
 done
 # duas rodadas suicas com vencedor determinado pelo nome, para a classificacao
 # ser desigual e o cruzamento por seed poder ser conferido
-for r in 1 2; do
+for _ in 1 2; do
   body -X POST $API/events/$BEV/rounds -H "Authorization: Bearer $OT" >/dev/null
   body $API/events/$BEV | python3 -c "
 import sys,json
@@ -406,7 +430,7 @@ for m in d['pairings']:
     a=nome[por[m['player1_id']]['clan_id']]; b=nome[por[m['player2_id']]['clan_id']]
     print(m['id'], 'player1' if len(a)<len(b) or (len(a)==len(b) and a<b) else 'player2')
 " > $SP/br.txt
-  while read pid res; do body -X PUT $API/events/$BEV/pairings/$pid -H "Authorization: Bearer $OT" \
+  while read -r pid res; do body -X PUT $API/events/$BEV/pairings/$pid -H "Authorization: Bearer $OT" \
     -H 'Content-Type: application/json' -d "{\"result\":\"$res\"}" >/dev/null; done < $SP/br.txt
 done
 
@@ -439,12 +463,13 @@ for _ in 1 2 3 4; do
   FORMA=$(jqp 'str(all(len([m["player%d_id"%i] for i in (1,2,3,4) if m["player%d_id"%i]])==4 and [p for p in d["players"] if p["id"]==m["player1_id"]][0]["clan_id"]==[p for p in d["players"] if p["id"]==m["player3_id"]][0]["clan_id"] for m in d["pairings"] if m["round_id"]==d["rounds"][-1]["id"]))' < $SP/be.json)
   ETAPAS="$ETAPAS $E/$N/$FORMA"
   jqp '"\n".join(m["id"] for m in d["pairings"] if m["round_id"]==d["rounds"][-1]["id"] and not m["result"])' < $SP/be.json > $SP/bp.txt
-  while read pid; do [ -n "$pid" ] && body -X PUT $API/events/$BEV/pairings/$pid -H "Authorization: Bearer $OT" \
+  while read -r pid; do [ -n "$pid" ] && body -X PUT $API/events/$BEV/pairings/$pid -H "Authorization: Bearer $OT" \
     -H 'Content-Type: application/json' -d '{"result":"player1"}' >/dev/null; done < $SP/bp.txt
   body -X POST $API/events/$BEV/rounds -H "Authorization: Bearer $OT" > $SP/badv.json
   grep -q '"champion"' $SP/badv.json && break
 done
-chk "tres etapas, cada uma metade da anterior, todas 2v2" "$(echo $ETAPAS)" "Round of 8/4/True Semifinals/2/True Final/1/True"
+# `${ETAPAS# }` tira o espaço que a primeira volta do laço deixa à esquerda.
+chk "tres etapas, cada uma metade da anterior, todas 2v2" "${ETAPAS# }" "Round of 8/4/True Semifinals/2/True Final/1/True"
 
 body $API/events/$BEV > $SP/bfim.json
 chk "o evento termina com uma dupla campea" "$(jqp '(d["status"], d["champion_clan_id"] is not None)' < $SP/bfim.json)" "('completed', True)"
@@ -457,7 +482,7 @@ for i in 1 2 3 4; do
   body -X POST $API/events/$P4/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
     -d "{\"name\":\"Q$i\",\"display_names\":[\"Q${i}a\",\"Q${i}b\"]}" >/dev/null
 done
-for r in 1 2 3; do
+for _ in 1 2 3; do
   body -X POST $API/events/$P4/rounds -H "Authorization: Bearer $OT" >/dev/null
   body $API/events/$P4 | python3 -c "
 import sys,json
@@ -466,7 +491,7 @@ for m in d['pairings']:
     if m['result'] or not m['player2_id']: continue
     print(m['id'], 'player1' if nome[por[m['player1_id']]['clan_id']] < nome[por[m['player2_id']]['clan_id']] else 'player2')
 " > $SP/p4.txt
-  while read pid res; do body -X PUT $API/events/$P4/pairings/$pid -H "Authorization: Bearer $OT" \
+  while read -r pid res; do body -X PUT $API/events/$P4/pairings/$pid -H "Authorization: Bearer $OT" \
     -H 'Content-Type: application/json' -d "{\"result\":\"$res\"}" >/dev/null; done < $SP/p4.txt
 done
 body $API/events/$P4 > $SP/p4a.json
