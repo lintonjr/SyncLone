@@ -255,4 +255,94 @@ describe('EventStandingsComponent · formatos de time', () => {
     const fixture = montar({ tournament_format: 'standard' });
     expect(fixture.nativeElement.querySelector('.standings-switch')).toBeNull();
   });
+
+  /**
+   * A caixa dos removidos.
+   *
+   * Ela existia mostrando só nomes, e foi assim que um drop ficou sem explicação:
+   * um jogador que havia disputado todas as rodadas apareceu ali, sem posição,
+   * sem cartel e sem nada que dissesse quem o tirou nem quando.
+   */
+  describe('caixa dos removidos', () => {
+    const PADINHA = umJogador({ id: 'p9', display_name: 'Gabriel Padinha', status: 'dropped' });
+
+    function comRemovido(historico: unknown[] = [], isOwner = true, over = {}) {
+      comRouter();
+      comIdiomaFixo();
+      const fixture = TestBed.createComponent(EventStandingsComponent);
+      fixture.componentRef.setInput(
+        'ev',
+        umEvento({ players: [umJogador({ id: 'p1' }), PADINHA], ...over }),
+      );
+      fixture.componentRef.setInput('isOwner', isOwner);
+      fixture.componentRef.setInput('historico', historico);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('diz que a pessoa saiu por conta própria, e quando', () => {
+      const html = comRemovido([
+        {
+          id: 'h1', event_player_id: 'p9', display_name: 'Gabriel Padinha',
+          acao: 'saiu', de: 'active', para: 'dropped', motivo: null,
+          created_at: '2026-10-31T22:47:00.000Z', autor: 'Gabriel Padinha',
+        },
+      ]);
+      expect(html.querySelector('.dropped-origem')?.textContent).toContain('saiu');
+      // Sair e ser tirado terminam no mesmo status: a tela não pode confundi-los.
+      expect(html.querySelector('.dropped-origem')?.textContent).not.toContain('removido por');
+    });
+
+    it('e nomeia o organizador quando foi ele quem tirou', () => {
+      const html = comRemovido([
+        {
+          id: 'h1', event_player_id: 'p9', display_name: 'Gabriel Padinha',
+          acao: 'removido', de: 'active', para: 'dropped', motivo: null,
+          created_at: '2026-10-31T22:47:00.000Z', autor: 'Anthasto',
+        },
+      ]);
+      expect(html.querySelector('.dropped-origem')?.textContent).toContain('Anthasto');
+    });
+
+    it('sem histórico, volta a mostrar apenas o nome — nunca uma linha vazia', () => {
+      // Quem não organiza não recebe o histórico: a rota é fechada.
+      const html = comRemovido([], false);
+      expect(html.textContent).toContain('Gabriel Padinha');
+      expect(html.querySelector('.dropped-origem')).toBeNull();
+    });
+
+    it('o organizador vê o botão de trazer de volta', () => {
+      expect(comRemovido([], true).querySelector('.btn-restore')).toBeTruthy();
+    });
+
+    it('e quem não organiza, não', () => {
+      // Um TestBed por teste: configurar duas vezes no mesmo `it` é erro.
+      expect(comRemovido([], false).querySelector('.btn-restore')).toBeNull();
+    });
+
+    it('e ele não aparece em torneio encerrado, porque a rota recusaria', () => {
+      // `assertNotFinished` barra a troca de status num evento completo: oferecer
+      // o botão ali seria prometer uma ação que volta como erro.
+      const html = comRemovido([], true, { status: 'completed' });
+      expect(html.querySelector('.btn-restore')).toBeNull();
+    });
+
+    it('o clique devolve ao pai a inscrição a restaurar', () => {
+      comRouter();
+      comIdiomaFixo();
+      const fixture = TestBed.createComponent(EventStandingsComponent);
+      // Precisa de alguém ativo: a caixa dos removidos vive dentro do bloco da
+      // tabela, que não renderiza sem jogador ativo — o mesmo detalhe que já
+      // deixou a fila de aprovação inalcançável (primeiro teste deste arquivo).
+      fixture.componentRef.setInput('ev', umEvento({ players: [umJogador({ id: 'p1' }), PADINHA] }));
+      fixture.componentRef.setInput('isOwner', true);
+      fixture.detectChanges();
+
+      const pedidos: string[] = [];
+      fixture.componentInstance.restore.subscribe((id) => pedidos.push(id));
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.btn-restore')!.click();
+
+      expect(pedidos).toEqual(['p9']);
+    });
+  });
 });

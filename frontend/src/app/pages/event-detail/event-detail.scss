@@ -472,3 +472,11 @@
   text-align: left;
   cursor: pointer;
 }
+
+/* Quem saiu do torneio: no lugar onde ficava o botão de entrar/sair. Não é erro
+   nem alerta — é um estado, e a volta depende do organizador. */
+.left-event-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}

@@ -11,6 +11,7 @@ import {
   Round,
   Pairing,
   ClanStanding,
+  EventPlayerHistory,
 } from '../../services/event';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
@@ -53,6 +54,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   apiUrl = environment.apiUrl.replace('/api', '');
 
   event = signal<TournamentEvent | null>(null);
+  // O histórico do elenco: vazio para quem não gerencia o evento, porque a rota
+  // que o serve é fechada — ela nomeia quem agiu.
+  historico = signal<EventPlayerHistory[]>([]);
   loading = signal(true);
   tab = signal<'standings' | 'pairings' | 'results' | 'myround'>('standings');
   actionLoading = signal(false);
@@ -117,11 +121,28 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return !!(user && ev && (ev.owner_id === user.id || ev.league_owner_id === user.id));
   });
 
-  isJoined = computed(() => {
+  /** A inscrição de quem está logado, em qualquer status, ou undefined. */
+  minhaInscricao = computed(() => {
     const user = this.auth.currentUser();
-    const ev = this.event();
-    return !!(user && ev?.players?.some((p) => p.user_id === user.id));
+    if (!user) return undefined;
+    return this.event()?.players?.find((p) => p.user_id === user.id);
   });
+
+  /**
+   * Inscrito *e ainda na disputa*.
+   *
+   * Olhava só a existência da linha, e a linha de quem sai continua lá (os
+   * pareamentos apontam para ela). O resultado era o botão "Sair do evento"
+   * continuar aparecendo para quem já tinha saído — um clique que repetiria o
+   * drop e, se virasse "Entrar", bateria no 409 do servidor.
+   */
+  isJoined = computed(() => {
+    const inscricao = this.minhaInscricao();
+    return !!inscricao && inscricao.status !== 'dropped';
+  });
+
+  /** Saiu e não volta sozinho: a volta é pela mesa do organizador. */
+  euSai = computed(() => this.minhaInscricao()?.status === 'dropped');
 
   // O servidor já devolve a lista na ordem oficial (pontos, OMW%, GW%, OGW%) —
   // a mesma que semeia os playoffs e alimenta a exportação. Aqui só filtramos.
@@ -131,6 +152,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   pendingPlayers = computed(() =>
     (this.event()?.players ?? []).filter((p) => p.status === 'pending'),
+  );
+
+  droppedPlayers = computed(() =>
+    (this.event()?.players ?? []).filter((p) => p.status === 'dropped'),
   );
 
   roundsGrouped = computed(() => {
@@ -395,15 +420,36 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       next: (ev) => {
         this.event.set(ev);
         this.loading.set(false);
+        this.loadHistory();
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  /**
+   * O histórico do elenco, para a caixa dos removidos dizer quem saiu e quando.
+   *
+   * Só quem gerencia o evento pode ler (a resposta nomeia o autor), então a
+   * chamada só sai nesse caso — e um erro aqui não estraga a página: sem
+   * histórico a caixa volta a mostrar apenas os nomes.
+   */
+  private loadHistory() {
+    if (!this.isOwner()) return this.historico.set([]);
+    this.eventSvc.getEventHistory(this.id()).subscribe({
+      next: (h) => this.historico.set(h),
+      error: () => this.historico.set([]),
     });
   }
 
   // Silent refetch used when the SSE stream pings that something changed elsewhere —
   // deliberately doesn't touch `loading`, so it never flashes the full-page spinner.
   refresh() {
-    this.eventSvc.getEvent(this.id()).subscribe({ next: (ev) => this.event.set(ev) });
+    this.eventSvc.getEvent(this.id()).subscribe({
+      next: (ev) => {
+        this.event.set(ev);
+        this.loadHistory();
+      },
+    });
   }
 
   join() {
@@ -421,14 +467,37 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  leave() {
+  /**
+   * Sair do torneio.
+   *
+   * Era a única ação destrutiva desta página sem confirmação — todas as outras
+   * (remover, iniciar rodada, desfazer, aprovar, recusar, dropar, encerrar) já
+   * passavam por aqui. Um clique tirava o jogador da classificação sem perguntar
+   * e sem caminho de volta, e foi exatamente assim que alguém que havia jogado
+   * todas as rodadas de uma etapa de liga sumiu do ranking.
+   *
+   * O erro também passou a aparecer: antes era engolido, então um 400 do
+   * servidor (torneio já encerrado, por exemplo) não dizia nada a ninguém.
+   */
+  async leave() {
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.leaveEvent'),
+      mensagem: this.i18n.t('dialog.leaveEventBody'),
+      confirmar: this.i18n.t('dialog.leave'),
+      perigo: true,
+    });
+    if (!ok) return;
+
     this.actionLoading.set(true);
     this.eventSvc.leaveEvent(this.id()).subscribe({
       next: () => {
         this.load();
         this.actionLoading.set(false);
       },
-      error: () => this.actionLoading.set(false),
+      error: (err) => {
+        this.error.set(mensagemDeErro(this.i18n, err));
+        this.actionLoading.set(false);
+      },
     });
   }
 
@@ -654,6 +723,32 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
     if (!ok) return;
     this.eventSvc.removePlayer(this.id(), playerId).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
+    });
+  }
+
+  /**
+   * Trazer de volta quem saiu.
+   *
+   * Só o organizador: foi a decisão de produto. O jogador que sai não reentra
+   * sozinho em momento nenhum — a mesa é de quem organiza.
+   *
+   * Reativa a inscrição existente em vez de criar outra, e é isso que preserva
+   * todos os pareamentos e resultados dele: eles apontam para aquele id.
+   */
+  async restorePlayer(playerId: string) {
+    const nome =
+      this.droppedPlayers().find((p) => p.id === playerId)?.display_name ??
+      this.i18n.t('common.player');
+    const ok = await this.dialog.confirm({
+      titulo: this.i18n.t('dialog.restorePlayer', { nome }),
+      mensagem: this.i18n.t('dialog.restorePlayerBody', { nome }),
+      confirmar: this.i18n.t('dialog.restore'),
+    });
+    if (!ok) return;
+
+    this.eventSvc.updatePlayer(this.id(), playerId, { status: 'active' }).subscribe({
       next: () => this.load(),
       error: (err) => this.error.set(mensagemDeErro(this.i18n, err)),
     });

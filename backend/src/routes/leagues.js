@@ -75,7 +75,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
     const cur = totals.get(userId) ?? {
       user_id: userId, display_name: displayName,
       points: 0, wins: 0, losses: 0, draws: 0,
-      // Torneios cuja pontuação de mesa entrou na conta (só quem terminou ativo).
+      // Torneios cuja pontuação de mesa entrou na conta — inclusive os que a
+      // pessoa não terminou, porque as mesas que ela jogou aconteceram.
       events_played: 0,
       // Torneios em que se inscreveu, drop incluído: é este que o bônus multiplica.
       events_bonus: 0,
@@ -85,7 +86,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     return cur;
   };
 
-  /** A pontuação de mesa de um torneio. Só para quem terminou ativo. */
+  /** A pontuação de mesa de um torneio. Vale para quem jogou, tenha terminado ou não. */
   const bump = (userId, displayName, { points, wins, losses, draws }) => {
     const cur = linha(userId, displayName);
     cur.points += points;
@@ -99,10 +100,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
    * O bônus de presença de um torneio.
    *
    * Separado do `bump` porque a regra é outra: aqui vale ter se inscrito, mesmo
-   * tendo dado drop no meio — foi a decisão de produto ("inscreveu-se, ganha").
-   * Chamado só quando `pontosExtra > 0`, e é isso que mantém a tabela idêntica à
-   * de antes nas ligas que não usam o recurso: sem bônus, quem só deu drop não
-   * ganha linha nenhuma.
+   * sem ter jogado mesa nenhuma — foi a decisão de produto ("inscreveu-se,
+   * ganha"). Chamado só quando `pontosExtra > 0`, e é isso que mantém a tabela
+   * idêntica à de antes nas ligas que não usam o recurso: sem bônus, quem se
+   * inscreveu e não jogou não ganha linha nenhuma.
    */
   const bonificar = (userId, displayName) => {
     const cur = linha(userId, displayName);
@@ -190,10 +191,22 @@ router.get('/:id', asyncHandler(async (req, res) => {
       // creditar entre eventos diferentes — nem pontos, nem bônus.
       if (!p.user_id) continue;
 
-      // O bônus premia presença, então drop conta. A pontuação de mesa, não: essa
-      // regra é anterior e continua valendo.
       if (pontosExtra > 0) bonificar(p.user_id, p.display_name);
-      if (p.status !== 'active') continue;
+
+      // Quem saiu leva os pontos que fez até sair.
+      //
+      // A tabela os descartava, e isso brigava com o resto do sistema: o perfil
+      // do jogador soma as participações sem olhar status (users.js, `somar`),
+      // então a ficha dele creditava um cartel que esta tabela ignorava. Era o
+      // mesmo defeito de sempre — dois lugares respondendo à mesma pergunta — e
+      // custou a uma etapa real sumir do ranking de quem jogou todas as rodadas.
+      //
+      // Não é preciso recortar "até o momento da saída": `computeStandings` só
+      // soma mesa confirmada, e quem está dropado não é pareado depois. Os
+      // pontos dele já são, por construção, os de até a saída.
+      //
+      // `pending` continua fora: pedido que nunca foi aprovado não sentou à mesa.
+      if (p.status === 'pending') continue;
       bump(p.user_id, p.display_name, p);
     }
   }

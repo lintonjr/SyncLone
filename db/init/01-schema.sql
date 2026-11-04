@@ -358,3 +358,26 @@ CREATE TABLE IF NOT EXISTS `avaliacao_exclusoes` (
   KEY `por_codigo` (`codigo`),
   CONSTRAINT `avaliacao_exclusoes_autor_fk` FOREIGN KEY (`autor_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Histórico da inscrição num torneio: quem entrou, saiu, foi tirado ou trouxeram
+-- de volta. Nasceu de um drop que ninguém conseguiu explicar depois do fato —
+-- `event_players` guarda só o estado atual. As decisões (por que não há FK para
+-- `event_players`, por que `acao` existe ao lado de `de`/`para`) estão em
+-- db/migrations/024_historico_da_inscricao.sql.
+CREATE TABLE IF NOT EXISTS `event_player_history` (
+  `id` varchar(36) NOT NULL,
+  `event_id` varchar(36) NOT NULL,
+  `event_player_id` varchar(36) NOT NULL,
+  `display_name` varchar(100) NOT NULL,
+  `acao` enum('entrou','saiu','removido','restaurado','aprovado','rejeitado','excluido','alterado') NOT NULL,
+  `de` varchar(20) DEFAULT NULL,
+  `para` varchar(20) DEFAULT NULL,
+  `autor_id` varchar(36) DEFAULT NULL,
+  `motivo` text DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `por_evento` (`event_id`, `created_at`),
+  KEY `por_inscricao` (`event_player_id`, `created_at`),
+  CONSTRAINT `eph_event_fk` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`),
+  CONSTRAINT `eph_autor_fk` FOREIGN KEY (`autor_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

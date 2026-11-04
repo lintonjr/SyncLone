@@ -19,6 +19,7 @@ const {
 } = require('../services/pairing');
 const { computeStandings, computeClanStandings, winningSide } = require('../services/standings');
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
+const { registrar: registrarInscricao } = require('../lib/historicoInscricao');
 const eventStream = require('../services/eventStream');
 const {
   gerenciaEvento, respondePeloEvento, gerenciaLiga,
@@ -581,6 +582,26 @@ router.get('/:id/export', asyncHandler(async (req, res) => {
   res.send('\ufeff' + csvRows(rows));
 }));
 
+/**
+ * O que aconteceu com o elenco deste torneio: quem entrou, saiu, foi tirado ou
+ * trouxeram de volta, com autor e hora.
+ *
+ * Fechada a quem gerencia o evento, e por isso fora do `GET /:id`, que é público:
+ * a resposta nomeia quem agiu, e isso não é informação de visitante. É a rota que
+ * responde "quem dropou o jogador?" — a pergunta que o sistema não soube
+ * responder quando ela apareceu de verdade.
+ */
+router.get('/:id/history', auth, asyncHandler(async (req, res) => {
+  await managedEvent(db, req.params.id, req.user.id);
+  res.json(await db.query(
+    `SELECT h.id, h.event_player_id, h.display_name, h.acao, h.de, h.para,
+            h.motivo, h.created_at, a.display_name AS autor
+       FROM event_player_history h LEFT JOIN users a ON a.id = h.autor_id
+      WHERE h.event_id = ? ORDER BY h.created_at DESC, h.id DESC LIMIT 200`,
+    [req.params.id]
+  ));
+}));
+
 // Auth: create event (organizer only)
 router.post('/', auth, requireOrganizer, upload.single('thumbnail'), validate(schemas.createEvent), asyncHandler(async (req, res) => {
   const {
@@ -757,10 +778,17 @@ router.post('/:id/join', auth, asyncHandler(async (req, res) => {
   if (existing) throw new HttpError(409, 'Already joined', 'api.alreadyJoined');
 
   const status = event.confirm_players ? 'pending' : 'active';
-  await db.run(
-    'INSERT INTO event_players (id, event_id, user_id, display_name, status) VALUES (?, ?, ?, ?, ?)',
-    [uuidv4(), req.params.id, req.user.id, req.user.display_name, status]
-  );
+  const inscricao = uuidv4();
+  await db.transaction(async (tx) => {
+    await tx.run(
+      'INSERT INTO event_players (id, event_id, user_id, display_name, status) VALUES (?, ?, ?, ?, ?)',
+      [inscricao, req.params.id, req.user.id, req.user.display_name, status]
+    );
+    await registrarInscricao(tx, {
+      evento: req.params.id, inscricao, nome: req.user.display_name,
+      de: null, para: status, autor: req.user.id, peloProprio: true,
+    });
+  });
   eventStream.broadcast(req.params.id);
   res.status(201).json({ message: status === 'pending' ? 'Join request sent' : 'Joined event', pending: status === 'pending' });
 }));
@@ -775,19 +803,33 @@ router.post('/:id/join', auth, asyncHandler(async (req, res) => {
  * the event page lists them under "Dropped Players". Only a player who never sat
  * at a table (a rejected join request, a last-minute cancellation) is deleted.
  */
-async function retirePlayer(eventId, player) {
-  const played = await db.get(
-    `SELECT id FROM pairings
-     WHERE event_id = ? AND (player1_id = ? OR player2_id = ? OR player3_id = ? OR player4_id = ?)
-     LIMIT 1`,
-    [eventId, player.id, player.id, player.id, player.id]
-  );
-  if (played) {
-    await db.run("UPDATE event_players SET status = 'dropped' WHERE id = ?", [player.id]);
-    return 'dropped';
-  }
-  await db.run('DELETE FROM event_players WHERE id = ?', [player.id]);
-  return 'removed';
+async function retirePlayer(eventId, player, { autor, peloProprio, motivo = null }) {
+  return db.transaction(async (tx) => {
+    const played = await tx.get(
+      `SELECT id FROM pairings
+       WHERE event_id = ? AND (player1_id = ? OR player2_id = ? OR player3_id = ? OR player4_id = ?)
+       LIMIT 1`,
+      [eventId, player.id, player.id, player.id, player.id]
+    );
+
+    // O registro vai junto com o fato, na mesma transação: foi a falta dele que
+    // deixou um drop inexplicável no banco de produção. Vai antes do DELETE
+    // porque depois dele não há mais de onde ler o nome.
+    const registro = {
+      evento: eventId, inscricao: player.id, nome: player.display_name,
+      de: player.status, autor, peloProprio, motivo,
+    };
+
+    if (played) {
+      await tx.run("UPDATE event_players SET status = 'dropped' WHERE id = ?", [player.id]);
+      await registrarInscricao(tx, { ...registro, para: 'dropped' });
+      return 'dropped';
+    }
+
+    await registrarInscricao(tx, { ...registro, para: null });
+    await tx.run('DELETE FROM event_players WHERE id = ?', [player.id]);
+    return 'removed';
+  });
 }
 
 // Auth: leave event
@@ -803,7 +845,10 @@ router.delete('/:id/join', auth, asyncHandler(async (req, res) => {
   );
   if (!player) return res.json({ message: 'Left event' });
 
-  const outcome = await retirePlayer(req.params.id, player);
+  const outcome = await retirePlayer(req.params.id, player, {
+    autor: req.user.id,
+    peloProprio: true,
+  });
   eventStream.broadcast(req.params.id);
   res.json({ message: outcome === 'dropped' ? 'Dropped from event' : 'Left event', dropped: outcome === 'dropped' });
 }));
@@ -839,10 +884,19 @@ router.post('/:id/players', auth, validate(schemas.addPlayer), asyncHandler(asyn
   }
 
   const id = uuidv4();
-  await db.run(
-    'INSERT INTO event_players (id, event_id, user_id, display_name) VALUES (?, ?, ?, ?)',
-    [id, req.params.id, userId, name]
-  );
+  await db.transaction(async (tx) => {
+    await tx.run(
+      'INSERT INTO event_players (id, event_id, user_id, display_name) VALUES (?, ?, ?, ?)',
+      [id, req.params.id, userId, name]
+    );
+    // O DEFAULT da coluna é 'active': quem o organizador inscreve não passa pela
+    // fila de aprovação, e é esse o status que o histórico registra.
+    await registrarInscricao(tx, {
+      evento: req.params.id, inscricao: id, nome: name,
+      de: null, para: 'active', autor: req.user.id,
+      peloProprio: userId === req.user.id,
+    });
+  });
   if (userId) await notifyUsers(db, [userId], 'notif.addedToEvent', { evento: event.name });
   eventStream.broadcast(req.params.id);
   res.status(201).json(await db.get('SELECT * FROM event_players WHERE id = ?', [id]));
@@ -1050,13 +1104,33 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
   if (status !== undefined && !canEditStatus) throw new HttpError(403, 'Forbidden', 'api.forbidden');
   if (deck_name === undefined && status === undefined && !canEditDeck) throw new HttpError(403, 'Forbidden', 'api.forbidden');
 
-  await db.run('UPDATE event_players SET deck_name=?, status=? WHERE id=?', [
-    deck_name ?? player.deck_name,
-    status ?? player.status,
-    req.params.playerId,
-  ]);
-  if (status === 'active' && player.status === 'pending' && player.user_id) {
-    await notifyUsers(db, [player.user_id], 'notif.joinApproved', { evento: event.name });
+  // Só a troca de status entra no histórico: nome de deck muda muitas vezes numa
+  // noite e não é o que alguém vai querer auditar seis meses depois.
+  const trocouStatus = status !== undefined && status !== player.status;
+
+  await db.transaction(async (tx) => {
+    await tx.run('UPDATE event_players SET deck_name=?, status=? WHERE id=?', [
+      deck_name ?? player.deck_name,
+      status ?? player.status,
+      req.params.playerId,
+    ]);
+    if (trocouStatus) {
+      await registrarInscricao(tx, {
+        evento: req.params.id, inscricao: player.id, nome: player.display_name,
+        de: player.status, para: status, autor: req.user.id, peloProprio: isSelf,
+      });
+    }
+  });
+
+  if (status === 'active' && player.user_id) {
+    // Aprovado é quem estava na fila; restaurado é quem havia saído e voltou pela
+    // mão do organizador. Os dois precisam saber — o segundo porque volta a ser
+    // pareado na próxima rodada e tem de aparecer na mesa.
+    if (player.status === 'pending') {
+      await notifyUsers(db, [player.user_id], 'notif.joinApproved', { evento: event.name });
+    } else if (player.status === 'dropped') {
+      await notifyUsers(db, [player.user_id], 'notif.playerRestored', { evento: event.name });
+    }
   }
   eventStream.broadcast(req.params.id);
   res.json(await db.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]));
@@ -1073,7 +1147,12 @@ router.delete('/:id/players/:playerId', auth, asyncHandler(async (req, res) => {
   );
   if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
 
-  const outcome = await retirePlayer(req.params.id, player);
+  const outcome = await retirePlayer(req.params.id, player, {
+    autor: req.user.id,
+    // Um organizador que também joga pode tirar a si mesmo pela tabela: quem
+    // decide o rótulo é de quem é a inscrição, não qual rota foi usada.
+    peloProprio: player.user_id === req.user.id,
+  });
   eventStream.broadcast(req.params.id);
   res.json({ message: outcome === 'dropped' ? 'Player dropped' : 'Player removed', dropped: outcome === 'dropped' });
 }));

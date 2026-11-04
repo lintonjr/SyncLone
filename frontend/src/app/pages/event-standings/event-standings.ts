@@ -3,7 +3,7 @@ import { I18nService } from '../../i18n/i18n';
 import { DialogService } from '../../services/dialog';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { TournamentEvent, Player, ClanStanding } from '../../services/event';
+import { TournamentEvent, Player, ClanStanding, EventPlayerHistory } from '../../services/event';
 
 /**
  * A aba de classificação — a tabela de clãs, a tabela individual, a fila de
@@ -29,6 +29,8 @@ export class EventStandingsComponent {
   actionLoading = input(false);
   /** Quem pode editar o deck — a regra depende do usuário logado, que só o pai conhece. */
   podeEditarDeck = input<(player: Player) => boolean>(() => false);
+  /** O histórico do elenco. Vazio para quem não gerencia: a rota é fechada. */
+  historico = input<EventPlayerHistory[]>([]);
 
   approve = output<string>();
   approveAll = output<void>();
@@ -38,6 +40,8 @@ export class EventStandingsComponent {
   editDeck = output<Player>();
   /** O organizador aponta de que conta é a inscrição de um convidado. */
   linkGuest = output<{ player: Player; email: string }>();
+  /** Trazer de volta quem saiu. Só o organizador: o jogador nunca reentra sozinho. */
+  restore = output<string>();
 
   /** Qual tabela está à frente no Clã Fronto. Estado só desta aba. */
   view = signal<'clans' | 'players'>('clans');
@@ -54,6 +58,34 @@ export class EventStandingsComponent {
   droppedPlayers = computed(() =>
     (this.ev()?.players ?? []).filter((p) => p.status !== 'active' && p.status !== 'pending'),
   );
+
+  /**
+   * A saída de cada inscrição, por id: o fato mais recente que a tirou da
+   * disputa. É o que deixa a caixa dos removidos dizer "saiu" ou "removido por
+   * Anthasto", em vez de só o nome — a pergunta que ninguém conseguiu responder
+   * quando apareceu de verdade.
+   *
+   * O histórico vem do servidor já em ordem decrescente, então o primeiro que
+   * casa é o último que aconteceu.
+   */
+  private saidaPorInscricao = computed(() => {
+    const porId = new Map<string, EventPlayerHistory>();
+    for (const h of this.historico()) {
+      if (h.acao !== 'saiu' && h.acao !== 'removido') continue;
+      if (!porId.has(h.event_player_id)) porId.set(h.event_player_id, h);
+    }
+    return porId;
+  });
+
+  /** Como a saída deste jogador se lê, ou '' quando não há registro dela. */
+  saidaDe(playerId: string): string {
+    const h = this.saidaPorInscricao().get(playerId);
+    if (!h) return '';
+    const quando = new Date(h.created_at).toLocaleString();
+    return h.acao === 'saiu'
+      ? this.i18n.t('standings.droppedSelf', { quando })
+      : this.i18n.t('standings.droppedBy', { autor: h.autor ?? '—', quando });
+  }
 
   private clanNameByPlayer = computed(() => {
     const nomes = new Map((this.ev()?.clans ?? []).map((c) => [c.id, c.name]));

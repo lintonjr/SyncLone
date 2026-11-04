@@ -377,6 +377,10 @@ export const PT_BR: Record<string, string> = {
     'A classificação vira final. Só é possível reabrir depois, sem alterar mais nada.',
   'dialog.lateEntryMany':
     'Entram a partir da Rodada {rodada}, com {n} rodada(s) a menos que os demais.',
+  'dialog.leave': 'Sair',
+  'dialog.leaveEvent': 'Sair do evento?',
+  'dialog.leaveEventBody':
+    'As partidas que você já jogou continuam valendo, e os pontos seguem contando para a liga. Mas não há como voltar sozinho: só o organizador pode te trazer de volta.',
   'dialog.lateEntryOne':
     'Entra a partir da Rodada {rodada}, com 0 pontos e {n} rodada(s) a menos que os demais.',
   'dialog.leaveLeagueTeam': 'Sair do time da liga?',
@@ -399,6 +403,10 @@ export const PT_BR: Record<string, string> = {
   'dialog.rejectJoin': 'Recusar inscrição?',
   'dialog.rejectJoinBody': 'O pedido de {nome} é descartado. Ela pode pedir de novo.',
   'dialog.remove': 'Remover',
+  'dialog.restore': 'Trazer de volta',
+  'dialog.restorePlayer': 'Trazer {nome} de volta?',
+  'dialog.restorePlayerBody':
+    'Os resultados que {nome} já tem continuam como estão, e ele volta a ser pareado a partir da próxima rodada.',
   'dialog.removeClan': 'Remover clã?',
   'dialog.removeClanBody': 'O clã {nome} e os seus quatro jogadores saem do torneio.',
   'dialog.removeOrganizer': 'Remover {nome} do time?',
@@ -450,6 +458,7 @@ export const PT_BR: Record<string, string> = {
   'event.guestName': 'Nome do convidado',
   'event.join': 'Participar',
   'event.leave': 'Sair do evento',
+  'event.leftEvent': 'Você saiu deste torneio. Para voltar, fale com o organizador.',
   'event.loginToJoin': 'Entre para participar',
   'event.noGameScore': 'Sem registrar placar:',
   'event.notFound': 'Evento não encontrado.',
@@ -654,6 +663,7 @@ export const PT_BR: Record<string, string> = {
   'notif.eventFinished': '{evento} foi finalizado — confira a classificação final.',
   'notif.guestLinked': '{evento}: a sua participação como "{nome}" foi vinculada à sua conta.',
   'notif.joinApproved': 'Sua inscrição em {evento} foi aprovada.',
+  'notif.playerRestored': '{evento}: o organizador te trouxe de volta ao torneio.',
   'notif.markAllRead': 'Marcar todas como lidas',
   'notif.organizerApproved':
     'Sua solicitação para organizar foi aprovada — você já pode criar eventos.',
@@ -811,6 +821,10 @@ export const PT_BR: Record<string, string> = {
   'standings.drop': 'Remover',
   'standings.dropHelp': 'Remover jogador do torneio',
   'standings.dropped': 'Jogadores removidos',
+  'standings.droppedBy': 'removido por {autor} · {quando}',
+  'standings.droppedSelf': 'saiu · {quando}',
+  'standings.restore': 'Trazer de volta',
+  'standings.restoreHelp': 'Trazer o jogador de volta ao torneio',
   'standings.linkDone': 'Participação vinculada à conta.',
   'standings.linkGuest': 'Vincular a uma conta',
   'standings.linkPrompt': 'E-mail da conta de {nome}:',

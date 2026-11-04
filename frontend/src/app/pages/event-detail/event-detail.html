@@ -228,6 +228,10 @@
             <button class="btn btn-ghost" (click)="leave()" [disabled]="actionLoading()">
               {{ i18n.t('event.leave') }}
             </button>
+          } @else if (euSai()) {
+            <!-- Saiu: a volta é com o organizador, então aqui não há botão nenhum.
+                 Antes ficava "Sair do evento", que repetiria o drop. -->
+            <span class="left-event-note">{{ i18n.t('event.leftEvent') }}</span>
           } @else if (event()!.status !== 'completed') {
             <button class="btn btn-primary" (click)="join()" [disabled]="actionLoading()">
               {{ i18n.t('event.join') }}
@@ -288,10 +292,12 @@
           [isOwner]="isOwner()"
           [actionLoading]="actionLoading()"
           [podeEditarDeck]="canEditDeckFn"
+          [historico]="historico()"
           (approve)="approvePlayer($event)"
           (approveAll)="approveAllPending()"
           (reject)="rejectPlayer($event)"
           (drop)="dropPlayer($event)"
+          (restore)="restorePlayer($event)"
           (removeClanReq)="removeClan($event.id, $event.nome)"
           (editDeck)="openDeckEdit($event)"
           (linkGuest)="vincularConvidado($event.player.id, $event.email)"

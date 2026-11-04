@@ -19,14 +19,14 @@ PJ="regp$S@t.local"; reg "Jogador Reg" "$PJ"; PT=$(tok "$PJ")
 sec() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
 sec "1. Autenticação, papéis e validação"
-chk "sem token -> 401" "$(code -X POST $API/events -F "name=X" -F "game=Magic" -F "date=2026-10-01")" "401"
-chk "jogador não cria evento -> 403" "$(code -X POST $API/events -H "Authorization: Bearer $PT" -F "name=X" -F "game=Magic" -F "date=2026-10-01")" "403"
+chk "sem token -> 401" "$(code -X POST $API/events -F "name=X" -F "game=Magic" -F "date=2026-10-01T19:00:00Z")" "401"
+chk "jogador não cria evento -> 403" "$(code -X POST $API/events -H "Authorization: Bearer $PT" -F "name=X" -F "game=Magic" -F "date=2026-10-01T19:00:00Z")" "403"
 chk "erro traz código traduzível" "$(body $API/events/00000000-0000-0000-0000-000000000000 | jqp 'd.get("code")')" "api.eventNotFound"
 chk "e mantém a frase de fallback" "$(body $API/events/00000000-0000-0000-0000-000000000000 | jqp '"error" in d')" "True"
 chk "data inválida -> 400" "$(code -X POST $API/events -H "Authorization: Bearer $OT" -F "name=X" -F "game=Magic" -F "date=31/12/2026")" "400"
 
 sec "2. C-01 · pontos com uma fonte só"
-ID=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg1 $S" -F "game=Magic" -F "date=2026-10-01" -F "points_win=3" | jqp 'd["id"]')
+ID=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg1 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "points_win=3" | jqp 'd["id"]')
 for n in P1 P2 P3 P4; do body -X POST $API/events/$ID/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
 fecha() { body $API/events/$1 | python3 -c "
 import sys,json;d=json.load(sys.stdin)
@@ -41,7 +41,7 @@ chk "total = 4 vitórias x escala vigente" "$(jqp 'sum(p["points"] for p in d["p
 chk "coluna points saiu do banco" "$(docker compose exec -T mysql mysql -N -uroot -proot123 manasync -e "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='manasync' AND table_name='event_players' AND column_name='points';" 2>/dev/null)" "0"
 
 sec "3. C-02 · rotação exata de 4 clãs"
-CID=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg2 $S" -F "game=Magic" -F "date=2026-10-01" -F "tournament_format=clafronto" -F "pairing_method=swiss-less-repetition" -F "playoff_structure=clan4" | jqp 'd["id"]')
+CID=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg2 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "tournament_format=clafronto" -F "pairing_method=swiss-less-repetition" -F "playoff_structure=clan4" | jqp 'd["id"]')
 for c in Alfa Beta Gama Delta; do body -X POST $API/events/$CID/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"$c\",\"display_names\":[\"$c 1\",\"$c 2\",\"$c 3\",\"$c 4\"]}" >/dev/null; done
 for r in 1 2 3 4; do body -X POST $API/events/$CID/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $CID; done
 body $API/events/$CID > $SP/r2.json
@@ -124,7 +124,7 @@ chk "a dupla vencedora tem dois assentos" "$NDUP" "2"
 chk "e os dois com o mesmo número de vitórias" "$NWIN" "1"
 
 sec "6. C-03 · evento encerrado só reabre"
-E3=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg3 $S" -F "game=Magic" -F "date=2026-10-01" | jqp 'd["id"]')
+E3=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg3 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" | jqp 'd["id"]')
 body -X POST $API/events/$E3/finish -H "Authorization: Bearer $OT" >/dev/null
 chk "renomear depois do fim -> 400" "$(code -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "name=Novo")" "400"
 chk "reabrir -> 200" "$(code -X PUT $API/events/$E3 -H "Authorization: Bearer $OT" -F "status=ongoing")" "200"
@@ -137,7 +137,7 @@ body -X DELETE $API/events/$E3 -H "Authorization: Bearer $OT" >/dev/null; sleep 
 chk "DELETE emite deleted" "$(grep -c 'data: deleted' $SP/sse.txt)" "1"
 
 sec "8. Selo de entrada tardia não confunde eliminação com atraso"
-E5=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg5 $S" -F "game=Magic" -F "date=2026-10-01" -F "playoff_structure=top4" | jqp 'd["id"]')
+E5=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg5 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "playoff_structure=top4" | jqp 'd["id"]')
 for n in A B C D E F G H; do body -X POST $API/events/$E5/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
 for r in 1 2; do body -X POST $API/events/$E5/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E5; done
 body -X POST $API/events/$E5/playoffs/start -H "Authorization: Bearer $OT" >/dev/null
@@ -148,7 +148,7 @@ body -X POST $API/events/$E5/players -H "Authorization: Bearer $OT" -H 'Content-
 chk "mas quem entra depois continua marcado" "$(body $API/events/$E5 | jqp 'len([p for p in d["players"] if p["swiss_rounds_seated"] < d["swiss_rounds_total"]])')" "1"
 
 sec "9. Regras antigas seguem de pé"
-E4=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg4 $S" -F "game=Magic" -F "date=2026-10-01" -F "allow_byes=true" -F "confirm_players=true" | jqp 'd["id"]')
+E4=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg4 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "allow_byes=true" -F "confirm_players=true" | jqp 'd["id"]')
 body -X POST $API/events/$E4/join -H "Authorization: Bearer $PT" > $SP/j.json
 chk "inscrição com aprovação fica pendente" "$(jqp 'd["pending"]' < $SP/j.json)" "True"
 PIDP=$(body $API/events/$E4 | jqp '[p["id"] for p in d["players"] if p["status"]=="pending"][0]')
@@ -169,14 +169,14 @@ chk "A-16: todos rodaram o bye" "$DISTB" "5"
 RID=$(jqp 'd["rounds"][0]["id"]' < $SP/r4.json)
 chk "A-17: cronômetro nasce parado" "$(jqp 'd["rounds"][-1]["timer_started_at"] is None' < $SP/r4.json)" "True"
 chk "B-01: Clã Fronto trava pod_size" "$(body -X PUT $API/events/$CID -H "Authorization: Bearer $OT" -F "pod_size=2" | jqp 'd["pod_size"]')" "4"
-chk "B-02: playoff incoerente -> 400" "$(code -X POST $API/events -H "Authorization: Bearer $OT" -F "name=X $S" -F "game=Magic" -F "date=2026-10-01" -F "playoff_structure=clan4")" "400"
+chk "B-02: playoff incoerente -> 400" "$(code -X POST $API/events -H "Authorization: Bearer $OT" -F "name=X $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "playoff_structure=clan4")" "400"
 chk "B-03: swiss_rounds_total exposto" "$(jqp '"swiss_rounds_total" in d' < $SP/r4.json)" "True"
 chk "B-04: CSV de clãs" "$(body "$API/events/$CID/export?type=clans" -H "Authorization: Bearer $OT" | head -1 | grep -c 'Rank,Clã')" "1"
-chk "A-01: upload não-imagem -> 400" "$(printf 'x' > $SP/x.txt; code -X POST $API/events -H "Authorization: Bearer $OT" -F "name=U $S" -F "game=Magic" -F "date=2026-10-01" -F "thumbnail=@$SP/x.txt;type=text/plain")" "400"
+chk "A-01: upload não-imagem -> 400" "$(printf 'x' > $SP/x.txt; code -X POST $API/events -H "Authorization: Bearer $OT" -F "name=U $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "thumbnail=@$SP/x.txt;type=text/plain")" "400"
 chk "apagar Clã Fronto (FK dos clãs) -> 200" "$(code -X DELETE $API/events/$CID -H "Authorization: Bearer $OT")" "200"
 
 sec "10. Perfil público e vinculação de convidado"
-E6=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg6 $S" -F "game=Magic" -F "date=2026-10-01" -F "allow_byes=true" | jqp 'd["id"]')
+E6=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Reg6 $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "allow_byes=true" | jqp 'd["id"]')
 for n in Umbra Vega Wren; do body -X POST $API/events/$E6/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
 body -X POST $API/events/$E6/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $E6
 UMBRA=$(body $API/events/$E6 | jqp '[p["id"] for p in d["players"] if p["display_name"]=="Umbra"][0]')
@@ -202,7 +202,7 @@ LB=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: 
 torneio() {
   local extra=""
   [ -n "$3" ] && extra="-F league_id=$3"
-  local eid=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=$1 $S" -F "game=MTG" -F "format=$2" -F "date=2026-10-01" -F "allow_byes=true" $extra | jqp 'd["id"]')
+  local eid=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=$1 $S" -F "game=MTG" -F "format=$2" -F "date=2026-10-01T19:00:00Z" -F "allow_byes=true" $extra | jqp 'd["id"]')
   body -X POST $API/events/$eid/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$MF\"}" >/dev/null
   for n in R1 R2 R3; do body -X POST $API/events/$eid/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
   body -X POST $API/events/$eid/rounds -H "Authorization: Bearer $OT" >/dev/null; fecha $eid
@@ -226,7 +226,7 @@ chk "quem joga uma liga so tem um recorte" "$(body $API/users/$UID_P/profile | j
 sec "12. Notificações: código e teto"
 NM="nt$S@t.local"; reg "Notificado" "$NM"; NMT=$(tok "$NM")
 NMID=$(body $API/users/me -H "Authorization: Bearer $NMT" | jqp 'd["id"]')
-ENT=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Notif $S" -F "game=MTG" -F "date=2026-10-01" -F "allow_byes=true" | jqp 'd["id"]')
+ENT=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Notif $S" -F "game=MTG" -F "date=2026-10-01T19:00:00Z" -F "allow_byes=true" | jqp 'd["id"]')
 body -X POST $API/events/$ENT/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"email\":\"$NM\"}" >/dev/null
 for n in N1 N2 N3; do body -X POST $API/events/$ENT/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
 body -X POST $API/events/$ENT/rounds -H "Authorization: Bearer $OT" >/dev/null
@@ -267,7 +267,7 @@ chk "o titular continua vendo, marcada" "$(body $API/users/$BPID/profile -H "Aut
 chk "quem entregou nao muda a visibilidade alheia -> 404" "$(code -X PUT $API/users/me/badges/$UB -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"visible":true}')" "404"
 chk "revogar -> 200" "$(code -X DELETE $API/badges/$BID/award/$BPID -H "Authorization: Bearer $OT")" "200"
 ANTES_ARQ=$(docker compose exec -T backend ls /app/uploads 2>/dev/null | wc -l)
-ECAPA=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Capa $S" -F "game=Magic" -F "date=2026-10-01" -F "thumbnail=@$SP/badge.png;type=image/png" | jqp 'd["id"]')
+ECAPA=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Capa $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "thumbnail=@$SP/badge.png;type=image/png" | jqp 'd["id"]')
 body -X DELETE $API/events/$ECAPA -H "Authorization: Bearer $OT" >/dev/null; sleep 1
 chk "apagar evento nao deixa a capa no disco" "$(docker compose exec -T backend ls /app/uploads 2>/dev/null | wc -l)" "$ANTES_ARQ"
 
@@ -288,7 +288,7 @@ chk "reabrir volta a responder" "$(body -X PUT $API/users/me/profile-visibility 
 
 sec "15. Partner · a dupla joga junta, e a liga conta cada um"
 PLG=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"Liga Partner $S\",\"playoff_counts\":true}" | jqp 'd["id"]')
-PEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Partner $S" -F "game=Magic" -F "date=2026-10-01" -F "tournament_format=partner" -F "playoff_structure=partner2" | jqp 'd["id"]')
+PEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Partner $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "tournament_format=partner" -F "playoff_structure=partner2" | jqp 'd["id"]')
 body -X PUT $API/events/$PEV -H "Authorization: Bearer $OT" -F "league_id=$PLG" >/dev/null
 chk "o formato manda na mesa e no bye" "$(body $API/events/$PEV | jqp '(d["pod_size"], d["allow_byes"])')" "(4, 1)"
 
@@ -382,7 +382,7 @@ sec "16. Partner · os brackets de 4 e 8 duplas, ate a campea"
 # jogados ate o fim. Aqui o bracket roda etapa por etapa: cada mesa elimina uma
 # dupla, a proxima fase e montada com quem sobrou, e a ultima coroa a campea.
 BEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Bracket $S" -F "game=Magic" \
-  -F "date=2026-10-01" -F "tournament_format=partner" -F "playoff_structure=partner8" | jqp 'd["id"]')
+  -F "date=2026-10-01T19:00:00Z" -F "tournament_format=partner" -F "playoff_structure=partner8" | jqp 'd["id"]')
 for i in 1 2 3 4 5 6 7 8; do
   body -X POST $API/events/$BEV/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
     -d "{\"name\":\"B$i\",\"display_names\":[\"B${i}a\",\"B${i}b\"]}" >/dev/null
@@ -447,7 +447,7 @@ chk "e a invariante vale nas oito duplas ate o fim" "$(jqp 'str(all(len({p["poin
 
 # partner4: o mesmo bracket com metade do campo — semifinais e final
 P4=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Bracket4 $S" -F "game=Magic" \
-  -F "date=2026-10-01" -F "tournament_format=partner" -F "playoff_structure=partner4" | jqp 'd["id"]')
+  -F "date=2026-10-01T19:00:00Z" -F "tournament_format=partner" -F "playoff_structure=partner4" | jqp 'd["id"]')
 for i in 1 2 3 4; do
   body -X POST $API/events/$P4/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
     -d "{\"name\":\"Q$i\",\"display_names\":[\"Q${i}a\",\"Q${i}b\"]}" >/dev/null
@@ -490,7 +490,7 @@ chk "e a final encerra com campea" "$(body $API/events/$P4 | jqp '(d["status"], 
 
 # guardas: o playoff escolhido precisa de campo para existir
 CURTO=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Curto $S" -F "game=Magic" \
-  -F "date=2026-10-01" -F "tournament_format=partner" -F "playoff_structure=partner8" | jqp 'd["id"]')
+  -F "date=2026-10-01T19:00:00Z" -F "tournament_format=partner" -F "playoff_structure=partner8" | jqp 'd["id"]')
 for i in 1 2 3; do
   body -X POST $API/events/$CURTO/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
     -d "{\"name\":\"K$i\",\"display_names\":[\"K${i}a\",\"K${i}b\"]}" >/dev/null
@@ -501,7 +501,7 @@ chk "e o erro diz quantas faltam" "$(body -X POST $API/events/$CURTO/playoffs/st
 
 # dupla quebrada antes do inicio: barrada na rodada, e com conserto
 QEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Quebra $S" -F "game=Magic" \
-  -F "date=2026-10-01" -F "tournament_format=partner" | jqp 'd["id"]')
+  -F "date=2026-10-01T19:00:00Z" -F "tournament_format=partner" | jqp 'd["id"]')
 for c in XX YY; do
   body -X POST $API/events/$QEV/clans -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' \
     -d "{\"name\":\"$c\",\"display_names\":[\"${c}a\",\"${c}b\"]}" >/dev/null
@@ -528,7 +528,7 @@ mkadmin(){ reg "$2" "$1"; docker compose exec -T mysql mysql -uroot -proot123 ma
 AE="dono$S@t.local"; AT=$(mkadmin "$AE" "Dono Reg")
 RJ="pede$S@t.local"; reg "Pedinte Reg" "$RJ"; RT=$(tok "$RJ")
 chk "endpoint antigo de auto-promocao nao existe mais" "$(code -X POST $API/users/me/upgrade-to-organizer -H "Authorization: Bearer $RT")" "404"
-chk "jogador nao cria evento" "$(code -X POST $API/events -H "Authorization: Bearer $RT" -F "name=X" -F "game=Magic" -F "date=2026-10-01")" "403"
+chk "jogador nao cria evento" "$(code -X POST $API/events -H "Authorization: Bearer $RT" -F "name=X" -F "game=Magic" -F "date=2026-10-01T19:00:00Z")" "403"
 chk "solicita" "$(code -X POST $API/users/me/organizer-request -H "Authorization: Bearer $RT" -H 'Content-Type: application/json' -d '{"justification":"organizo na loja"}')" "201"
 chk "dois pedidos pendentes nao existem" "$(code -X POST $API/users/me/organizer-request -H "Authorization: Bearer $RT" -H 'Content-Type: application/json' -d '{}')" "409"
 chk "pedir nao promoveu ninguem" "$(body $API/users/me -H "Authorization: Bearer $RT" | jqp 'd["role"]')" "player"
@@ -542,20 +542,111 @@ chk "recusado pode pedir de novo" "$(code -X POST $API/users/me/organizer-reques
 RID2=$(body $API/admin/organizer-requests -H "Authorization: Bearer $AT" | jqp "[r['id'] for r in d if r['email']=='$RJ' and r['status']=='pending'][0]")
 chk "aprova" "$(body -X POST $API/admin/organizer-requests/$RID2/approve -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{}' | jqp 'd["role"]')" "organizer"
 # O token e o mesmo de antes da aprovacao: o papel sai do banco a cada chamada.
-REV=$(body -X POST $API/events -H "Authorization: Bearer $RT" -F "name=Pos aprovacao $S" -F "game=Magic" -F "date=2026-10-01" | jqp 'd.get("id","")')
+REV=$(body -X POST $API/events -H "Authorization: Bearer $RT" -F "name=Pos aprovacao $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" | jqp 'd.get("id","")')
 chk "aprovado cria evento sem relogar" "$([ -n "$REV" ] && echo ok)" "ok"
 RUID=$(body $API/users/me -H "Authorization: Bearer $RT" | jqp 'd["id"]')
 chk "revogar rebaixa" "$(body -X PUT $API/admin/users/$RUID/role -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"role":"player"}' | jqp 'd["role"]')" "player"
-chk "e vale no clique seguinte, com o mesmo token" "$(code -X POST $API/events -H "Authorization: Bearer $RT" -F "name=X" -F "game=Magic" -F "date=2026-10-01")" "403"
+chk "e vale no clique seguinte, com o mesmo token" "$(code -X POST $API/events -H "Authorization: Bearer $RT" -F "name=X" -F "game=Magic" -F "date=2026-10-01T19:00:00Z")" "403"
 # Revogar tira a permissao, nao o passado: o evento continua dele, inteiro.
 chk "o evento criado continua existindo, e continua dele" "$(body $API/events/$REV | jqp 'd["owner_id"]')" "$RUID"
 AUID=$(body $API/users/me -H "Authorization: Bearer $AT" | jqp 'd["id"]')
 chk "dono nao mexe no proprio papel" "$(code -X PUT $API/admin/users/$AUID/role -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"role":"player"}')" "400"
 chk "papel inexistente -> 400" "$(code -X PUT $API/admin/users/$RUID/role -H "Authorization: Bearer $AT" -H 'Content-Type: application/json' -d '{"role":"superuser"}')" "400"
-chk "admin organiza tambem" "$(code -X POST $API/events -H "Authorization: Bearer $AT" -F "name=Admin organiza $S" -F "game=Magic" -F "date=2026-10-01")" "201"
+chk "admin organiza tambem" "$(code -X POST $API/events -H "Authorization: Bearer $AT" -F "name=Admin organiza $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z")" "201"
 chk "o dono foi avisado do pedido" "$(body $API/notifications -H "Authorization: Bearer $AT" | jqp "len([n for n in d if n['code']=='notif.organizerRequested'])>=1")" "True"
 chk "e o pedinte, de cada desfecho" "$(body $API/notifications -H "Authorization: Bearer $RT" | jqp "sorted({n['code'] for n in d if n['code'].startswith('notif.organizer')})")" "['notif.organizerApproved', 'notif.organizerRejectedReason', 'notif.organizerRevoked']"
 
+
+sec "17. Quem sai leva os pontos, e a saida deixa rastro"
+# O achado: um jogador terminou as quatro rodadas de uma etapa de liga, com todos
+# os resultados confirmados, e sumiu da classificacao e da pontuacao da liga.
+# Duas coisas faltavam. A liga descartava os pontos de quem saiu, brigando com o
+# proprio perfil do jogador, que os somava. E o banco guardava so o estado atual,
+# sem autor nem hora: nao havia como dizer quem tirou a pessoa.
+DLG=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"Liga Drop $S\"}" | jqp 'd["id"]')
+DEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Drop $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "points_win=3" -F "league_id=$DLG" | jqp 'd["id"]')
+
+# Dois jogadores com conta: um vai sair por conta propria, o outro fica.
+DSAI="dsai$S@t.local"; reg "Dropante" "$DSAI"; DST=$(tok "$DSAI")
+DFIC="dfic$S@t.local"; reg "Ficante" "$DFIC"; DFT=$(tok "$DFIC")
+body -X POST $API/events/$DEV/join -H "Authorization: Bearer $DST" >/dev/null
+body -X POST $API/events/$DEV/join -H "Authorization: Bearer $DFT" >/dev/null
+body -X POST $API/events/$DEV/rounds -H "Authorization: Bearer $OT" >/dev/null
+
+# O dropante ganha a mesa, e so depois sai: e o caso real — o resultado existe.
+body $API/events/$DEV > $SP/d1.json
+PID_SAI=$(jqp "[p['id'] for p in d['players'] if p['display_name']=='Dropante'][0]" < $SP/d1.json)
+MESA=$(jqp "d['pairings'][0]['id']" < $SP/d1.json)
+VENC=$(jqp "'player1' if d['pairings'][0]['player1_id']=='$PID_SAI' else 'player2'" < $SP/d1.json)
+body -X PUT $API/events/$DEV/pairings/$MESA -H "Authorization: Bearer $OT" \
+  -H 'Content-Type: application/json' -d "{\"result\":\"$VENC\"}" >/dev/null
+chk "antes de sair, a liga da 3 pontos a ele" \
+  "$(body $API/leagues/$DLG | jqp "[r['points'] for r in d['standings'] if r['display_name']=='Dropante'][0]")" "3"
+
+# Sai por conta propria. A inscricao foi pareada, entao e drop, nao exclusao.
+chk "sair com mesa jogada e drop, nao exclusao" \
+  "$(body -X DELETE $API/events/$DEV/join -H "Authorization: Bearer $DST" | jqp 'd["dropped"]')" "True"
+chk "e ele sai da classificacao do evento" \
+  "$(body $API/events/$DEV | jqp "[p['status'] for p in d['players'] if p['id']=='$PID_SAI'][0]")" "dropped"
+
+# O ponto do pedido: a liga continua somando o que ele fez ate sair.
+chk "a liga preserva os pontos de quem saiu" \
+  "$(body $API/leagues/$DLG | jqp "[r['points'] for r in d['standings'] if r['display_name']=='Dropante'][0]")" "3"
+chk "e o cartel vai junto" \
+  "$(body $API/leagues/$DLG | jqp "[(r['wins'],r['losses']) for r in d['standings'] if r['display_name']=='Dropante'][0]")" "(1, 0)"
+# A divergencia que existia: o perfil creditava o que a liga ignorava.
+UID_SAI=$(body $API/users/me -H "Authorization: Bearer $DST" | jqp 'd["id"]')
+chk "perfil e liga dizem o mesmo cartel" \
+  "$(body $API/leagues/$DLG | jqp "[r['wins'] for r in d['standings'] if r['display_name']=='Dropante'][0]") $(body $API/users/$UID_SAI/profile | jqp "d['totals']['wins']")" \
+  "1 1"
+
+# O rastro: quem saiu e quem foi tirado sao fatos diferentes.
+body $API/events/$DEV/history -H "Authorization: Bearer $OT" > $SP/dh.json
+chk "a saida por conta propria fica como 'saiu'" \
+  "$(jqp "[h['acao'] for h in d if h['event_player_id']=='$PID_SAI'][0]" < $SP/dh.json)" "saiu"
+chk "com o nome de quem agiu" \
+  "$(jqp "[h['autor'] for h in d if h['event_player_id']=='$PID_SAI'][0]" < $SP/dh.json)" "Dropante"
+chk "e a entrada tambem esta registrada" \
+  "$(jqp "sorted(h['acao'] for h in d if h['event_player_id']=='$PID_SAI')" < $SP/dh.json)" "['entrou', 'saiu']"
+chk "o historico e fechado: jogador nao le" \
+  "$(code $API/events/$DEV/history -H "Authorization: Bearer $DFT")" "403"
+chk "e nem anonimo" "$(code $API/events/$DEV/history)" "401"
+
+# Reentrar e so do organizador: o jogador nunca volta sozinho.
+chk "quem saiu nao reentra sozinho -> 409" \
+  "$(code -X POST $API/events/$DEV/join -H "Authorization: Bearer $DST")" "409"
+chk "o organizador traz de volta" \
+  "$(body -X PUT $API/events/$DEV/players/$PID_SAI -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"status":"active"}' | jqp 'd["status"]')" "active"
+chk "e isso fica como 'restaurado'" \
+  "$(body $API/events/$DEV/history -H "Authorization: Bearer $OT" | jqp "[h['acao'] for h in d if h['event_player_id']=='$PID_SAI'][0]")" "restaurado"
+# Reativa a inscricao existente, nao cria outra: e o que preserva os resultados.
+chk "a mesa dele continua de pe, com o mesmo id" \
+  "$(body $API/events/$DEV | jqp "len([p for p in d['pairings'] if '$PID_SAI' in (p['player1_id'],p['player2_id'])])")" "1"
+chk "e ele volta para a classificacao com os 3 pontos" \
+  "$(body $API/events/$DEV | jqp "[p['points'] for p in d['players'] if p['id']=='$PID_SAI' and p['status']=='active'][0]")" "3"
+chk "o jogador foi avisado da volta" \
+  "$(body $API/notifications -H "Authorization: Bearer $DST" | jqp "len([n for n in d if n['code']=='notif.playerRestored'])")" "1"
+
+# Tirado pelo organizador: mesmo status final, fato diferente.
+chk "o organizador tira" \
+  "$(body -X DELETE $API/events/$DEV/players/$PID_SAI -H "Authorization: Bearer $OT" | jqp 'd["dropped"]')" "True"
+chk "e isso fica como 'removido', com o organizador como autor" \
+  "$(body $API/events/$DEV/history -H "Authorization: Bearer $OT" | jqp "[(h['acao'],h['autor']) for h in d if h['event_player_id']=='$PID_SAI'][0]")" "('removido', 'Reg Final')"
+
+# Inscricao que nunca sentou a mesa e apagada — e o historico tem de sobreviver a ela.
+NOVO=$(body -X POST $API/events/$DEV/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d '{"display_name":"Avulso"}' | jqp 'd["id"]')
+body -X DELETE $API/events/$DEV/players/$NOVO -H "Authorization: Bearer $OT" >/dev/null
+chk "a inscricao apagada sai do elenco" \
+  "$(body $API/events/$DEV | jqp "len([p for p in d['players'] if p['id']=='$NOVO'])")" "0"
+chk "mas o historico guarda o nome e o que houve" \
+  "$(body $API/events/$DEV/history -H "Authorization: Bearer $OT" | jqp "sorted((h['acao'],h['display_name']) for h in d if h['event_player_id']=='$NOVO')")" \
+  "[('entrou', 'Avulso'), ('excluido', 'Avulso')]"
+
+# Pendente nunca sentou a mesa: continua fora da pontuacao, com ou sem bonus.
+PEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Fila $S" -F "game=Magic" -F "date=2026-10-01T19:00:00Z" -F "confirm_players=true" -F "league_id=$DLG" | jqp 'd["id"]')
+body -X POST $API/events/$PEV/join -H "Authorization: Bearer $DFT" >/dev/null
+chk "pedido na fila nao pontua na liga" \
+  "$(body $API/leagues/$DLG | jqp "[r['events_played'] for r in d['standings'] if r['display_name']=='Ficante'][0]")" "1"
 
 printf '\n\033[1mRESULTADO: %d ok / %d falhas\033[0m\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

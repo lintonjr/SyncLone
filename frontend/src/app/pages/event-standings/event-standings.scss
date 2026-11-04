@@ -282,13 +282,50 @@
   gap: 8px;
 }
 
+// Cada removido virou um grupo: nome, como saiu, e o botão de trazer de volta.
+// A pílula agora é o grupo, não o nome, para os três ficarem juntos na quebra de
+// linha em vez de se separarem no meio.
+.dropped-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px;
+  background: var(--surface2);
+  border-radius: 999px;
+}
+
 .dropped-name {
   font-size: 12px;
   color: var(--text-muted);
-  padding: 2px 10px;
-  background: var(--surface2);
-  border-radius: 999px;
   text-decoration: line-through;
+}
+
+.dropped-origem {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.btn-restore {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .pending-section {

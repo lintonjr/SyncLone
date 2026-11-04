@@ -280,7 +280,23 @@
         <h4 class="dropped-title">{{ i18n.t('standings.dropped') }}</h4>
         <div class="dropped-list">
           @for (player of droppedPlayers(); track player.id) {
-            <span class="dropped-name">{{ player.display_name }}</span>
+            <span class="dropped-item">
+              <span class="dropped-name">{{ player.display_name }}</span>
+              <!-- Quem saiu e quando: só quem gerencia o evento recebe o histórico. -->
+              @if (saidaDe(player.id)) {
+                <span class="dropped-origem">{{ saidaDe(player.id) }}</span>
+              }
+              @if (isOwner() && ev().status !== 'completed') {
+                <button
+                  class="btn-restore"
+                  [title]="i18n.t('standings.restoreHelp')"
+                  [disabled]="actionLoading()"
+                  (click)="restore.emit(player.id)"
+                >
+                  {{ i18n.t('standings.restore') }}
+                </button>
+              }
+            </span>
           }
         </div>
       </div>

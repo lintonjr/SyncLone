@@ -61,6 +61,34 @@ export interface Clan {
 }
 
 // Tabela principal do Clã Fronto: a soma dos quatro membros.
+/**
+ * Uma linha do histórico do elenco de um torneio.
+ *
+ * `autor` é o nome de quem agiu, e vem nulo quando o fato não tem a quem ser
+ * atribuído (convidado sem conta). `acao` já diz *o que* aconteceu — sair por
+ * conta própria e ser removido pelo organizador são fatos diferentes que
+ * terminam no mesmo status.
+ */
+export interface EventPlayerHistory {
+  id: string;
+  event_player_id: string;
+  display_name: string;
+  acao:
+    | 'entrou'
+    | 'saiu'
+    | 'removido'
+    | 'restaurado'
+    | 'aprovado'
+    | 'rejeitado'
+    | 'excluido'
+    | 'alterado';
+  de: string | null;
+  para: string | null;
+  motivo: string | null;
+  created_at: string;
+  autor: string | null;
+}
+
 export interface ClanStanding {
   id: string;
   name: string;
@@ -163,6 +191,13 @@ export class EventService {
 
   getEvent(id: string) {
     return this.http.get<TournamentEvent>(`${this.API}/${id}`);
+  }
+
+  /** Fechada a quem gerencia o evento: a resposta nomeia quem agiu. */
+  getEventHistory(id: string) {
+    return this.http.get<EventPlayerHistory[]>(`${this.API}/${id}/history`, {
+      headers: this.authHeaders(),
+    });
   }
 
   // Avisa sempre que o evento muda no servidor. 'update' pede um re-fetch via

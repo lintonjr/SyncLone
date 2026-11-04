@@ -375,6 +375,10 @@ export const EN: Record<string, string> = {
     'The standings become final. It can only be reopened afterwards, with nothing else changed.',
   'dialog.lateEntryMany':
     'They join from round {rodada}, with {n} round(s) fewer than everyone else.',
+  'dialog.leave': 'Leave',
+  'dialog.leaveEvent': 'Leave the event?',
+  'dialog.leaveEventBody':
+    'The matches you already played still count, and the points still go to the league. But you cannot come back on your own: only the organizer can bring you back.',
   'dialog.lateEntryOne':
     'Joins from round {rodada}, with 0 points and {n} round(s) fewer than everyone else.',
   'dialog.leaveLeagueTeam': 'Leave the league team?',
@@ -397,6 +401,10 @@ export const EN: Record<string, string> = {
   'dialog.rejectJoin': 'Reject join request?',
   'dialog.rejectJoinBody': "{nome}'s request is discarded. They can ask again.",
   'dialog.remove': 'Remove',
+  'dialog.restore': 'Bring back',
+  'dialog.restorePlayer': 'Bring {nome} back?',
+  'dialog.restorePlayerBody':
+    "The results {nome} already has stay as they are, and they go back into the pairings from the next round on.",
   'dialog.removeClan': 'Remove clan?',
   'dialog.removeClanBody': 'The clan {nome} and its four players leave the tournament.',
   'dialog.removeOrganizer': 'Remove {nome} from the team?',
@@ -448,6 +456,7 @@ export const EN: Record<string, string> = {
   'event.guestName': 'Guest name',
   'event.join': 'Join Event',
   'event.leave': 'Leave Event',
+  'event.leftEvent': 'You left this tournament. To come back, talk to the organizer.',
   'event.loginToJoin': 'Login to Join',
   'event.noGameScore': 'Without a game score:',
   'event.notFound': 'Event not found.',
@@ -653,6 +662,7 @@ export const EN: Record<string, string> = {
   'notif.eventFinished': '{evento} has finished — check the final standings.',
   'notif.guestLinked': '{evento}: your participation as "{nome}" was linked to your account.',
   'notif.joinApproved': 'Your registration for {evento} was approved.',
+  'notif.playerRestored': '{evento}: the organizer brought you back into the tournament.',
   'notif.markAllRead': 'Mark all read',
   'notif.organizerApproved': 'Your request to organize was approved — you can create events now.',
   'notif.organizerRejected': 'Your request to organize was not approved.',
@@ -808,6 +818,10 @@ export const EN: Record<string, string> = {
   'standings.drop': 'Drop',
   'standings.dropHelp': 'Drop player',
   'standings.dropped': 'Dropped Players',
+  'standings.droppedBy': 'dropped by {autor} · {quando}',
+  'standings.droppedSelf': 'left · {quando}',
+  'standings.restore': 'Bring back',
+  'standings.restoreHelp': 'Bring the player back into the tournament',
   'standings.linkDone': 'Participation linked to the account.',
   'standings.linkGuest': 'Link to an account',
   'standings.linkPrompt': "Email of {nome}'s account:",
