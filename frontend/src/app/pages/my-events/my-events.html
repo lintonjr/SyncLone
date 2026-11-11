@@ -40,7 +40,7 @@
           }
         </div>
       } @else {
-        <div class="events-list">
+        <div class="events-grid">
           @for (ev of owned(); track ev.id) {
             <app-event-card [event]="ev" />
           }
@@ -53,7 +53,7 @@
           <a routerLink="/" class="btn btn-ghost">{{ i18n.t('myEvents.browse') }}</a>
         </div>
       } @else {
-        <div class="events-list">
+        <div class="events-grid">
           @for (ev of joined(); track ev.id) {
             <app-event-card [event]="ev" />
           }
