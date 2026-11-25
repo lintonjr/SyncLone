@@ -239,7 +239,7 @@
       <b>está implementado e em produção</b>; o que ainda não existe aparece só na seção 15.
     </p>
     <div class="meta">
-      <span>Versão <b>2.4</b></span>
+      <span>Versão <b>2.6</b></span>
       <span>Data <b>26/10/2026</b></span>
       <span>Produção <b>app.mercadiastore.online</b></span>
       <span>Região <b>us-east-2</b></span>
@@ -289,7 +289,7 @@
             <tr><td>2.1</td><td>2026-09-24</td><td>Percentual da proposta negociável por OS; exclusão de OS só para administrador</td><td><code>avaliacao_exclusoes</code>: o que sobra quando a OS não sobra</td></tr>
             <tr><td>2.2</td><td>2026-09-28</td><td>Extra em reais na proposta, além do percentual</td><td><code>valor_credito</code>/<code>valor_pix</code> passam a ser o valor a pagar, com o extra dentro</td></tr>
             <tr><td>2.3</td><td>2026-09-29</td><td>Ponto extra por torneio participado na pontuação da liga</td><td>Presença entra no ranking da liga, sem tocar na classificação de nenhum torneio</td></tr>
-            <tr><td><b>2.4</b></td><td>2026-10-26</td><td><b>Pareamento suíço sem revanche</b> em duelo (FIDE C.04.1 e C.04.4.1); desempates conforme a Appendix C do MTR; placar por games com cinco placares, reportável pelo jogador</td><td><code>services/suicoDubov.js</code> e <code>lib/placar.js</code>: a rodada passa a ser um emparelhamento de custo mínimo, e o placar passa a <b>dizer</b> o resultado em vez de acompanhá-lo</td></tr><tr><td><b>2.5</b></td><td>2026-11-04</td><td><b>Quem sai leva os pontos que fez</b> na classificação da liga; <b>histórico da inscrição</b> com autor e hora; sair do evento passa a pedir confirmação; voltar à disputa e reabrir o torneio ganham botão</td><td><code>event_player_history</code>: sair por conta própria e ser tirado pelo organizador deixam de ser indistinguíveis. A pontuação de mesa de quem saiu passa a contar, alinhando a liga ao perfil do jogador, que já a somava</td></tr>
+            <tr><td><b>2.4</b></td><td>2026-10-26</td><td><b>Pareamento suíço sem revanche</b> em duelo (FIDE C.04.1 e C.04.4.1); desempates conforme a Appendix C do MTR; placar por games com cinco placares, reportável pelo jogador</td><td><code>services/suicoDubov.js</code> e <code>lib/placar.js</code>: a rodada passa a ser um emparelhamento de custo mínimo, e o placar passa a <b>dizer</b> o resultado em vez de acompanhá-lo</td></tr><tr><td><b>2.5</b></td><td>2026-11-04</td><td><b>Quem sai leva os pontos que fez</b> na classificação da liga; <b>histórico da inscrição</b> com autor e hora; sair do evento passa a pedir confirmação; voltar à disputa e reabrir o torneio ganham botão</td><td><code>event_player_history</code>: sair por conta própria e ser tirado pelo organizador deixam de ser indistinguíveis. A pontuação de mesa de quem saiu passa a contar, alinhando a liga ao perfil do jogador, que já a somava</td></tr><tr><td><b>2.6</b></td><td>2026-11-25</td><td><b>Buscar, filtrar e ordenar torneios</b> nas duas telas que os listam: busca por nome de torneio, liga, jogo e <b>jogador</b>; filtro por liga; ordem por data; e a lista como alternativa à vitrine de pôsteres</td><td><code>lib/listaEventos.js</code>: o recorte da lista deixa de ser escrito dentro de cada rota e passa a ser a mesma regra para a home e para "Meus eventos"</td></tr>
           </tbody>
         </table>
       </div>
@@ -387,8 +387,8 @@
             </tr>
             <tr>
               <td><b>Eventos</b></td>
-              <td>Criação e edição, capa, pontuação, tamanho de mesa, duração de rodada, evento de teste, encerrar e reabrir, QR de divulgação</td>
-              <td><code>routes/events.js</code></td>
+              <td>Criação e edição, capa, pontuação, tamanho de mesa, duração de rodada, evento de teste, encerrar e reabrir, QR de divulgação; busca por torneio, liga, jogo ou nome de jogador, filtro por liga, ordem por data e exibição em pôster ou em lista</td>
+              <td><code>routes/events.js</code>, <code>lib/listaEventos.js</code></td>
             </tr>
             <tr>
               <td><b>Inscrições</b></td>
@@ -762,7 +762,8 @@
         <table>
           <thead><tr><th>Método</th><th>Rota</th><th>Acesso</th><th>Função</th></tr></thead>
           <tbody>
-            <tr><td><span class="metodo get">GET</span></td><td><code>/api/events</code></td><td>público</td><td>Lista paginada</td></tr>
+            <tr><td><span class="metodo get">GET</span></td><td><code>/api/events</code></td><td>público</td><td>Lista paginada, com <code>q</code> (torneio, liga, jogo ou <b>nome de quem está inscrito</b>), <code>league_id</code>, <code>sort</code> e <code>past</code></td></tr>
+              <tr><td><span class="metodo get">GET</span></td><td><code>/api/events/user/mine</code></td><td>autenticado</td><td>Os torneios que a pessoa organiza e aqueles de que participa, com o mesmo recorte da lista pública</td></tr>
             <tr><td><span class="metodo get">GET</span></td><td><code>/api/events/:id</code></td><td>público</td><td>Evento completo, com classificação calculada</td></tr>
             <tr><td><span class="metodo get">GET</span></td><td><code>/api/events/:id/stream</code></td><td>público</td><td>Canal SSE de atualização</td></tr>
             <tr><td><span class="metodo get">GET</span></td><td><code>/api/events/:id/export</code></td><td>público</td><td>CSV de classificação, rodadas ou times</td></tr><tr><td><span class="metodo get">GET</span></td><td><code>/api/events/:id/history</code></td><td>organiza o evento</td><td>O que aconteceu com o elenco, com autor e hora. Fora do evento público porque nomeia quem agiu</td></tr>

@@ -102,6 +102,8 @@ Um fluxo que não é torneio: a loja recebe uma coleção, avalia, propõe um va
 - **Uso no celular**: nenhuma tela rola de lado (medido em 390 px de largura), as tabelas de classificação viram lista de cartões abaixo de 640 px, o banner do evento empilha em vez de sobrepor texto e botões, e todo alvo de toque tem no mínimo 44 px. Interface em português e inglês, com guarda automatizada: um teste falha se uma chave existir num idioma e faltar no outro, ou se um template usar chave inexistente
 - **Notificações**: o sino da barra superior traz contador de não lidas e é alimentado por eventos reais — inscrição feita pelo organizador, inscrição aprovada, rodada iniciada, classificação para os playoffs, resultado registrado ou aprovado, e evento finalizado. Um resultado auto-reportado avisa o organizador de que há algo esperando aprovação. Só jogadores com conta recebem (convidados avulsos não têm caixa de entrada)
 - **Aproveitamento por deck no perfil**: cada deck jogado aparece com o percentual, o número de eventos e as partidas, acompanhando o recorte de liga escolhido. A conta é a mesma do aproveitamento geral (empate vale meia vitória, MTR), compartilhada entre perfil e liga em `lib/retrospecto` — os dois lados, porque o perfil calcula do que já recebeu e a liga soma dezenas de torneios no servidor
+- **Achar um torneio**: a home e "Meus eventos" dividem a mesma barra de busca, filtro por liga e ordem. A busca alcança o nome do torneio, o da liga, o jogo e **o nome de quem está inscrito** — inclusive quem saiu e quem está na fila de espera, porque o histórico de quem passou pelo torneio não depende de aprovação. A ordem tem três opções: as duas datas e a "sugerida", que deixa cada lista com o padrão dela (os próximos começam pelo mais perto de acontecer, os passados pelo mais recente). O mesmo recorte vale nas duas telas porque mora num lugar só, `backend/src/lib/listaEventos.js`
+- **Pôster ou lista**: a vitrine de capas 2:3 continua o padrão, e a lista é a alternativa de quem procura em vez de passear — mostra liga e inscritos, que no pôster não cabem, e põe doze torneios na tela onde cabiam três. A escolha é guardada no navegador como o tema, e vale nas duas telas
 - **Exportação em CSV**: `GET /api/events/:id/export?type=standings|pairings` — classificação com todos os desempates, ou todas as rodadas com mesa, resultado, vencedor e placar por games. Botões na página do evento; arquivo sai com BOM para o Excel não quebrar acentuação
 - Upload de imagem de evento (multer) — só PNG / JPEG / WebP / GIF, até 5 MB; o arquivo é gravado com a extensão do tipo aceito (nunca a do nome enviado) e servido com `nosniff` + `Content-Disposition: attachment`, para que um upload nunca seja interpretado como documento na origem da SPA
 - **Atualização em tempo real** da página do evento via Server-Sent Events (`GET /api/events/:id/stream`) — quando o organizador adiciona jogador, lança/aprova resultado, inicia/desfaz rodada, faz swap ou finaliza o evento, qualquer outra aba/pessoa olhando aquele evento atualiza sozinha, sem reload
@@ -116,6 +118,7 @@ CloneManaSync/
 │   │   ├── db.js                   # pool MySQL + db.transaction()
 │   │   ├── lib/http.js             # HttpError + asyncHandler
 │   │   ├── lib/placar.js           # placar por games: a regra que liga placar e resultado
+│   │   ├── lib/listaEventos.js     # busca, liga e ordem da lista de torneios — a mesma nas duas telas
 │   │   ├── middleware/
 │   │   │   ├── auth.js
 │   │   │   ├── requireOrganizer.js
@@ -140,7 +143,7 @@ CloneManaSync/
 ├── frontend/           # SPA Angular
 │   └── src/app/
 │       ├── pages/{home,login,register,forgot-password,my-events,create-event,event-detail,leagues,league-detail,create-league,profile,admin}
-│       ├── components/{event-card,navbar,notification-panel}
+│       ├── components/{event-card,event-row,event-list,event-filters,navbar,notification-panel}
 │       └── services/
 ├── db/
 │   ├── init/01-schema.sql  # schema consolidado (initdb no Docker; banco vazio no runner)
@@ -322,8 +325,8 @@ POST   /api/auth/register
 POST   /api/auth/login
 POST   /api/auth/forgot-password
 
-GET    /api/events/user/mine
-GET    /api/events
+GET    /api/events/user/mine          # aceita ?q=&league_id=&sort= (mesmo recorte da lista pública)
+GET    /api/events                   # ?q=&league_id=&sort=&past=&offset=&limit= — ver lib/listaEventos.js
 GET    /api/events/:id
 GET    /api/events/:id/stream            # SSE — avisa clientes conectados quando o evento muda
 GET    /api/events/:id/history           # elenco: quem entrou, saiu, foi tirado ou voltou — só para quem organiza
