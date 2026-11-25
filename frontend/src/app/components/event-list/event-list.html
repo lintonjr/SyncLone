@@ -1,0 +1,13 @@
+@if (layout.layout() === 'lista') {
+  <div class="events-list">
+    @for (ev of events(); track ev.id) {
+      <app-event-row [event]="ev" />
+    }
+  </div>
+} @else {
+  <div class="events-grid">
+    @for (ev of events(); track ev.id) {
+      <app-event-card [event]="ev" />
+    }
+  </div>
+}

@@ -1,0 +1,85 @@
+/* A linha de filtros das telas de torneio.
+   Mesma ideia do `.filtros` de `avaliacoes` e `admin` — campo que cresce,
+   seletores do tamanho do conteúdo —, com a moldura da busca da home, que é a
+   tela em que esta barra aparece primeiro. */
+.filtros-eventos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+
+  select {
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    max-width: 100%;
+  }
+}
+
+.busca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* Cresce e encolhe: em 2 por linha no celular, 240px ainda caberiam. */
+  flex: 1 1 240px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text-muted);
+
+  input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    font: inherit;
+    font-size: 15px;
+    color: var(--text);
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
+  }
+}
+
+.layout {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition:
+      color 0.15s,
+      background 0.15s;
+
+    &:hover:not(.ativo) {
+      color: var(--text);
+    }
+
+    &.ativo {
+      color: var(--accent);
+      background: var(--bg);
+    }
+  }
+}

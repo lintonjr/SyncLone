@@ -167,6 +167,18 @@ export interface Pairing {
   winner_ids?: string[];
 }
 
+/**
+ * O recorte de uma lista de torneios: o que a tela filtrou, do jeito que o
+ * servidor espera receber. Campo vazio é campo que não vai na query string.
+ */
+export interface RecorteEventos {
+  q?: string;
+  /** Id da liga; `none` é "torneio sem liga". */
+  leagueId?: string;
+  /** `data_desc` ou `data_asc`; vazio deixa o padrão com o servidor. */
+  sort?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class EventService {
   private readonly API = `${environment.apiUrl}/events`;
@@ -178,9 +190,26 @@ export class EventService {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  getEvents(query?: string, past?: boolean, offset = 0, limit = 24) {
-    let params = new HttpParams().set('offset', offset).set('limit', limit);
-    if (query) params = params.set('q', query);
+  /**
+   * Como as duas telas de torneio pedem o recorte da lista.
+   *
+   * `sort` vazio ou ausente não é "sem ordem": é deixar o padrão com o
+   * servidor, que o escolhe por seção (o mais perto de acontecer nos próximos, o
+   * mais recente nos passados — ver backend/src/lib/listaEventos.js).
+   */
+  private paramsDoRecorte(recorte: RecorteEventos, base = new HttpParams()) {
+    let params = base;
+    if (recorte.q) params = params.set('q', recorte.q);
+    if (recorte.leagueId) params = params.set('league_id', recorte.leagueId);
+    if (recorte.sort) params = params.set('sort', recorte.sort);
+    return params;
+  }
+
+  getEvents(recorte: RecorteEventos = {}, past = false, offset = 0, limit = 24) {
+    let params = this.paramsDoRecorte(
+      recorte,
+      new HttpParams().set('offset', offset).set('limit', limit),
+    );
     if (past) params = params.set('past', 'true');
     return this.http.get<TournamentEvent[]>(this.API, { params });
   }
@@ -259,10 +288,10 @@ export class EventService {
     return this.http.delete(`${this.API}/${id}/join`, { headers: this.authHeaders() });
   }
 
-  getMyEvents() {
+  getMyEvents(recorte: RecorteEventos = {}) {
     return this.http.get<{ owned: TournamentEvent[]; joined: TournamentEvent[] }>(
       `${this.API}/user/mine`,
-      { headers: this.authHeaders() },
+      { headers: this.authHeaders(), params: this.paramsDoRecorte(recorte) },
     );
   }
 

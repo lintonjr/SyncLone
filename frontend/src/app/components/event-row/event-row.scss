@@ -1,0 +1,31 @@
+/* A linha que a página da liga já usava, agora compartilhada com a home e
+   "Meus eventos". */
+.event-row {
+  display: flex;
+  align-items: center;
+  /* Sem quebrar, o selo de status era empurrado para fora da tela no celular
+     (medido: 453px de conteúdo em 384px). */
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+.event-row-name {
+  font-weight: 600;
+  flex-shrink: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.event-row-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex: 1;
+}

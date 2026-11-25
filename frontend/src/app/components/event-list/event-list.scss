@@ -1,0 +1,22 @@
+/* A vitrine: o card de evento é um pôster 2:3, e empilhado numa coluna só ele
+   ocupava a largura inteira da página, um evento por tela. */
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A lista: serve para achar um torneio entre muitos, então cabe mais por tela
+   e a linha não tem o que cortar. */
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

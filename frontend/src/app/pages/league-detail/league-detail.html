@@ -198,21 +198,7 @@
     } @else {
       <div class="events-list">
         @for (ev of league()!.events; track ev.id) {
-          <a [routerLink]="['/event', ev.id]" class="event-row card">
-            <span class="event-row-name">{{ ev.name }}</span>
-            <span class="event-row-meta"
-              >{{ ev.game }}{{ ev.format ? ' - ' + ev.format : '' }} &nbsp;•&nbsp;
-              {{ ev.date | dataEvento: ev.timezone : 'curto' }}</span
-            >
-            <span
-              class="badge"
-              [class]="
-                'badge-' +
-                (ev.status === 'upcoming' ? 'purple' : ev.status === 'ongoing' ? 'yellow' : 'green')
-              "
-              >{{ i18n.t('status.' + ev.status) }}</span
-            >
-          </a>
+          <app-event-row [event]="ev" />
         }
       </div>
     }

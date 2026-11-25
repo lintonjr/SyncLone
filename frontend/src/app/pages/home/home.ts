@@ -1,9 +1,9 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { I18nService } from '../../i18n/i18n';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { EventService, TournamentEvent } from '../../services/event';
-import { EventCardComponent } from '../../components/event-card/event-card';
+import { EventService, TournamentEvent, RecorteEventos } from '../../services/event';
+import { EventListComponent } from '../../components/event-list/event-list';
+import { EventFiltersComponent, FiltroEventos } from '../../components/event-filters/event-filters';
 
 // A API pagina por offset e não devolve total: uma página curta significa fim da
 // lista, então "Load more" some sozinho sem precisar de uma contagem extra.
@@ -11,7 +11,7 @@ const PAGE_SIZE = 24;
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, FormsModule, EventCardComponent],
+  imports: [CommonModule, EventListComponent, EventFiltersComponent],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -21,8 +21,10 @@ export class HomeComponent implements OnInit {
   upcoming = signal<TournamentEvent[]>([]);
   past = signal<TournamentEvent[]>([]);
   loading = signal(true);
-  searchQuery = signal('');
-  searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // O que a barra de filtros escolheu. Ela já segura o texto por 300 ms, então
+  // cada mudança que chega aqui vale uma consulta.
+  filtro = signal<FiltroEventos>({ q: '', leagueId: '', ordem: '' });
 
   moreUpcoming = signal(false);
   morePast = signal(false);
@@ -32,9 +34,27 @@ export class HomeComponent implements OnInit {
     this.load();
   }
 
+  /** Vazio é campo que não vai na query string — e, em `sort`, é o padrão da seção. */
+  private recorte(): RecorteEventos {
+    const f = this.filtro();
+    return {
+      q: f.q.trim() || undefined,
+      leagueId: f.leagueId || undefined,
+      sort: f.ordem || undefined,
+    };
+  }
+
+  aoFiltrar(f: FiltroEventos) {
+    this.filtro.set(f);
+    // Recomeça do zero: a próxima página do filtro antigo não tem nada a ver
+    // com a lista nova, e `load()` já volta ao offset 0.
+    this.load();
+  }
+
   load() {
     this.loading.set(true);
-    this.eventSvc.getEvents(this.searchQuery() || undefined, false, 0, PAGE_SIZE).subscribe({
+    const recorte = this.recorte();
+    this.eventSvc.getEvents(recorte, false, 0, PAGE_SIZE).subscribe({
       next: (events) => {
         this.upcoming.set(events);
         this.moreUpcoming.set(events.length === PAGE_SIZE);
@@ -42,7 +62,7 @@ export class HomeComponent implements OnInit {
       },
       error: () => this.loading.set(false),
     });
-    this.eventSvc.getEvents(this.searchQuery() || undefined, true, 0, PAGE_SIZE).subscribe({
+    this.eventSvc.getEvents(recorte, true, 0, PAGE_SIZE).subscribe({
       next: (events) => {
         this.past.set(events);
         this.morePast.set(events.length === PAGE_SIZE);
@@ -54,21 +74,13 @@ export class HomeComponent implements OnInit {
     const list = which === 'upcoming' ? this.upcoming : this.past;
     const hasMore = which === 'upcoming' ? this.moreUpcoming : this.morePast;
     this.loadingMore.set(which);
-    this.eventSvc
-      .getEvents(this.searchQuery() || undefined, which === 'past', list().length, PAGE_SIZE)
-      .subscribe({
-        next: (events) => {
-          list.update((current) => [...current, ...events]);
-          hasMore.set(events.length === PAGE_SIZE);
-          this.loadingMore.set(null);
-        },
-        error: () => this.loadingMore.set(null),
-      });
-  }
-
-  onSearch(q: string) {
-    this.searchQuery.set(q);
-    if (this.searchTimeout) clearTimeout(this.searchTimeout);
-    this.searchTimeout = setTimeout(() => this.load(), 300);
+    this.eventSvc.getEvents(this.recorte(), which === 'past', list().length, PAGE_SIZE).subscribe({
+      next: (events) => {
+        list.update((current) => [...current, ...events]);
+        hasMore.set(events.length === PAGE_SIZE);
+        this.loadingMore.set(null);
+      },
+      error: () => this.loadingMore.set(null),
+    });
   }
 }

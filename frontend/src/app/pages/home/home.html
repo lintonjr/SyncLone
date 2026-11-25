@@ -1,23 +1,5 @@
 <div class="home-page">
-  <div class="search-bar">
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-    <input
-      type="text"
-      [placeholder]="i18n.t('home.search')"
-      [value]="searchQuery()"
-      (input)="onSearch($any($event.target).value)"
-    />
-  </div>
+  <app-event-filters (mudou)="aoFiltrar($event)" />
 
   @if (loading()) {
     <div class="loading-state">
@@ -30,11 +12,7 @@
       @if (upcoming().length === 0) {
         <p class="empty">{{ i18n.t('home.noUpcoming') }}</p>
       } @else {
-        <div class="events-grid">
-          @for (event of upcoming(); track event.id) {
-            <app-event-card [event]="event" />
-          }
-        </div>
+        <app-event-list [events]="upcoming()" />
         @if (moreUpcoming()) {
           <button
             class="load-more"
@@ -52,11 +30,7 @@
       @if (past().length === 0) {
         <p class="empty">{{ i18n.t('home.noPast') }}</p>
       } @else {
-        <div class="events-grid">
-          @for (event of past(); track event.id) {
-            <app-event-card [event]="event" />
-          }
-        </div>
+        <app-event-list [events]="past()" />
         @if (morePast()) {
           <button
             class="load-more"

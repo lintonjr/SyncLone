@@ -1,0 +1,14 @@
+<a [routerLink]="['/event', event().id]" class="event-row card">
+  <span class="event-row-name">{{ event().name }}</span>
+  <span class="event-row-meta">
+    {{ event().game }}{{ event().format ? ' · ' + event().format : '' }} &nbsp;•&nbsp;
+    {{ event().date | dataEvento: event().timezone : 'curto' }}
+    @if (event().league_name) {
+      &nbsp;•&nbsp; {{ event().league_name }}
+    }
+    @if (event().player_count !== undefined) {
+      &nbsp;•&nbsp; {{ i18n.t('card.players', { n: event().player_count ?? 0 }) }}
+    }
+  </span>
+  <span class="badge" [class]="corDoStatus()">{{ i18n.t('status.' + event().status) }}</span>
+</a>

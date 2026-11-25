@@ -6,11 +6,11 @@ import { RouterLink, Router } from '@angular/router';
 import { LeagueService, LeagueDetail, LeagueOrganizer } from '../../services/league';
 import { formatarAproveitamento } from '../../lib/retrospecto';
 import { AuthService } from '../../services/auth';
-import { DataEventoPipe } from '../../lib/data-evento.pipe';
+import { EventRowComponent } from '../../components/event-row/event-row';
 
 @Component({
   selector: 'app-league-detail',
-  imports: [CommonModule, RouterLink, DataEventoPipe],
+  imports: [CommonModule, RouterLink, EventRowComponent],
   templateUrl: './league-detail.html',
   styleUrl: './league-detail.scss',
 })

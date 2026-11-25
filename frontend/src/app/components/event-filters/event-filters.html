@@ -1,0 +1,95 @@
+<div class="filtros-eventos">
+  <div class="busca">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+    <input
+      type="search"
+      [value]="q()"
+      (input)="aoBuscar($any($event.target).value)"
+      [placeholder]="i18n.t('events.filters.search')"
+      [attr.aria-label]="i18n.t('events.filters.search')"
+    />
+  </div>
+
+  <select
+    [value]="leagueId()"
+    (change)="aoEscolherLiga($any($event.target).value)"
+    [attr.aria-label]="i18n.t('events.filters.league')"
+  >
+    <option value="">{{ i18n.t('events.filters.allLeagues') }}</option>
+    <option value="none">{{ i18n.t('events.filters.noLeague') }}</option>
+    @for (l of ligas(); track l.id) {
+      <option [value]="l.id">{{ l.name }}</option>
+    }
+  </select>
+
+  <select
+    [value]="ordem()"
+    (change)="aoOrdenar($any($event.target).value)"
+    [attr.aria-label]="i18n.t('events.filters.order')"
+  >
+    <option value="">{{ i18n.t('events.filters.orderSuggested') }}</option>
+    <option value="data_desc">{{ i18n.t('events.filters.orderNewest') }}</option>
+    <option value="data_asc">{{ i18n.t('events.filters.orderOldest') }}</option>
+  </select>
+
+  <!-- Pôster ou lista: a escolha fica no serviço, porque vale para as duas telas
+       e sobrevive ao recarregar. -->
+  <div class="layout" role="group" [attr.aria-label]="i18n.t('events.filters.view')">
+    <button
+      type="button"
+      [class.ativo]="layout.layout() === 'poster'"
+      [attr.aria-pressed]="layout.layout() === 'poster'"
+      [title]="i18n.t('events.filters.viewPoster')"
+      [attr.aria-label]="i18n.t('events.filters.viewPoster')"
+      (click)="layout.usar('poster')"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+    </button>
+    <button
+      type="button"
+      [class.ativo]="layout.layout() === 'lista'"
+      [attr.aria-pressed]="layout.layout() === 'lista'"
+      [title]="i18n.t('events.filters.viewList')"
+      [attr.aria-label]="i18n.t('events.filters.viewList')"
+      (click)="layout.usar('lista')"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="8" y1="6" x2="21" y2="6" />
+        <line x1="8" y1="12" x2="21" y2="12" />
+        <line x1="8" y1="18" x2="21" y2="18" />
+        <line x1="3" y1="6" x2="3.01" y2="6" />
+        <line x1="3" y1="12" x2="3.01" y2="12" />
+        <line x1="3" y1="18" x2="3.01" y2="18" />
+      </svg>
+    </button>
+  </div>
+</div>
