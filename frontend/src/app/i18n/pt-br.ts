@@ -658,6 +658,7 @@ export const PT_BR: Record<string, string> = {
   'nav.leagues': 'Ligas',
   'nav.login': 'Entrar',
   'nav.logout': 'Sair',
+  'nav.menu': 'Abrir menu',
   'nav.myEvents': 'Meus eventos',
   'nav.notifications': 'Abrir notificações',
   'nav.notificationsUnread': 'Abrir notificações ({n} não lidas)',

@@ -162,12 +162,65 @@
   white-space: nowrap;
 }
 
+/* ── Menu do celular ──
+   O botão só existe abaixo de 640px, que é onde a barra de links some. Acima
+   disso os links estão na barra e um menu seria um clique a mais para chegar
+   ao mesmo lugar. */
+.menu-wrapper {
+  position: relative;
+  display: none;
+}
+
+.menu-btn {
+  /* 44px de alvo de toque, como o resto do app no celular. */
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  /* Ancorado à esquerda: o botão é o primeiro item da barra, e à direita o
+     painel nasceria fora da tela. */
+  left: 0;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+
+  .dropdown-item {
+    /* Alvo de toque, de novo: 14px de fonte com 10px de padding dá 40. */
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+
+    &.active {
+      background: var(--surface2);
+      font-weight: 500;
+    }
+  }
+}
+
 @media (max-width: 640px) {
   .nav-links {
     display: none;
   }
   .user-name {
     display: none;
+  }
+  .menu-wrapper {
+    display: block;
+  }
+  /* Com o botão de menu na frente, 32px de respiro empurrariam o logo. */
+  .navbar-left {
+    gap: 12px;
   }
 }
 

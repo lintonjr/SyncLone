@@ -7,6 +7,19 @@ import { ThemeService } from '../../services/theme';
 import { NotificationService } from '../../services/notification';
 import { NotificationPanelComponent } from '../notification-panel/notification-panel';
 
+/**
+ * Um destino da navegação.
+ *
+ * `exato` existe por causa da home: sem ele, `/` ficaria marcada como ativa em
+ * toda rota, porque toda rota começa com barra.
+ */
+export interface LinkDeNavegacao {
+  rota: string;
+  /** Chave do dicionário, não a frase — o rótulo muda com o idioma. */
+  rotulo: string;
+  exato?: boolean;
+}
+
 @Component({
   selector: 'app-navbar',
   imports: [RouterLink, RouterLinkActive, CommonModule, NotificationPanelComponent],
@@ -20,9 +33,38 @@ export class NavbarComponent {
   notif = inject(NotificationService);
   showNotifications = signal(false);
   showUserMenu = signal(false);
+  showMenu = signal(false);
 
   /** Admin também organiza — a regra mora no AuthService. */
   podeOrganizar = this.auth.podeOrganizar;
+
+  /**
+   * Para onde a navegação leva, conforme o papel de quem olha.
+   *
+   * É uma lista só porque a barra do desktop e o menu do celular desenham as
+   * duas a mesma coisa. Escrita duas vezes no template, o próximo link entraria
+   * numa e seria esquecido na outra — foi exatamente assim que Avaliações,
+   * Administração, Criar evento e Badges ficaram inalcançáveis no celular: a
+   * barra sumia abaixo de 640px e não havia nada no lugar.
+   */
+  links = computed<LinkDeNavegacao[]>(() => {
+    const itens: LinkDeNavegacao[] = [
+      { rota: '/', rotulo: 'nav.home', exato: true },
+      { rota: '/events', rotulo: 'nav.myEvents' },
+      { rota: '/leagues', rotulo: 'nav.leagues' },
+    ];
+    if (this.podeOrganizar()) {
+      itens.push({ rota: '/create', rotulo: 'nav.createEvent' });
+      itens.push({ rota: '/badges', rotulo: 'nav.badges' });
+    }
+    // Avaliar é marca ao lado do papel, não um papel novo: quem atende o balcão
+    // costuma estar com o celular na mão, e era o caso mais penalizado.
+    if (this.auth.podeAvaliar()) itens.push({ rota: '/avaliacoes', rotulo: 'nav.avaliacoes' });
+    if (this.auth.currentUser()?.role === 'admin') {
+      itens.push({ rota: '/admin', rotulo: 'nav.admin' });
+    }
+    return itens;
+  });
 
   constructor() {
     // O painel de notificações só é montado quando aberto, então quem carrega a
@@ -48,9 +90,19 @@ export class NavbarComponent {
     this.showUserMenu.set(false);
   }
 
+  toggleMenu(event: Event) {
+    event.stopPropagation();
+    this.showMenu.update((v) => !v);
+  }
+
+  closeMenu() {
+    this.showMenu.set(false);
+  }
+
   @HostListener('document:click')
   onDocumentClick() {
     this.showUserMenu.set(false);
     this.showNotifications.set(false);
+    this.showMenu.set(false);
   }
 }

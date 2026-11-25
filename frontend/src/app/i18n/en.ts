@@ -657,6 +657,7 @@ export const EN: Record<string, string> = {
   'nav.leagues': 'Leagues',
   'nav.login': 'Login',
   'nav.logout': 'Logout',
+  'nav.menu': 'Open menu',
   'nav.myEvents': 'My Events',
   'nav.notifications': 'Open notifications',
   'nav.notificationsUnread': 'Open notifications ({n} unread)',

@@ -1,24 +1,71 @@
 <nav class="navbar">
   <div class="navbar-inner">
     <div class="navbar-left">
+      <!-- Menu do celular. Abaixo de 640px a barra de links some, e sem isto não
+           haveria como chegar a Avaliações, Administração, Criar evento, Badges
+           ou Ligas: o menu da conta só leva a Meus eventos, Perfil e Sair. -->
+      <div class="menu-wrapper" (click)="$event.stopPropagation()">
+        <button
+          class="icon-btn menu-btn"
+          (click)="toggleMenu($event)"
+          [attr.aria-expanded]="showMenu()"
+          [attr.aria-label]="i18n.t('nav.menu')"
+          [title]="i18n.t('nav.menu')"
+        >
+          @if (showMenu()) {
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          } @else {
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          }
+        </button>
+        @if (showMenu()) {
+          <div class="menu-dropdown">
+            @for (link of links(); track link.rota) {
+              <a
+                [routerLink]="link.rota"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: !!link.exato }"
+                class="dropdown-item"
+                (click)="closeMenu()"
+                >{{ i18n.t(link.rotulo) }}</a
+              >
+            }
+          </div>
+        }
+      </div>
+
       <a routerLink="/" class="logo">
         <img src="/mercadia-logo.png" alt="Mercadia" class="logo-img" />
       </a>
       <div class="nav-links">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{
-          i18n.t('nav.home')
-        }}</a>
-        <a routerLink="/events" routerLinkActive="active">{{ i18n.t('nav.myEvents') }}</a>
-        <a routerLink="/leagues" routerLinkActive="active">{{ i18n.t('nav.leagues') }}</a>
-        @if (podeOrganizar()) {
-          <a routerLink="/create" routerLinkActive="active">{{ i18n.t('nav.createEvent') }}</a>
-          <a routerLink="/badges" routerLinkActive="active">{{ i18n.t('nav.badges') }}</a>
-        }
-        @if (auth.podeAvaliar()) {
-          <a routerLink="/avaliacoes" routerLinkActive="active">{{ i18n.t('nav.avaliacoes') }}</a>
-        }
-        @if (auth.currentUser()?.role === 'admin') {
-          <a routerLink="/admin" routerLinkActive="active">{{ i18n.t('nav.admin') }}</a>
+        @for (link of links(); track link.rota) {
+          <a
+            [routerLink]="link.rota"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: !!link.exato }"
+            >{{ i18n.t(link.rotulo) }}</a
+          >
         }
       </div>
     </div>
