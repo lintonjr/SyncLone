@@ -20,6 +20,7 @@ const {
 const { computeStandings, computeClanStandings, winningSide } = require('../services/standings');
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
 const { registrar: registrarInscricao } = require('../lib/historicoInscricao');
+const { filtrosDeEventos } = require('../lib/listaEventos');
 const eventStream = require('../services/eventStream');
 const {
   gerenciaEvento, respondePeloEvento, gerenciaLiga,
@@ -321,22 +322,39 @@ router.get('/user/mine', auth, asyncHandler(async (req, res) => {
   // deixa de ver os eventos alheios na hora, não quando o token vencer.
   const eu = await db.get('SELECT role FROM users WHERE id = ?', [req.user.id]);
   const noTime = podeOrganizar(eu?.role) ? 1 : 0;
+  // Busca, liga e ordem vêm da mesma regra da home (lib/listaEventos), para as
+  // duas telas acharem a mesma coisa com o mesmo texto digitado. Sem `passados`:
+  // aqui a lista é uma só, com futuro e passado juntos.
+  const recorte = filtrosDeEventos({
+    q: req.query.q,
+    liga: req.query.league_id,
+    ordem: req.query.sort,
+  });
+  const extra = recorte.condicoes.map((c) => ` AND ${c}`).join('');
+
+  // O grupo de quem gerencia vai entre parênteses: são três alternativas num OR,
+  // e um AND emendado depois sem eles passaria a valer só para a última.
+  // A liga do evento entra em LEFT JOIN porque a busca casa o nome dela — e as
+  // ligas de dentro dos subselects viraram `l2`, que `l` agora é esta.
   const owned = await db.query(`
-    SELECT e.*, (SELECT COUNT(*) FROM event_players ep WHERE ep.event_id = e.id AND ep.status = 'active') as player_count
-    FROM events e
-    WHERE e.owner_id = ?
-       OR e.league_id IN (SELECT l.id FROM leagues l WHERE l.owner_id = ?)
-       OR (? = 1 AND e.league_id IN (SELECT lo.league_id FROM league_organizers lo WHERE lo.user_id = ?))
-    ORDER BY e.date ASC
-  `, [req.user.id, req.user.id, noTime, req.user.id]);
+    SELECT e.*, l.name as league_name,
+      (SELECT COUNT(*) FROM event_players ep WHERE ep.event_id = e.id AND ep.status = 'active') as player_count
+    FROM events e LEFT JOIN leagues l ON l.id = e.league_id
+    WHERE (e.owner_id = ?
+       OR e.league_id IN (SELECT l2.id FROM leagues l2 WHERE l2.owner_id = ?)
+       OR (? = 1 AND e.league_id IN (SELECT lo.league_id FROM league_organizers lo WHERE lo.user_id = ?)))${extra}
+    ORDER BY ${recorte.ordem}
+  `, [req.user.id, req.user.id, noTime, req.user.id, ...recorte.params]);
   const organizados = new Set(owned.map((e) => e.id));
   const joined = (await db.query(`
-    SELECT e.*, (SELECT COUNT(*) FROM event_players ep2 WHERE ep2.event_id = e.id AND ep2.status = 'active') as player_count
+    SELECT e.*, l.name as league_name,
+      (SELECT COUNT(*) FROM event_players ep2 WHERE ep2.event_id = e.id AND ep2.status = 'active') as player_count
     FROM events e
     JOIN event_players ep ON ep.event_id = e.id
-    WHERE ep.user_id = ? AND e.owner_id != ?
-    ORDER BY e.date ASC
-  `, [req.user.id, req.user.id])).filter((e) => !organizados.has(e.id));
+    LEFT JOIN leagues l ON l.id = e.league_id
+    WHERE ep.user_id = ? AND e.owner_id != ?${extra}
+    ORDER BY ${recorte.ordem}
+  `, [req.user.id, req.user.id, ...recorte.params])).filter((e) => !organizados.has(e.id));
   res.json({ owned, joined });
 }));
 
@@ -346,24 +364,25 @@ const EVENTS_PAGE_SIZE = 24;
 const EVENTS_MAX_PAGE_SIZE = 100;
 
 router.get('/', asyncHandler(async (req, res) => {
-  const { q, past } = req.query;
   const limit = Math.min(Math.max(parseInt(req.query.limit) || EVENTS_PAGE_SIZE, 1), EVENTS_MAX_PAGE_SIZE);
   const offset = Math.max(parseInt(req.query.offset) || 0, 0);
   const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-  let sql = `SELECT e.*, u.display_name as owner_name, l.name as league_name,
-    (SELECT COUNT(*) FROM event_players ep WHERE ep.event_id = e.id AND ep.status = 'active') as player_count
-    FROM events e JOIN users u ON u.id = e.owner_id LEFT JOIN leagues l ON l.id = e.league_id WHERE e.test_event = 0`;
-  const params = [];
-  if (past === 'true') { sql += " AND (e.date < ? OR e.status = 'completed')"; params.push(now); }
-  else { sql += " AND e.date >= ? AND e.status != 'completed'"; params.push(now); }
-  if (q) {
-    sql += ' AND (e.name LIKE ? OR e.description LIKE ? OR e.game LIKE ?)';
-    params.push(`%${q}%`, `%${q}%`, `%${q}%`);
-  }
+  const recorte = filtrosDeEventos({
+    q: req.query.q,
+    liga: req.query.league_id,
+    ordem: req.query.sort,
+    passados: req.query.past === 'true',
+    agora: now,
+  });
   // LIMIT/OFFSET interpolados: já são inteiros saneados acima, e o driver não
-  // aceita placeholder nessa posição em statements preparados.
-  sql += ` ORDER BY e.date ASC LIMIT ${limit} OFFSET ${offset}`;
-  res.json(await db.query(sql, params));
+  // aceita placeholder nessa posição em statements preparados. A ordem também é
+  // interpolada, e por isso só pode vir da lista fechada de lib/listaEventos.
+  const sql = `SELECT e.*, u.display_name as owner_name, l.name as league_name,
+    (SELECT COUNT(*) FROM event_players ep WHERE ep.event_id = e.id AND ep.status = 'active') as player_count
+    FROM events e JOIN users u ON u.id = e.owner_id LEFT JOIN leagues l ON l.id = e.league_id
+    WHERE e.test_event = 0${recorte.condicoes.map((c) => ` AND ${c}`).join('')}
+    ORDER BY ${recorte.ordem} LIMIT ${limit} OFFSET ${offset}`;
+  res.json(await db.query(sql, recorte.params));
 }));
 
 // Public: get single event
