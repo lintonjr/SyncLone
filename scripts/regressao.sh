@@ -678,5 +678,65 @@ body -X POST $API/events/$PEV/join -H "Authorization: Bearer $DFT" >/dev/null
 chk "pedido na fila nao pontua na liga" \
   "$(body $API/leagues/$DLG | jqp "[r['events_played'] for r in d['standings'] if r['display_name']=='Ficante'][0]")" "1"
 
+sec "18. Buscar, filtrar por liga e ordenar a lista de torneios"
+# A home e "Meus eventos" passaram a oferecer os mesmos controles, e o recorte
+# dos dois vem da mesma regra no servidor (lib/listaEventos). O que se cobre aqui
+# e o que nenhum teste unitario alcanca: que a busca realmente ache o torneio
+# pelo nome de quem jogou nele, e que a ordem pedida chegue ao banco.
+BLG=$(body -X POST $API/leagues -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"name\":\"Liga Busca $S\"}" | jqp 'd["id"]')
+# Datas distantes e no futuro: entram na secao dos proximos, e a ordem tem o que ordenar.
+BE1=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Busca$S Antigo" -F "game=Magic" -F "date=2030-01-10T19:00:00Z" -F "league_id=$BLG" | jqp 'd["id"]')
+BE2=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Busca$S Novo" -F "game=Magic" -F "date=2030-12-20T19:00:00Z" -F "league_id=$BLG" | jqp 'd["id"]')
+# Um torneio solto, para "sem liga" ter o que filtrar.
+BE3=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Busca$S Solto" -F "game=Magic" -F "date=2030-06-15T19:00:00Z" | jqp 'd["id"]')
+# O nome do jogador nao aparece no nome de nenhum torneio: se a busca o achar,
+# foi pela inscricao.
+body -X POST $API/events/$BE1/players -H "Authorization: Bearer $OT" -H 'Content-Type: application/json' -d "{\"display_name\":\"Nicodemos $S\"}" >/dev/null
+
+chk "busca pelo nome do jogador acha o torneio dele" \
+  "$(body --get $API/events --data-urlencode "q=Nicodemos $S" | jqp "[e['id'] for e in d]")" "['$BE1']"
+chk "e o nome dele nao esta em nome de torneio nenhum" \
+  "$(body --get $API/events --data-urlencode "q=Busca$S" | jqp "any('Nicodemos' in e['name'] for e in d)")" "False"
+chk "busca pelo nome da liga acha os torneios dela" \
+  "$(body --get $API/events --data-urlencode "q=Liga Busca $S" | jqp "sorted(e['id'] for e in d)")" "$(python3 -c "print(sorted(['$BE1','$BE2']))")"
+chk "busca pelo nome do torneio continua achando" \
+  "$(body --get $API/events --data-urlencode "q=Busca$S Solto" | jqp "[e['id'] for e in d]")" "['$BE3']"
+
+# Fila de espera: quem pediu para entrar tambem e achado (decisao de produto —
+# o historico de quem passou pelo torneio nao depende de aprovacao).
+FEV=$(body -X POST $API/events -H "Authorization: Bearer $OT" -F "name=Fila$S" -F "game=Magic" -F "date=2030-03-01T19:00:00Z" -F "confirm_players=true" | jqp 'd["id"]')
+FJ="fila$S@t.local"; reg "Belchior $S" "$FJ"; FJT=$(tok "$FJ")
+body -X POST $API/events/$FEV/join -H "Authorization: Bearer $FJT" >/dev/null
+chk "quem esta na fila tambem e achado pelo nome" \
+  "$(body --get $API/events --data-urlencode "q=Belchior $S" | jqp "[e['id'] for e in d]")" "['$FEV']"
+
+chk "filtro por liga traz so os torneios dela" \
+  "$(body --get $API/events --data-urlencode "league_id=$BLG" | jqp "sorted(e['id'] for e in d)")" "$(python3 -c "print(sorted(['$BE1','$BE2']))")"
+chk "a busca desta rodada casa os tres torneios" \
+  "$(body --get $API/events --data-urlencode "q=Busca$S" | jqp "len(d)")" "3"
+chk "sem liga nao traz torneio de liga" \
+  "$(body --get $API/events --data-urlencode "league_id=none" --data-urlencode "q=Busca$S" | jqp "[e['id'] for e in d]")" "['$BE3']"
+
+# A ordem: os mesmos dois torneios, invertidos.
+chk "mais antigo primeiro" \
+  "$(body --get $API/events --data-urlencode "q=Liga Busca $S" --data-urlencode "sort=data_asc" | jqp "[e['id'] for e in d]")" "['$BE1', '$BE2']"
+chk "mais novo primeiro" \
+  "$(body --get $API/events --data-urlencode "q=Liga Busca $S" --data-urlencode "sort=data_desc" | jqp "[e['id'] for e in d]")" "['$BE2', '$BE1']"
+chk "sem pedir ordem, os proximos comecam pelo mais perto de acontecer" \
+  "$(body --get $API/events --data-urlencode "q=Liga Busca $S" | jqp "[e['id'] for e in d]")" "['$BE1', '$BE2']"
+# Ordem vem da query string e vai para o ORDER BY: so pode ser um dos dois valores.
+chk "ordem desconhecida cai no padrao, em vez de virar erro" \
+  "$(code --get $API/events --data-urlencode "sort=e.date; DROP TABLE events")" "200"
+
+# As mesmas tres coisas em "Meus eventos", que e a outra tela.
+chk "meus eventos aceita a busca por jogador" \
+  "$(body --get $API/events/user/mine -H "Authorization: Bearer $OT" --data-urlencode "q=Nicodemos $S" | jqp "[e['id'] for e in d['owned']]")" "['$BE1']"
+chk "meus eventos aceita o filtro por liga" \
+  "$(body --get $API/events/user/mine -H "Authorization: Bearer $OT" --data-urlencode "league_id=$BLG" | jqp "sorted(e['id'] for e in d['owned'])")" "$(python3 -c "print(sorted(['$BE1','$BE2']))")"
+chk "meus eventos aceita a ordem pedida" \
+  "$(body --get $API/events/user/mine -H "Authorization: Bearer $OT" --data-urlencode "q=Liga Busca $S" --data-urlencode "sort=data_asc" | jqp "[e['id'] for e in d['owned']]")" "['$BE1', '$BE2']"
+chk "e agora diz de que liga e cada torneio" \
+  "$(body --get $API/events/user/mine -H "Authorization: Bearer $OT" --data-urlencode "league_id=$BLG" | jqp "set(e['league_name'] for e in d['owned'])")" "{'Liga Busca $S'}"
+
 printf '\n\033[1mRESULTADO: %d ok / %d falhas\033[0m\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
