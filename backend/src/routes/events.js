@@ -100,6 +100,42 @@ async function managedEvent(conn, eventId, userId) {
   return event;
 }
 
+/**
+ * Uma mesa **daquele** evento, ou 404.
+ *
+ * A autorização destas rotas é calculada sobre o evento da URL, e o id da mesa
+ * vem da URL também. Buscar a mesa só pelo id desamarrava as duas coisas: quem
+ * organizava o evento A podia passar o id de uma mesa do evento B e escrever
+ * nela — e os ids das mesas saem do `GET /events/:id`, que é público, então não
+ * havia nada a adivinhar. Amarrar aqui é o que faz a autorização valer sobre o
+ * que de fato vai ser escrito.
+ *
+ * `travar` pede o `FOR UPDATE` de quem vai alterar a mesa: lançar um resultado
+ * lê o anterior para desfazê-lo, e dois organizadores na mesma mesa partiriam do
+ * mesmo estado inicial.
+ */
+async function mesaDoEvento(conn, eventId, pairingId, { travar = false } = {}) {
+  const pairing = await conn.get(
+    `SELECT * FROM pairings WHERE id = ? AND event_id = ?${travar ? ' FOR UPDATE' : ''}`,
+    [pairingId, eventId]
+  );
+  if (!pairing) throw new HttpError(404, 'Pairing not found', 'api.pairingNotFound');
+  return pairing;
+}
+
+/**
+ * Uma inscrição **daquele** evento, ou 404. Mesmo motivo de `mesaDoEvento`:
+ * sem o vínculo, quem organiza um evento derruba jogador de outro.
+ */
+async function inscricaoDoEvento(conn, eventId, playerId, { travar = false } = {}) {
+  const player = await conn.get(
+    `SELECT * FROM event_players WHERE id = ? AND event_id = ?${travar ? ' FOR UPDATE' : ''}`,
+    [playerId, eventId]
+  );
+  if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
+  return player;
+}
+
 /** Vincular um evento a uma liga exige gerenciar a liga (dono ou time). */
 async function assertPodeVincularLiga(conn, leagueId, userId) {
   const league = await conn.get('SELECT * FROM leagues WHERE id = ?', [leagueId]);
@@ -1063,11 +1099,7 @@ router.put('/:id/players/:playerId/link', auth, validate(schemas.linkPlayer), as
   const vinculado = await db.transaction(async (tx) => {
     const event = await managedEvent(tx, req.params.id, req.user.id);
 
-    const player = await tx.get(
-      'SELECT * FROM event_players WHERE id = ? AND event_id = ? FOR UPDATE',
-      [req.params.playerId, req.params.id]
-    );
-    if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
+    const player = await inscricaoDoEvento(tx, req.params.id, req.params.playerId, { travar: true });
     if (player.user_id) {
       throw new HttpError(409, 'Esta inscrição já pertence a uma conta', 'api.playerAlreadyLinked');
     }
@@ -1083,13 +1115,16 @@ router.put('/:id/players/:playerId/link', auth, validate(schemas.linkPlayer), as
     );
     if (jaEsta) throw new HttpError(409, 'Esta conta já participa deste evento', 'api.accountAlreadyInEvent');
 
-    await tx.run('UPDATE event_players SET user_id = ? WHERE id = ?', [user.id, req.params.playerId]);
+    await tx.run(
+      'UPDATE event_players SET user_id = ? WHERE id = ? AND event_id = ?',
+      [user.id, req.params.playerId, req.params.id]
+    );
     await notifyUsers(tx, [user.id], 'notif.guestLinked', {
       evento: event.name,
       nome: player.display_name,
     });
 
-    return await tx.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]);
+    return await inscricaoDoEvento(tx, req.params.id, req.params.playerId);
   });
 
   eventStream.broadcast(req.params.id);
@@ -1101,8 +1136,7 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
   if (!event) throw new HttpError(404, 'Event not found', 'api.eventNotFound');
   assertNotFinished(event);
 
-  const player = await db.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]);
-  if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
+  const player = await inscricaoDoEvento(db, req.params.id, req.params.playerId);
 
   // "Owner" aqui é quem organiza o evento: quem o criou ou o time da liga.
   const isOwner = gerenciaEvento(await papelDoUsuarioNoEvento(db, event, req.user.id));
@@ -1128,10 +1162,11 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
   const trocouStatus = status !== undefined && status !== player.status;
 
   await db.transaction(async (tx) => {
-    await tx.run('UPDATE event_players SET deck_name=?, status=? WHERE id=?', [
+    await tx.run('UPDATE event_players SET deck_name=?, status=? WHERE id=? AND event_id=?', [
       deck_name ?? player.deck_name,
       status ?? player.status,
       req.params.playerId,
+      req.params.id,
     ]);
     if (trocouStatus) {
       await registrarInscricao(tx, {
@@ -1152,7 +1187,7 @@ router.put('/:id/players/:playerId', auth, validate(schemas.updatePlayer), async
     }
   }
   eventStream.broadcast(req.params.id);
-  res.json(await db.get('SELECT * FROM event_players WHERE id = ?', [req.params.playerId]));
+  res.json(await inscricaoDoEvento(db, req.params.id, req.params.playerId));
 }));
 
 // Auth: remove player (owner only) — kept as a drop once they've been paired
@@ -1160,11 +1195,7 @@ router.delete('/:id/players/:playerId', auth, asyncHandler(async (req, res) => {
   const event = await liveManagedEvent(db, req.params.id, req.user.id);
   assertClanRosterOpen(event, 'remover jogador');
 
-  const player = await db.get(
-    'SELECT * FROM event_players WHERE id = ? AND event_id = ?',
-    [req.params.playerId, req.params.id]
-  );
-  if (!player) throw new HttpError(404, 'Player not found', 'api.playerNotFound');
+  const player = await inscricaoDoEvento(db, req.params.id, req.params.playerId);
 
   const outcome = await retirePlayer(req.params.id, player, {
     autor: req.user.id,
@@ -1614,8 +1645,7 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
     // Locked for the duration: recording a result reads the previous one, reverses
     // its points and applies the new ones. Two organizers submitting the same table
     // concurrently would otherwise both revert from the same starting state.
-    const pairing = await tx.get('SELECT * FROM pairings WHERE id = ? FOR UPDATE', [req.params.pairingId]);
-    if (!pairing) throw new HttpError(404, 'Pairing not found', 'api.pairingNotFound');
+    const pairing = await mesaDoEvento(tx, req.params.id, req.params.pairingId, { travar: true });
 
     const { result, p1_games, p2_games } = req.body;
 
@@ -1670,8 +1700,8 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
     // Trocar o resultado sem informar placar zera o placar anterior: manter um
     // 2×1 antigo sob um vencedor novo produziria um GW% que nunca aconteceu.
     await tx.run(
-      'UPDATE pairings SET result = ?, result_status = ?, p1_games = ?, p2_games = ? WHERE id = ?',
-      [result, newStatus, hasGameScore ? p1_games : null, hasGameScore ? p2_games : null, req.params.pairingId]
+      'UPDATE pairings SET result = ?, result_status = ?, p1_games = ?, p2_games = ? WHERE id = ? AND event_id = ?',
+      [result, newStatus, hasGameScore ? p1_games : null, hasGameScore ? p2_games : null, req.params.pairingId, req.params.id]
     );
 
     const pending = await pendingResultsCount(tx, pairing.round_id);
@@ -1688,7 +1718,7 @@ router.put('/:id/pairings/:pairingId', auth, validate(schemas.submitResult), asy
       await notifyUsers(tx, await pairingUserIds(tx, pairing), 'notif.resultRecorded', { evento: event.name });
     }
 
-    return await tx.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]);
+    return await mesaDoEvento(tx, req.params.id, req.params.pairingId);
   });
 
   eventStream.broadcast(req.params.id);
@@ -1700,15 +1730,17 @@ router.post('/:id/pairings/:pairingId/approve', auth, asyncHandler(async (req, r
   const updated = await db.transaction(async (tx) => {
     const event = await liveManagedEvent(tx, req.params.id, req.user.id);
 
-    const pairing = await tx.get('SELECT * FROM pairings WHERE id = ? FOR UPDATE', [req.params.pairingId]);
-    if (!pairing) throw new HttpError(404, 'Pairing not found', 'api.pairingNotFound');
+    const pairing = await mesaDoEvento(tx, req.params.id, req.params.pairingId, { travar: true });
     if (!pairing.result) throw new HttpError(400, 'No result to approve');
     if (pairing.result_status === 'confirmed') throw new HttpError(400, 'Result already confirmed');
 
     // Aprovar é mudar o status da mesa. Um resultado pendente já estava gravado e
     // apenas não contava; confirmá-lo o coloca no cálculo, sem nenhuma escrita de
     // retrospecto — que é derivado das mesas confirmadas.
-    await tx.run("UPDATE pairings SET result_status = 'confirmed' WHERE id = ?", [req.params.pairingId]);
+    await tx.run(
+      "UPDATE pairings SET result_status = 'confirmed' WHERE id = ? AND event_id = ?",
+      [req.params.pairingId, req.params.id]
+    );
 
     const pending = await pendingResultsCount(tx, pairing.round_id);
     await tx.run('UPDATE rounds SET status = ? WHERE id = ?',
@@ -1716,7 +1748,7 @@ router.post('/:id/pairings/:pairingId/approve', auth, asyncHandler(async (req, r
 
     await notifyUsers(tx, await pairingUserIds(tx, pairing), 'notif.resultApproved', { evento: event.name });
 
-    return await tx.get('SELECT * FROM pairings WHERE id = ?', [req.params.pairingId]);
+    return await mesaDoEvento(tx, req.params.id, req.params.pairingId);
   });
 
   eventStream.broadcast(req.params.id);

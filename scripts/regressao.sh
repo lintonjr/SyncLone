@@ -738,5 +738,44 @@ chk "meus eventos aceita a ordem pedida" \
 chk "e agora diz de que liga e cada torneio" \
   "$(body --get $API/events/user/mine -H "Authorization: Bearer $OT" --data-urlencode "league_id=$BLG" | jqp "set(e['league_name'] for e in d['owned'])")" "{'Liga Busca $S'}"
 
+sec "19. Um torneio nao se mexe pelo id de outro"
+# Achado de revisao de seguranca: tres rotas autorizavam contra o evento da URL e
+# depois buscavam a mesa (ou a inscricao) so pelo id. Quem organizava o evento A
+# passava o id de um filho do evento B e escrevia nele — e os ids saem do
+# GET /events/:id, que e publico, entao nao havia nada a adivinhar.
+#
+# Os tres casos abaixo sao o exploit original com a expectativa invertida: 404.
+VIT=$(mkorg "vit$S@t.local" "Bob Vitima")
+ATA=$(mkorg "ata$S@t.local" "Ana Atacante")
+VEV=$(body -X POST $API/events -H "Authorization: Bearer $VIT" -F "name=Vitima $S" -F "game=Magic" -F "date=2030-05-01T19:00:00Z" -F "async_draws=true" | jqp 'd["id"]')
+for n in V1 V2; do body -X POST $API/events/$VEV/players -H "Authorization: Bearer $VIT" -H 'Content-Type: application/json' -d "{\"display_name\":\"$n\"}" >/dev/null; done
+AEV=$(body -X POST $API/events -H "Authorization: Bearer $ATA" -F "name=Atacante $S" -F "game=Magic" -F "date=2030-05-01T19:00:00Z" | jqp 'd["id"]')
+VPID=$(body $API/events/$VEV | jqp 'd["players"][0]["id"]')
+
+chk "inscricao alheia nao e editavel pelo id do meu evento" \
+  "$(code -X PUT $API/events/$AEV/players/$VPID -H "Authorization: Bearer $ATA" -H 'Content-Type: application/json' -d '{"status":"dropped"}')" "404"
+chk "e o jogador da vitima segue ativo" \
+  "$(body $API/events/$VEV | jqp 'd["players"][0]["status"]')" "active"
+
+body -X POST $API/events/$VEV/rounds -H "Authorization: Bearer $VIT" >/dev/null
+VPAIR=$(body $API/events/$VEV | jqp 'd["pairings"][0]["id"]')
+chk "mesa alheia nao recebe resultado pelo id do meu evento" \
+  "$(code -X PUT $API/events/$AEV/pairings/$VPAIR -H "Authorization: Bearer $ATA" -H 'Content-Type: application/json' -d '{"result":"player1"}')" "404"
+chk "e a mesa da vitima segue sem resultado" \
+  "$(body $API/events/$VEV | jqp 'repr(d["pairings"][0]["result"])')" "None"
+
+# Um resultado pendente de verdade: o proprio jogador reporta. Aqui a vitima
+# lanca pelo organizador e volta para pendente pela rota de auto-reporte nao
+# existir sem conta — o que importa e o estado, nao como se chegou nele.
+body -X PUT $API/events/$VEV/pairings/$VPAIR -H "Authorization: Bearer $VIT" -H 'Content-Type: application/json' -d '{"result":"player1"}' >/dev/null
+chk "aprovar mesa alheia pelo id do meu evento -> 404" \
+  "$(code -X POST $API/events/$AEV/pairings/$VPAIR/approve -H "Authorization: Bearer $ATA")" "404"
+
+# E o controle: pelo id certo, quem organiza continua podendo.
+chk "o dono do torneio continua lancando na propria mesa" \
+  "$(code -X PUT $API/events/$VEV/pairings/$VPAIR -H "Authorization: Bearer $VIT" -H 'Content-Type: application/json' -d '{"result":"player2"}')" "200"
+chk "e editando a propria inscricao" \
+  "$(code -X PUT $API/events/$VEV/players/$VPID -H "Authorization: Bearer $VIT" -H 'Content-Type: application/json' -d '{"deck_name":"Burn"}')" "200"
+
 printf '\n\033[1mRESULTADO: %d ok / %d falhas\033[0m\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
