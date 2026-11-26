@@ -21,6 +21,7 @@ const { computeStandings, computeClanStandings, winningSide } = require('../serv
 const { notifyUsers, activeEventUserIds, pairingUserIds } = require('../services/notify');
 const { registrar: registrarInscricao } = require('../lib/historicoInscricao');
 const { filtrosDeEventos } = require('../lib/listaEventos');
+const { linhas: csvRows } = require('../lib/csv');
 const eventStream = require('../services/eventStream');
 const {
   gerenciaEvento, respondePeloEvento, gerenciaLiga,
@@ -535,11 +536,6 @@ router.get('/:id/stream', (req, res) => {
 
 // Public: export the event as CSV — standings or every round's pairings.
 // Same data the page shows, in the format a shop actually files after the event.
-const csvCell = (value) => {
-  const text = value === null || value === undefined ? '' : String(value);
-  return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-};
-const csvRows = (rows) => rows.map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
 const pct = (v) => (v === null || v === undefined ? '' : `${(v * 100).toFixed(1)}%`);
 const slug = (name) => name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'event';
