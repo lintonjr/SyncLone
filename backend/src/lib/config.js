@@ -26,7 +26,11 @@ const ORIGENS_DEV = ['http://localhost:4200', 'http://localhost:4201'];
  *
  * `*` é aceito explicitamente para quem quiser abrir a API de propósito, mas
  * nunca é o padrão: o padrão silencioso de um sistema com JWT no header não pode
- * ser "qualquer site pode me chamar".
+ * ser "qualquer site pode me chamar". **Em produção nem explicitamente**: o app
+ * monta o `cors` com `credentials: true`, e a dupla `*` + credenciais é a
+ * configuração que os navegadores recusam e que os revisores leem como permissão
+ * geral. Recusar na subida, como o `JWT_SECRET` curto, é o que impede que isso
+ * entre por uma variável de ambiente trocada às pressas.
  *
  * Variável vazia só cai no par de desenvolvimento **fora** de produção. Em
  * produção, vazio quer dizer nenhuma origem (`false`, o `cors` não emite
@@ -38,7 +42,12 @@ function corsOrigins(env = process.env) {
   if (bruto === undefined || bruto === '') {
     return env.NODE_ENV === 'production' ? false : ORIGENS_DEV;
   }
-  if (bruto === '*') return '*';
+  if (bruto === '*') {
+    if (env.NODE_ENV === 'production') {
+      throw new Error('CORS_ORIGINS="*" não é aceito em produção: liste as origens, ou deixe vazio se SPA e API estão na mesma origem');
+    }
+    return '*';
+  }
   return bruto.split(',').map((o) => o.trim()).filter(Boolean);
 }
 

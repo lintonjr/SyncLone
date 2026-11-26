@@ -10,6 +10,33 @@ const { podePedirParaOrganizar } = require('../lib/roles');
 const validate = require('../middleware/validate');
 const schemas = require('../schemas');
 const { aproveitamento } = require('../lib/retrospecto');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
+const { obterClientes } = require('../lib/valkey');
+const { ValkeyStore } = require('../lib/rateLimitStore');
+
+/**
+ * O perfil público é a rota mais cara que não pede login: ela recalcula a
+ * classificação de **todos** os eventos da pessoa a cada chamada, das mesas, e
+ * não lê nada pronto de coluna. Um laço sobre um jogador veterano é, por
+ * requisição, dezenas de torneios recalculados.
+ *
+ * A chave é o par IP + perfil pedido, e não o IP sozinho — essa distinção não é
+ * detalhe. Um torneio na loja põe vinte celulares atrás de um único IP público:
+ * limitar por IP estrangularia a loja inteira justo na noite de evento, que é
+ * quando o sistema mais importa. Por par, cada pessoa continua navegando por
+ * quantos perfis quiser, e o que fica barrado é repetir o *mesmo* cálculo caro —
+ * que é o abuso, e não é algo que gente faça.
+ */
+const valkey = obterClientes();
+const limitePerfil = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}:${req.params.id}`,
+  message: { error: 'Too many requests. Please wait a few minutes and try again.' },
+  ...(valkey && { store: new ValkeyStore({ cliente: valkey.comandos }), passOnStoreError: true }),
+});
 const bcrypt = require('bcryptjs');
 
 /**
@@ -169,7 +196,7 @@ router.put('/me/badges/:id', auth, validate(schemas.badgeVisibility), asyncHandl
  * alimenta a tabela de cada evento, então perfil e classificação não têm como
  * discordar.
  */
-router.get('/:id/profile', optionalAuth, asyncHandler(async (req, res) => {
+router.get('/:id/profile', limitePerfil, optionalAuth, asyncHandler(async (req, res) => {
   const user = await db.get(
     'SELECT id, display_name, role, profile_public, created_at FROM users WHERE id = ?',
     [req.params.id]

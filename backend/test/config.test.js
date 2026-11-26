@@ -25,6 +25,21 @@ test('cors: lista separada por vírgula, com espaços tolerados', () => {
   );
 });
 
+test('cors: "*" é aceito fora de produção e recusado dentro', () => {
+  // Fora de produção abre a API de propósito, que é um uso legítimo em
+  // desenvolvimento.
+  assert.equal(corsOrigins({ CORS_ORIGINS: '*' }), '*');
+
+  // Em produção, não: o app monta o `cors` com `credentials: true`, e `*` com
+  // credenciais é a combinação que o navegador recusa e que o revisor lê como
+  // "qualquer site pode chamar". Recusar na subida é o que impede isso de entrar
+  // por uma variável trocada às pressas.
+  assert.throws(
+    () => corsOrigins({ CORS_ORIGINS: '*', NODE_ENV: 'production' }),
+    /não é aceito em produção/
+  );
+});
+
 test('cors: vazio em produção é resposta legítima, não engano', () => {
   // Com SPA e API na mesma origem não há chamada cross-origin: a lista vazia é
   // o estado correto, e o teste existe para ninguém "consertar" isso para `*`.
